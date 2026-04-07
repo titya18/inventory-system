@@ -1,0 +1,30 @@
+name: 🚀 Auto Deploy Inventory
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.0
+
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+          script: |
+            cd /var/www/inventory
+
+            echo "📥 Pull latest code"
+            git pull origin main
+
+            echo "🐳 Rebuild & restart containers"
+            docker compose up -d --build
+
+            echo "✅ Deploy complete"

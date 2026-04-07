@@ -1,0 +1,217 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Core colors */
+    --background: 0 0% 96%;
+    --foreground: 220 20% 20%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 20%;
+
+    /* Primary - Teal accent */
+    --primary: 174 72% 46%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Light gray */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 20% 30%;
+
+    /* Muted */
+    --muted: 220 14% 92%;
+    --muted-foreground: 220 10% 50%;
+
+    /* Accent - Navy header */
+    --accent: 220 40% 13%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Destructive - Red */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Success - Green */
+    --success: 142 72% 45%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning - Orange */
+    --warning: 25 95% 53%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Info - Blue */
+    --info: 210 100% 50%;
+    --info-foreground: 0 0% 100%;
+
+    /* Purple */
+    --purple: 262 80% 55%;
+    --purple-foreground: 0 0% 100%;
+
+    /* Border and input */
+    --border: 220 14% 90%;
+    --input: 220 14% 90%;
+    --ring: 174 72% 46%;
+
+    --radius: 0.625rem;
+
+    /* Sidebar */
+    --sidebar-background: 220 14% 97%;
+    --sidebar-foreground: 220 20% 30%;
+    --sidebar-primary: 174 72% 46%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 94%;
+    --sidebar-accent-foreground: 220 20% 30%;
+    --sidebar-border: 220 14% 90%;
+    --sidebar-ring: 174 72% 46%;
+
+    /* Custom POS colors */
+    --pos-header: 220 40% 13%;
+    --pos-header-foreground: 0 0% 100%;
+    --pos-stock: 174 72% 46%;
+    --pos-price: 220 20% 20%;
+    
+    /* Button variants */
+    --btn-discount: 142 72% 45%;
+    --btn-tax: 210 100% 50%;
+    --btn-shipping: 174 72% 50%;
+    --btn-hold: 25 95% 53%;
+    --btn-void: 220 40% 25%;
+    --btn-payment: 142 72% 45%;
+    --btn-orders: 220 40% 25%;
+    --btn-reset: 210 100% 50%;
+    --btn-transaction: 0 84% 60%;
+  }
+
+  .dark {
+    --background: 220 25% 10%;
+    --foreground: 0 0% 95%;
+
+    --card: 220 25% 14%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 220 25% 14%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 174 72% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 25% 18%;
+    --secondary-foreground: 0 0% 90%;
+
+    --muted: 220 25% 20%;
+    --muted-foreground: 220 10% 60%;
+
+    --accent: 220 40% 20%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 72% 50%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 25 95% 55%;
+    --warning-foreground: 0 0% 100%;
+
+    --info: 210 100% 55%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 220 25% 20%;
+    --input: 220 25% 20%;
+    --ring: 174 72% 50%;
+
+    --sidebar-background: 220 25% 12%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 174 72% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 25% 18%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 220 25% 20%;
+    --sidebar-ring: 174 72% 50%;
+
+    --pos-header: 220 40% 10%;
+    --pos-header-foreground: 0 0% 100%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted)) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted));
+    border-radius: 3px;
+  }
+}
+
+/* Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s infinite;
+}

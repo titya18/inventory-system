@@ -1,0 +1,123 @@
+/* ================= KHMER FONT EMBED ================= */
+@font-face {
+  font-family: "KhmerOSMuolLight";
+  src: url("/admin_assets/fonts/KhmerOSMuolLight.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Optional helper class */
+.khmer-muol {
+  font-family: "KhmerOSMuolLight", serif;
+}
+
+
+/* ================= PRINT STYLE ================= */
+@media print {
+
+  /* iOS Safari FIX for fixed / overlay UI */
+  nav,
+  .sticky {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  /* ================= RESET ================= */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    height: auto !important;
+    overflow: visible !important;
+    zoom: 0.98;   /* shrink slightly */
+  }
+
+  /* ================= HIDE UI ================= */
+  .no-print,
+  button,
+  svg,
+  [class*="mt-auto"],
+  [class*="main-logo"],
+  [class*="my-auto"],
+  [class*="floating"],
+  [class*="fab"],
+  [class*="chat"],
+  [class*="help"],
+  [class*="setting"],
+  [class*="widget"] {
+    display: none !important;
+  }
+
+  /* ================= INVOICE ================= */
+  .invoice-container {
+    width: 100%;
+    margin: 0 auto !important;
+    padding: 5mm!important;
+    background: white !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* ================= COMPANY KHMER TITLE ================= */
+  .company-khmer {
+    font-family: "KhmerOSMuolLight", serif !important;
+    font-size: 22px !important;
+    font-weight: normal !important; /* Muol should not use bold */
+    color: #ffab93 !important;
+    margin-bottom: 15px !important;
+  }
+
+  /* ================= TABLE ================= */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    page-break-inside: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  /* Smaller font ONLY for items */
+  .items-section table {
+    font-size: 12px;
+  }
+
+  .items-section th {
+    font-size: 11px;
+    padding: 6px 8px !important;
+  }
+
+  .items-section td {
+    font-size: 11px;
+    padding: 4px 8px !important;
+  }
+
+  .items-section td span {
+    font-size: 10px !important;
+  }
+
+  /* ================= BLOCK SAFETY ================= */
+  .invoice-header,
+  .address-section,
+  .totals-section,
+  .terms-notes-section {
+    break-inside: auto;
+  }
+}

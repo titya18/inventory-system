@@ -1,0 +1,8 @@
+.icon_style{
+    background: linear-gradient(135deg, rgba(239, 18, 98, 1) 0%, rgba(67, 97, 238, 1) 100%)
+}
+.error_validate {
+    color: red;
+    margin-top: 5px;
+    margin-bottom: -5px;
+}

@@ -1,0 +1,87 @@
+services:
+  # ------------------- PostgreSQL -------------------
+  db:
+    image: postgres:latest
+    container_name: pos_db
+    restart: always
+    environment:
+      POSTGRES_DB: ctl_db_inventory
+      POSTGRES_USER: ctl_inventory_user
+      POSTGRES_PASSWORD: CTL_inventoryPassword18
+      TZ: Asia/Phnom_Penh
+      PGTZ: Asia/Phnom_Penh
+    command:
+      [
+        "postgres",
+        "-c", "wal_level=logical",
+        "-c", "max_replication_slots=10",
+        "-c", "max_wal_senders=10",
+        "-c", "max_logical_replication_workers=10",
+        "-c", "max_worker_processes=20"
+      ]
+    ports:
+      - "55555:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      inventory_net:
+      inventory_replication_net:
+        aliases:
+          - pos_db
+
+  # ------------------- PgAdmin -------------------
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pos_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      TZ: Asia/Phnom_Penh
+    ports:
+      - "8081:80"
+    networks:
+      - inventory_net
+
+  # ------------------- Backend -------------------
+  backend:
+    build: ./backend
+    container_name: pos_backend
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: postgresql://ctl_inventory_user:CTL_inventoryPassword18@db:5432/ctl_db_inventory
+      TZ: Asia/Phnom_Penh
+    volumes:
+      - ./backend/public:/app/public
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      - inventory_net
+      - inventory_replication_net
+
+  # ------------------- Frontend -------------------
+  frontend:
+    build: ./frontend
+    container_name: pos_frontend
+    restart: always
+    ports:
+      - "3000:80"
+    environment:
+      TZ: Asia/Phnom_Penh
+    networks:
+      - inventory_net
+
+networks:
+  inventory_net:
+    driver: bridge
+  inventory_replication_net:
+    external: true
+
+volumes:
+  pgdata:

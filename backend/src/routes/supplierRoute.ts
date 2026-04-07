@@ -1,0 +1,20 @@
+import express from "express";
+import { validateSupplierRequest } from "../middlewares/validation";
+import { verifyToken, authorize } from "../middlewares/auth";
+
+import {
+    getAllSuppliersWithPagination,
+    getAllSuppliers,
+    getSupplierById,
+    upsertSupplier,
+    deleteSupplier
+} from "../controllers/supplierController";
+
+const router = express.Router();
+
+router.use(verifyToken);
+router.route("/all").get(getAllSuppliers);
+router.route("/").get(getAllSuppliersWithPagination).post(authorize(["Supplier-Create"]), validateSupplierRequest, upsertSupplier);
+router.route("/:id").get(getSupplierById).put(authorize(["Supplier-Edit"]), validateSupplierRequest, upsertSupplier).delete(authorize(["Supplier-Delete"]), deleteSupplier);
+
+export default router;
