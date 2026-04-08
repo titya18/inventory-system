@@ -19,7 +19,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
 
           script: |
-            cd /var/www/inventory
+            cd /var/www/inventory/inventory-system
 
             echo "📥 Pull latest code----"
             git pull origin main
