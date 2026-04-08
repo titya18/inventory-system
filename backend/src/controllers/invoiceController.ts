@@ -195,7 +195,7 @@ export const getNextInvoiceRef = async (
             nextNumber = parseInt(lastPart, 10) + 1;
         }
 
-        const nextRef = `${prefix}${String(nextNumber).padStart(4, "0")}`;
+        const nextRef = `${prefix}${String(nextNumber).padStart(5, "0")}`;
 
         res.json({ ref: nextRef });
     } catch (error) {
