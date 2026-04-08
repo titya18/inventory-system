@@ -213,7 +213,7 @@ const validateTrackedItems = (
       id: item.id ? Number(item.id) : undefined,
       branchId: Number(item.branchId || 0),
       assetCode: item.assetCode?.trim() || null,
-      macAddress: normalizeMac(item.macAddress),
+      macAddress: item.macAddress || null,
       serialNumber: item.serialNumber?.trim() || null,
     }))
     .filter((item) => item.branchId);
@@ -986,7 +986,7 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
               const existsMac = await tx.productAssetItem.findFirst({
                 where: {
                   productVariantId: variantId,
-                  macAddress: normalizeMac(item.macAddress),
+                  macAddress: item.macAddress,
                   ...(item.id ? { id: { not: item.id } } : {}),
                 },
               });
@@ -1026,9 +1026,9 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
               where: { id: Number(item.id) },
               data: {
                 branchId: item.branchId,
-                assetCode: item.assetCode ?? null,
-                macAddress: normalizeMac(item.macAddress) ?? null,
-                serialNumber: item.serialNumber ?? undefined,
+                assetCode: item.assetCode || undefined,
+                macAddress: item.macAddress || undefined,
+                serialNumber: item.serialNumber || undefined,
                 updatedAt: currentDate,
                 updatedBy: req.user?.id || null,
               },
@@ -1044,7 +1044,7 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
                 productVariantId: variantId,
                 branchId: item.branchId,
                 assetCode: item.assetCode || null,
-                macAddress: normalizeMac(item.macAddress) || null,
+                macAddress: item.macAddress || null,
                 serialNumber: item.serialNumber as string,
                 status: "IN_STOCK",
                 sourceType: productId ? "PRODUCT_EDIT" : "OPENING",

@@ -342,15 +342,18 @@ const PurchaseForm: React.FC = () => {
     }, [shippingValue, discountValue, taxValue, purchaseDetails]);
 
     useEffect(() => {
-        if (!isOverPurchaseAuthorizeAmount) return;
-        // If admin already approved this purchase, allow simple user to move to RECEIVED
-        if (initialDbStatusRef.current === "APPROVED") return;
-
-        if (watchedStatus === "APPROVED" || watchedStatus === "RECEIVED") {
+        if (!isSimpleUser) return;
+        // Simple user must not stay on APPROVED — only admin can approve
+        if (watchedStatus === "APPROVED") {
             setValue("status", "REQUESTED", { shouldDirty: true, shouldValidate: true });
             setStatusValue("REQUESTED");
         }
-    }, [isOverPurchaseAuthorizeAmount, watchedStatus, setValue]);
+        // Simple user can only go to RECEIVED if admin already approved this PO
+        if (watchedStatus === "RECEIVED" && initialDbStatusRef.current !== "APPROVED") {
+            setValue("status", "REQUESTED", { shouldDirty: true, shouldValidate: true });
+            setStatusValue("REQUESTED");
+        }
+    }, [isSimpleUser, watchedStatus, setValue]);
 
     // Fetch products as the user types
     const handleSearch = async (term: string) => {
@@ -979,8 +982,14 @@ const PurchaseForm: React.FC = () => {
                 imagesToDelete: imagesToDelete
             }
 
-            if (isOverPurchaseAuthorizeAmount && ["APPROVED", "RECEIVED"].includes(String(formData.status ?? ""))) {
-                throw new Error(`Purchase over PO Authorize Amount (${purchaseAuthorizeAmount}) must stay in Requested or Pending status for simple users.`);
+            // Simple users can never submit APPROVED; can only submit RECEIVED if admin already approved
+            if (isSimpleUser) {
+                if (formData.status === "APPROVED") {
+                    throw new Error("Simple users cannot approve purchases. Please use Pending or Requested.");
+                }
+                if (formData.status === "RECEIVED" && initialDbStatusRef.current !== "APPROVED") {
+                    throw new Error("You can only receive a purchase after it has been approved by an admin.");
+                }
             }
 
             await upsertPurchase(purchaseData);
@@ -1440,7 +1449,11 @@ const PurchaseForm: React.FC = () => {
 
                                         <option
                                             value="APPROVED"
-                                            disabled={watchedStatus === "APPROVED" || isOverPurchaseAuthorizeAmount}
+                                            disabled={
+                                                // Only admin can set APPROVED
+                                                isSimpleUser ||
+                                                watchedStatus === "APPROVED"
+                                            }
                                         >
                                             Approved
                                         </option>
@@ -1448,11 +1461,10 @@ const PurchaseForm: React.FC = () => {
                                         <option
                                             value="RECEIVED"
                                             disabled={
-                                                isOverPurchaseAuthorizeAmount ||
-                                                (
-                                                    !hasPermission("Purchase-Receive") &&
-                                                    (watchedStatus === "PENDING" || watchedStatus === "APPROVED")
-                                                )
+                                                // Simple user: only allowed after admin has set DB status to APPROVED
+                                                (isSimpleUser && initialDbStatusRef.current !== "APPROVED") ||
+                                                (!hasPermission("Purchase-Receive") &&
+                                                    (watchedStatus === "PENDING" || watchedStatus === "APPROVED"))
                                             }
                                         >
                                             Received
@@ -1481,9 +1493,9 @@ const PurchaseForm: React.FC = () => {
                                         </option>
                                     </select>
                                     {errors.status && <span className="error_validate">{errors.status.message}</span>}
-                                    {isOverPurchaseAuthorizeAmount && (
+                                    {isSimpleUser && isOverPurchaseAuthorizeAmount && initialDbStatusRef.current !== "APPROVED" && (
                                         <span className="error_validate">
-                                            Purchase over PO Authorize Amount ({Number(purchaseAuthorizeAmount).toFixed(2)}) cannot be set to Approved or Received by a simple user.
+                                            Purchase over PO Authorize Amount ({Number(purchaseAuthorizeAmount).toFixed(2)}). Waiting for admin approval.
                                         </span>
                                     )}
                                 </div>
@@ -1539,13 +1551,22 @@ const PurchaseForm: React.FC = () => {
                                 <FontAwesomeIcon icon={faArrowLeft} className='mr-1' />
                                 Go Back
                             </NavLink>
-                            {(statusValue === 'PENDING' || statusValue === 'REQUESTED' || statusValue === 'APPROVED') &&
+                            {(
+                                statusValue === 'PENDING' ||
+                                statusValue === 'REQUESTED' ||
+                                // APPROVED: admin only
+                                (statusValue === 'APPROVED' && !isSimpleUser) ||
+                                // RECEIVED: admin directly, or simple user after admin set DB status to APPROVED
+                                (statusValue === 'RECEIVED' && (!isSimpleUser || initialDbStatusRef.current === 'APPROVED'))
+                            ) &&
                                 (hasPermission('Purchase-Create') || hasPermission('Purchase-Edit')) && (
                                 <button type="submit" className="btn btn-primary ltr:ml-4 rtl:mr-4" disabled={isLoading}>
                                     <FontAwesomeIcon icon={faSave} className='mr-1' />
                                     {
-                                        statusValue === 'APPROVED' 
-                                        ? isLoading ? 'Receiving...' : 'Receive' 
+                                        statusValue === 'RECEIVED'
+                                        ? isLoading ? 'Receiving...' : 'Receive'
+                                        : statusValue === 'APPROVED'
+                                        ? isLoading ? 'Approving...' : 'Approve'
                                         : isLoading ? 'Saving...' : 'Save'
                                     }
                                 </button>

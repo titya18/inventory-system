@@ -31865,3 +31865,51 @@ Unique constraint failed on the fields: (`id`)
     at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\purchaseController.ts:519:15)
     at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
     at async upsertPurchase (D:\Citylink-Inventory-claude\backend\src\controllers\purchaseController.ts:490:20)
+2026-04-08 15:24:59 error: Error upserting product: 
+Invalid `tx.productAssetItem.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:1025:39
+
+  1022 
+  1023 // update existing rows
+  1024 for (const item of cleanedTrackedItems.filter((x) => x.id)) {
+→ 1025   await tx.productAssetItem.update(
+Unique constraint failed on the fields: (`productVariantId`,`macAddress`) PrismaClientKnownRequestError: 
+Invalid `tx.productAssetItem.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:1025:39
+
+  1022 
+  1023 // update existing rows
+  1024 for (const item of cleanedTrackedItems.filter((x) => x.id)) {
+→ 1025   await tx.productAssetItem.update(
+Unique constraint failed on the fields: (`productVariantId`,`macAddress`)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:1025:13)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertProduct (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:786:20)
+2026-04-08 15:27:29 error: Error upserting product: 
+Invalid `tx.productAssetItem.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:1025:39
+
+  1022 
+  1023 // update existing rows
+  1024 for (const item of cleanedTrackedItems.filter((x) => x.id)) {
+→ 1025   await tx.productAssetItem.update(
+Unique constraint failed on the fields: (`productVariantId`,`macAddress`) PrismaClientKnownRequestError: 
+Invalid `tx.productAssetItem.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:1025:39
+
+  1022 
+  1023 // update existing rows
+  1024 for (const item of cleanedTrackedItems.filter((x) => x.id)) {
+→ 1025   await tx.productAssetItem.update(
+Unique constraint failed on the fields: (`productVariantId`,`macAddress`)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:1025:13)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertProduct (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:786:20)

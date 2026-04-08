@@ -265,7 +265,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, product }) => 
         id: item.id,
         branchId: Number(item.branchId || 0),
         assetCode: item.assetCode?.trim() || "",
-        macAddress: normalizeMac(item.macAddress),
+        macAddress: item.macAddress,
         serialNumber: item.serialNumber?.trim() || "",
       }))
       .filter((item) => item.branchId);

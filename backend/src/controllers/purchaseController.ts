@@ -449,30 +449,30 @@ export const upsertPurchase = async (req: Request, res: Response): Promise<void>
     finalPurchaseDate = new Date();
   }
 
-  const getPurchaseAmountAuthorize = await prisma.purchaseAmountAuthorize.findFirst();
   if (loggedInUser.roleType !== "ADMIN") {
-    if (status === "APPROVED" || status === "RECEIVED" || status === "COMPLETED") {
-      if (getPurchaseAmountAuthorize) {
-        const { amount } = getPurchaseAmountAuthorize;
-        if (Number(grandTotal) > Number(amount)) {
-          // Allow simple users to receive (RECEIVED) a purchase that an admin already approved
-          const purchaseId = id ? Number(Array.isArray(id) ? id[0] : id) : 0;
-          let currentStatus: string | null = null;
-          if (purchaseId) {
-            const existing = await prisma.purchases.findUnique({
-              where: { id: purchaseId },
-              select: { status: true },
-            });
-            currentStatus = existing?.status ?? null;
-          }
-          const isReceivingAdminApproved = status === "RECEIVED" && currentStatus === "APPROVED";
-          if (!isReceivingAdminApproved) {
-            res.status(400).json({
-              message: `Simple users cannot set purchase status to Approved, Received, or Completed when the amount is over the PO Authorize Amount (${Number(amount).toFixed(2)}). Please use Pending or Requested.`,
-            });
-            return;
-          }
-        }
+    // Simple users can never set APPROVED or COMPLETED
+    if (status === "APPROVED" || status === "COMPLETED") {
+      res.status(400).json({
+        message: "Simple users cannot approve or complete purchases.",
+      });
+      return;
+    }
+    // Simple users can only set RECEIVED if the current DB status is already APPROVED by an admin
+    if (status === "RECEIVED") {
+      const purchaseId = id ? Number(Array.isArray(id) ? id[0] : id) : 0;
+      let currentStatus: string | null = null;
+      if (purchaseId) {
+        const existing = await prisma.purchases.findUnique({
+          where: { id: purchaseId },
+          select: { status: true },
+        });
+        currentStatus = existing?.status ?? null;
+      }
+      if (currentStatus !== "APPROVED") {
+        res.status(400).json({
+          message: "You can only receive a purchase after it has been approved by an admin.",
+        });
+        return;
       }
     }
   }
