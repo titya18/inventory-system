@@ -495,7 +495,7 @@ const Invoice: React.FC = () => {
                                                                         )}
                                                                         {(rows.status === 'APPROVED' || rows.status === 'COMPLETED') && (
                                                                             <>
-                                                                                {/* {hasPermission('Declare-VAT') && (
+                                                                                {hasPermission('Declare-VAT') && (
                                                                                     <button
                                                                                         disabled={rows.vat_status ? true : false}
                                                                                         className={`
@@ -512,9 +512,9 @@ const Invoice: React.FC = () => {
                                                                                         {rows.vat_status ? <span style={{ color: 'pink' }}><CheckCircle2 size={14} /></span> : <Receipt size={14} />}
                                                                                         {rows.vat_status ? <span style={{ marginLeft: '2px', color: 'pink' }}>Declared</span> : 'Declare VAT'}
                                                                                     </button>  
-                                                                                )} */}
+                                                                                )}
 
-                                                                                {/* {hasPermission('Sale-Payment') && (
+                                                                                {hasPermission('Sale-Payment') && (
                                                                                     <button
                                                                                         type="button"
                                                                                         className="hover:text-primary"
@@ -533,7 +533,7 @@ const Invoice: React.FC = () => {
                                                                                     >
                                                                                         <BanknoteArrowUp color="blue" />
                                                                                     </button>
-                                                                                )} */}
+                                                                                )}
 
                                                                                 {hasPermission('Sale-Return') && (
                                                                                     <NavLink

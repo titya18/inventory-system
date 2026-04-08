@@ -3,4 +3,3 @@ node_modules/
 package-lock.json
 tsconfig.tsbuildinfo
 .env.test
-.env
