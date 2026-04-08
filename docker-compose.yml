@@ -2,7 +2,6 @@ services:
   # ------------------- PostgreSQL -------------------
   db:
     image: postgres:latest
-    container_name: pos_db
     restart: always
     environment:
       POSTGRES_DB: ctl_db_inventory
@@ -34,7 +33,6 @@ services:
   # ------------------- PgAdmin -------------------
   pgadmin:
     image: dpage/pgadmin4
-    container_name: pos_pgadmin
     restart: always
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
@@ -48,7 +46,6 @@ services:
   # ------------------- Backend -------------------
   backend:
     build: ./backend
-    container_name: pos_backend
     restart: always
     ports:
       - "4000:4000"
@@ -68,7 +65,6 @@ services:
   # ------------------- Frontend --------------------------
   frontend:
     build: ./frontend
-    container_name: pos_frontend
     restart: always
     ports:
       - "3000:80"
