@@ -514,7 +514,7 @@ const Invoice: React.FC = () => {
                                                                                     </button>  
                                                                                 )} */}
 
-                                                                                {hasPermission('Sale-Payment') && (
+                                                                                {/* {hasPermission('Sale-Payment') && (
                                                                                     <button
                                                                                         type="button"
                                                                                         className="hover:text-primary"
@@ -533,7 +533,7 @@ const Invoice: React.FC = () => {
                                                                                     >
                                                                                         <BanknoteArrowUp color="blue" />
                                                                                     </button>
-                                                                                )}
+                                                                                )} */}
 
                                                                                 {hasPermission('Sale-Return') && (
                                                                                     <NavLink

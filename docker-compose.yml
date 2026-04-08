@@ -65,7 +65,7 @@ services:
       - inventory_net
       - inventory_replication_net
 
-  # ------------------- Frontend -------------------
+  # ------------------- Frontend --------------------------
   frontend:
     build: ./frontend
     container_name: pos_frontend

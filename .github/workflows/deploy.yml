@@ -21,7 +21,7 @@ jobs:
           script: |
             cd /var/www/inventory
 
-            echo "📥 Pull latest code"
+            echo "📥 Pull latest code----"
             git pull origin main
 
             echo "🐳 Rebuild & restart containers"
