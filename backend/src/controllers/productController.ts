@@ -1026,9 +1026,9 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
               where: { id: Number(item.id) },
               data: {
                 branchId: item.branchId,
-                assetCode: item.assetCode || undefined,
-                macAddress: normalizeMac(item.macAddress) || undefined,
-                serialNumber: item.serialNumber || undefined,
+                assetCode: item.assetCode ?? null,
+                macAddress: normalizeMac(item.macAddress) ?? null,
+                serialNumber: item.serialNumber ?? undefined,
                 updatedAt: currentDate,
                 updatedBy: req.user?.id || null,
               },
