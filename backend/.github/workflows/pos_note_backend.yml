@@ -46,12 +46,15 @@ jobs:
             fi
           EOF
 
-      # Step 5: Rebuild and deploy frontend only.
-      - name: Deploy frontend to VPS
+      # Step 5: Rebuild and deploy backend only.
+      - name: Deploy backend to VPS
+        timeout-minutes: 20
         run: |
           echo "Rebuilding and restarting backend on VPS..."
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${{ secrets.SERVER_IP }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+              -o ServerAliveInterval=30 -o ServerAliveCountMax=20 \
+              root@${{ secrets.SERVER_IP }} << 'EOF'
             cd /var/www/pos_node_back_office
-            docker compose -f /var/www/docker-compose.backend.yml build --no-cache backend  # Rebuild backend without cache
-            docker compose -f /var/www/docker-compose.backend.yml up -d --no-deps backend  # Restart only backend container
+            docker compose -f /var/www/docker-compose.backend.yml build backend
+            docker compose -f /var/www/docker-compose.backend.yml up -d --no-deps backend
           EOF

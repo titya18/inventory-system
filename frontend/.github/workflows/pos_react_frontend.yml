@@ -48,10 +48,13 @@ jobs:
 
       # Step 5: Rebuild and deploy frontend only
       - name: Deploy frontend to VPS
+        timeout-minutes: 20
         run: |
           echo "Rebuilding and restarting frontend on VPS..."
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${{ secrets.SERVER_IP }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+              -o ServerAliveInterval=30 -o ServerAliveCountMax=20 \
+              root@${{ secrets.SERVER_IP }} << 'EOF'
             cd /var/www/pos_react_front_office
-            docker compose -f /var/www/docker-compose.frontend.yml build --no-cache frontend  # Rebuild frontend without cache
-            docker compose -f /var/www/docker-compose.frontend.yml up -d --no-deps frontend  # Restart only frontend container
+            docker compose -f /var/www/docker-compose.frontend.yml build frontend
+            docker compose -f /var/www/docker-compose.frontend.yml up -d --no-deps frontend
           EOF
