@@ -43,7 +43,7 @@ export const validateUserRequest = [
 ];
 
 export const validateRoleandPermissionRequest = [
-    body("module").notEmpty().withMessage("Module must be required"),
+    body("name").notEmpty().withMessage("Module name must be required"),
     handleValidationErrors
 ];
 

@@ -95,6 +95,9 @@ export const upsertModule = async (req: Request, res: Response): Promise<void> =
                 }
             });
         } else {
+            // Resync sequences to prevent id collision after manual/seed inserts
+            await prisma.$executeRaw`SELECT setval('"Module_id_seq"', COALESCE((SELECT MAX(id) FROM "Module"), 0) + 1, false)`;
+            await prisma.$executeRaw`SELECT setval('"Permission_id_seq"', COALESCE((SELECT MAX(id) FROM "Permission"), 0) + 1, false)`;
             // Create a new module
             module = await prisma.module.create({
                 data: {
@@ -165,7 +168,7 @@ export const getAllModulesWithPagination = async (req: Request, res: Response): 
 };
 
 // Get All Modules
-export const getAllModules = async (req: Request, res: Response): Promise<void> => {
+export const getAllModules = async (_req: Request, res: Response): Promise<void> => {
     try {
         const modules = await prisma.module.findMany({
             include: { permissions: true }

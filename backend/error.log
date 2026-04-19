@@ -33028,3 +33028,47 @@ Null constraint violation on the fields: (`productAssetItemId`)
     at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:865:31)
     at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
     at async upsertProduct (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:787:20)
+2026-04-19 22:20:57 error: Error upserting module: 
+Invalid `prisma.module.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\module_permissionController.ts:99:42
+
+  96     });
+  97 } else {
+  98     // Create a new module
+→ 99     module = await prisma.module.create(
+Unique constraint failed on the fields: (`id`) PrismaClientKnownRequestError: 
+Invalid `prisma.module.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\module_permissionController.ts:99:42
+
+  96     });
+  97 } else {
+  98     // Create a new module
+→ 99     module = await prisma.module.create(
+Unique constraint failed on the fields: (`id`)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async upsertModule (D:\Citylink-Inventory-claude\backend\src\controllers\module_permissionController.ts:99:22)
+2026-04-19 22:22:04 error: Error upserting module: 
+Invalid `prisma.module.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\module_permissionController.ts:101:42
+
+   98 // Resync sequence to prevent id collision after manual/seed inserts
+   99 await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('"Module"', 'id'), COALESCE((SELECT MAX(id) FROM "Module"), 0), true)`;
+  100 // Create a new module
+→ 101 module = await prisma.module.create(
+Unique constraint failed on the fields: (`id`) PrismaClientKnownRequestError: 
+Invalid `prisma.module.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\module_permissionController.ts:101:42
+
+   98 // Resync sequence to prevent id collision after manual/seed inserts
+   99 await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('"Module"', 'id'), COALESCE((SELECT MAX(id) FROM "Module"), 0), true)`;
+  100 // Create a new module
+→ 101 module = await prisma.module.create(
+Unique constraint failed on the fields: (`id`)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async upsertModule (D:\Citylink-Inventory-claude\backend\src\controllers\module_permissionController.ts:101:22)
