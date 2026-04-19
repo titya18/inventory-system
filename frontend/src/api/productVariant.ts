@@ -94,6 +94,29 @@ export const deleteProductVaraint = async (id: number): Promise<ProductVariantTy
     return response.json();
 };
 
+export const updateVariantPricing = async (
+  variantId: number,
+  data: {
+    purchasePrice: number;
+    purchasePriceUnitId: number | null;
+    retailPrice: number;
+    retailPriceUnitId: number | null;
+    wholeSalePrice: number;
+    wholeSalePriceUnitId: number | null;
+  }
+): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/api/productvariant/${variantId}/pricing`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.message || "Error updating SecondHand variant pricing");
+  }
+};
+
 export const statusProductVariant = async (id: number): Promise<ProductVariantType> => {
     const response = await fetch(`${API_BASE_URL}/api/productvariant/status/${id}`, {
         credentials: "include"

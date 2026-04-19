@@ -930,3 +930,43 @@ export const getProfitReport = async (
     if (!response.ok) throw new Error("Error fetching profit report");
     return response.json();
 };
+
+export const getCustomerEquipmentReport = async ({
+    page = 1,
+    pageSize = 10,
+    searchTerm = "",
+    startDate = "",
+    endDate = "",
+    status = "",
+    assignType = "",
+    branchId,
+}: {
+    page?: number;
+    pageSize?: number;
+    searchTerm?: string;
+    startDate?: string;
+    endDate?: string;
+    status?: string;
+    assignType?: string;
+    branchId?: number;
+}): Promise<{
+    data: any[];
+    total: number;
+    summary: { total: number; active: number; returned: number; byType: Record<string, number> };
+}> => {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("pageSize", String(pageSize));
+    if (searchTerm) params.set("searchTerm", searchTerm);
+    if (startDate)  params.set("startDate", startDate);
+    if (endDate)    params.set("endDate", endDate);
+    if (status)     params.set("status", status);
+    if (assignType) params.set("assignType", assignType);
+    if (branchId)   params.set("branchId", String(branchId));
+
+    const res = await fetch(`${API_BASE_URL}/api/report/reportCustomerEquipment?${params.toString()}`, {
+        credentials: "include",
+    });
+    if (!res.ok) throw new Error("Failed to fetch customer equipment report");
+    return res.json();
+};

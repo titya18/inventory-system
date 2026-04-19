@@ -46,7 +46,8 @@ model Branch {
   productAssetItems ProductAssetItem[]
 
   outgoingTransfers StockTransfers[] @relation("FromBranch")
-  incomingTransfers StockTransfers[] @relation("ToBranch")
+  incomingTransfers  StockTransfers[]     @relation("ToBranch")
+  customerEquipments CustomerEquipment[]
 }
 
 model User {
@@ -191,6 +192,9 @@ model User {
 
   purchases Purchases[]
   roles     RoleOnUser[] @relation("UserRoles")
+
+  createCustomerEquipment CustomerEquipment[] @relation("CEQCreatedBy")
+  updateCustomerEquipment CustomerEquipment[] @relation("CEQUpdatedBy")
 }
 
 model Role {
@@ -334,6 +338,7 @@ model Units {
   purchasePriceVariants ProductVariants[] @relation("PurchasePriceUnit")
   retailPriceVariants ProductVariants[] @relation("ProductVariantRetailPriceUnit")
   wholeSalePriceVariants ProductVariants[] @relation("ProductVariantWholeSalePriceUnit")
+  customerEquipmentItems CustomerEquipmentItem[] @relation("CEQItemUnit")
 }
 
 enum TrackingType {
@@ -490,8 +495,9 @@ model ProductVariants {
   stockReturns         ReturnDetails[]
   stockTransfers       TransferDetails[]
   stockRequests        RequestDetails[]
-  saleReturnItems      SaleReturnItems[]
-  productAssetItems    ProductAssetItem[]
+  saleReturnItems         SaleReturnItems[]
+  productAssetItems       ProductAssetItem[]
+  customerEquipmentItems  CustomerEquipmentItem[] @relation("CEQItemVariant")
 
   @@unique([productType, sku])
   @@unique([productType, barcode])
@@ -530,7 +536,8 @@ model ProductAssetItem {
   productVariant   ProductVariants @relation(fields: [productVariantId], references: [id])
   branch           Branch          @relation(fields: [branchId], references: [id])
   orderItemLinks   OrderItemAssetItem[]
-  quotationDetailLinks QuotationDetailAssetItem[]
+  quotationDetailLinks    QuotationDetailAssetItem[]
+  customerEquipmentItems  CustomerEquipmentItem[]
 
   @@index([productVariantId, branchId, status])
   @@unique([productVariantId, assetCode])
@@ -963,8 +970,9 @@ model Customer {
   creator User? @relation("CustomerCreatedBy", fields: [createdBy], references: [id])
   updater User? @relation("CustomerUpdatedBy", fields: [updatedBy], references: [id])
 
-  quotations Quotations[]
-  saleReturn SaleReturns[]
+  quotations         Quotations[]
+  saleReturn         SaleReturns[]
+  customerEquipments CustomerEquipment[]  // header-level relation (for backward compat on branch/customer)
 }
 
 model Order {
@@ -1015,7 +1023,8 @@ model Order {
   items           OrderItem[]
   orderOnPayments OrderOnPayments[] @relation("OrderPayments")
 
-  saleReturn SaleReturns[]
+  saleReturn         SaleReturns[]
+  customerEquipments CustomerEquipment[]  // header-level relation
 
   @@unique([sourceSystem, sourceOrderId])
   @@index([sourceSystem])
@@ -1217,6 +1226,7 @@ model AdjustmentDetails {
 
   cost            Decimal? @db.Decimal(10, 4)      // ✅ NEW
   costPerBaseUnit Decimal? @db.Decimal(10, 4)      // ✅ NEW
+  trackedPayload  String?  @db.Text
 
   stockadjustments StockAdjustments @relation(fields: [adjustmentId], references: [id])
   products         Products?        @relation(fields: [productId], references: [id])
@@ -1265,10 +1275,11 @@ model TransferDetails {
   quantity         Int?
 
   // ✅ NEW
-  unitId  Int?
-  unitQty Decimal? @db.Decimal(10, 4)
-  baseQty Decimal? @db.Decimal(10, 4)
-  unit    Units?   @relation(fields: [unitId], references: [id])
+  unitId         Int?
+  unitQty        Decimal? @db.Decimal(10, 4)
+  baseQty        Decimal? @db.Decimal(10, 4)
+  trackedPayload String?  @db.Text
+  unit           Units?   @relation(fields: [unitId], references: [id])
 
   stocktransfers  StockTransfers   @relation(fields: [transferId], references: [id])
   products        Products?        @relation(fields: [productId], references: [id])
@@ -1314,10 +1325,11 @@ model RequestDetails {
   quantity         Int?
 
   // ✅ NEW
-  unitId  Int?
-  unitQty Decimal? @db.Decimal(10, 4)
-  baseQty Decimal? @db.Decimal(10, 4)
-  unit    Units?   @relation(fields: [unitId], references: [id])
+  unitId         Int?
+  unitQty        Decimal? @db.Decimal(10, 4)
+  baseQty        Decimal? @db.Decimal(10, 4)
+  trackedPayload String?  @db.Text
+  unit           Units?   @relation(fields: [unitId], references: [id])
 
   stockrequests   StockRequests    @relation(fields: [requestId], references: [id])
   products        Products?        @relation(fields: [productId], references: [id])
@@ -1369,7 +1381,8 @@ model ReturnDetails {
 
   cost            Decimal? @db.Decimal(18, 6)
   costPerBaseUnit Decimal? @db.Decimal(18, 6)
-  
+  trackedPayload  String?  @db.Text
+
   unit    Units?   @relation(fields: [unitId], references: [id])
 
   stockreturns    StockReturns     @relation(fields: [returnId], references: [id])
@@ -1496,6 +1509,49 @@ model SaleReturnItems {
   saleReturn SaleReturns @relation(fields: [saleReturnId], references: [id])
 
   stockMovements StockMovements[]
+}
+
+enum AssignType {
+  SOLD
+  RENTED
+  INSTALLED
+}
+
+model CustomerEquipment {
+  id         Int        @id @default(autoincrement())
+  ref        String     @db.VarChar(50)
+  customerId Int
+  branchId   Int
+  assignType AssignType
+  assignedAt DateTime
+  returnedAt DateTime?
+  note       String?    @db.VarChar(500)
+  orderId    Int?
+  createdAt  DateTime   @default(now())
+  createdBy  Int?
+  updatedAt  DateTime?
+  updatedBy  Int?
+
+  customer Customer  @relation(fields: [customerId], references: [id])
+  branch   Branch    @relation(fields: [branchId], references: [id])
+  order    Order?    @relation(fields: [orderId], references: [id])
+  creator  User?     @relation("CEQCreatedBy", fields: [createdBy], references: [id])
+  updater  User?     @relation("CEQUpdatedBy", fields: [updatedBy], references: [id])
+  items    CustomerEquipmentItem[]
+}
+
+model CustomerEquipmentItem {
+  id                  Int  @id @default(autoincrement())
+  customerEquipmentId Int
+  productAssetItemId  Int?           // set for tracked (serial) items
+  productVariantId    Int?           // set for non-tracked items
+  quantity            Int?           // quantity for non-tracked items
+  unitId              Int?           // display unit for non-tracked quantity
+
+  customerEquipment CustomerEquipment @relation(fields: [customerEquipmentId], references: [id], onDelete: Cascade)
+  productAssetItem  ProductAssetItem?  @relation(fields: [productAssetItemId], references: [id])
+  productVariant    ProductVariants?   @relation("CEQItemVariant", fields: [productVariantId], references: [id])
+  unit              Units?             @relation("CEQItemUnit", fields: [unitId], references: [id])
 }
 
 // How to run the Prisma Migrate

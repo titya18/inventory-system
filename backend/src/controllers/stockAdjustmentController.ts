@@ -164,6 +164,16 @@ export const upsertAdjustment = async (req: Request, res: Response): Promise<voi
         }
       }
 
+      // Build a map of trackedItemData keyed by productVariantId for use in APPROVED block
+      const trackedMap = new Map<number, any>();
+      if (Array.isArray(adjustmentDetails)) {
+        for (const orig of adjustmentDetails) {
+          if (orig.productVariantId && orig.trackedItemData) {
+            trackedMap.set(Number(orig.productVariantId), orig.trackedItemData);
+          }
+        }
+      }
+
       if (!adjustmentDetails || !Array.isArray(adjustmentDetails) || adjustmentDetails.length === 0) {
         throw new Error("Adjustment details cannot be empty");
       }
@@ -234,6 +244,7 @@ export const upsertAdjustment = async (req: Request, res: Response): Promise<voi
             quantity: Math.round(Number(baseQty)),
             cost,
             costPerBaseUnit,
+            trackedPayload: detail.trackedItemData ? JSON.stringify(detail.trackedItemData) : null,
           };
         })
       );
@@ -257,6 +268,7 @@ export const upsertAdjustment = async (req: Request, res: Response): Promise<voi
             quantity: detail.quantity,
             cost: detail.cost,
             costPerBaseUnit: detail.costPerBaseUnit,
+            trackedPayload: detail.trackedPayload ?? null,
           })),
         },
       };
@@ -333,6 +345,45 @@ export const upsertAdjustment = async (req: Request, res: Response): Promise<voi
               currentDate,
               note: note || `Positive stock adjustment #${adjustment.ref}`,
             });
+
+            // Handle tracked items for POSITIVE adjustment
+            const trackedData = trackedMap.get(Number(detail.productVariantId));
+            if (trackedData) {
+              if (trackedData.type === "NEW" && Array.isArray(trackedData.newSerials) && trackedData.newSerials.length > 0) {
+                for (const s of trackedData.newSerials) {
+                  if (!s.serialNumber?.trim()) continue;
+                  await tx.productAssetItem.create({
+                    data: {
+                      productVariantId: Number(detail.productVariantId),
+                      branchId: Number(branchId),
+                      serialNumber: s.serialNumber.trim(),
+                      assetCode: s.assetCode?.trim() || null,
+                      macAddress: s.macAddress?.trim() || null,
+                      status: "IN_STOCK",
+                      sourceType: "ADJUSTMENT",
+                      sourceId: adjustment.id,
+                      createdBy: loggedInUser.id,
+                      createdAt: currentDate,
+                      updatedBy: loggedInUser.id,
+                      updatedAt: currentDate,
+                    },
+                  });
+                }
+              } else if (trackedData.type === "REACTIVATE" && Array.isArray(trackedData.reactivateIds) && trackedData.reactivateIds.length > 0) {
+                await tx.productAssetItem.updateMany({
+                  where: {
+                    id: { in: trackedData.reactivateIds.map(Number) },
+                    productVariantId: Number(detail.productVariantId),
+                    branchId: Number(branchId),
+                  },
+                  data: {
+                    status: "IN_STOCK",
+                    updatedBy: loggedInUser.id,
+                    updatedAt: currentDate,
+                  },
+                });
+              }
+            }
           } else {
             const availableQty = new Decimal(stock?.quantity ?? 0);
 
@@ -360,6 +411,23 @@ export const upsertAdjustment = async (req: Request, res: Response): Promise<voi
                 updatedAt: currentDate,
               },
             });
+
+            // Handle tracked items for NEGATIVE adjustment
+            const trackedDataNeg = trackedMap.get(Number(detail.productVariantId));
+            if (trackedDataNeg?.type === "SELECT" && Array.isArray(trackedDataNeg.selectedIds) && trackedDataNeg.selectedIds.length > 0) {
+              await tx.productAssetItem.updateMany({
+                where: {
+                  id: { in: trackedDataNeg.selectedIds.map(Number) },
+                  productVariantId: Number(detail.productVariantId),
+                  branchId: Number(branchId),
+                },
+                data: {
+                  status: "REMOVED",
+                  updatedBy: loggedInUser.id,
+                  updatedAt: currentDate,
+                },
+              });
+            }
           }
         }
 
@@ -410,6 +478,7 @@ export const getStockAdjustmentById = async (
                                 barcode: true,
                                 sku: true,
                                 productType: true,
+                                trackingType: true,
                                 baseUnitId: true,
                                 baseUnit: {
                                     select: {
@@ -559,6 +628,31 @@ export const getStockAdjustmentById = async (
         res.status(500).json({
             message: "Error fetching adjustment by ID",
         });
+    }
+};
+
+export const getReactivatableItems = async (req: Request, res: Response): Promise<void> => {
+    const variantId = Number(req.query.variantId);
+    const branchId = Number(req.query.branchId);
+
+    if (!variantId || !branchId) {
+        res.status(400).json({ message: "variantId and branchId are required" });
+        return;
+    }
+
+    try {
+        const items = await prisma.productAssetItem.findMany({
+            where: {
+                productVariantId: variantId,
+                branchId,
+                status: { in: ["DAMAGED", "LOST", "REMOVED", "RETURNED"] },
+            },
+            orderBy: { createdAt: "asc" },
+        });
+        res.status(200).json(items);
+    } catch (error) {
+        logger.error("Error fetching reactivatable items:", error);
+        res.status(500).json({ message: "Internal server error" });
     }
 };
 

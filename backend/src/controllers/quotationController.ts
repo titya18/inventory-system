@@ -50,14 +50,9 @@ export const getAllQuotations = async (req: Request, res: Response): Promise<voi
         // Build parameters: $1 = likeTerm, $2..$n = searchword, $n+1 = limit, $n+2 = offset
         const params = [likeTerm, ...searchWords.map(w => `%${w}%`), pageSize, offset];
 
-        // Branch restriction
-        let branchRestriction = "";
-        if (loggedInUser.roleType === "USER" && loggedInUser.branchId) {
-            branchRestriction = `
-                AND q."branchId" = ${loggedInUser.branchId}
-                AND q."createdBy" = ${loggedInUser.id}
-            `;
-        }
+        const userRestriction = loggedInUser.roleType === "USER"
+            ? `AND q."createdBy" = ${loggedInUser.id}`
+            : "";
 
         // ----- 1) COUNT -----
         const totalResult: any = await prisma.$queryRawUnsafe(`
@@ -70,7 +65,7 @@ export const getAllQuotations = async (req: Request, res: Response): Promise<voi
             LEFT JOIN "User" sb ON q."sentBy" = sb.id
             LEFT JOIN "User" ib ON q."invoicedBy" = ib.id
             WHERE 1=1
-                ${branchRestriction}
+                ${userRestriction}
                 AND (
                     q."ref" ILIKE $1
                     OR cs."name" ILIKE $1
@@ -107,7 +102,7 @@ export const getAllQuotations = async (req: Request, res: Response): Promise<voi
             LEFT JOIN "User" sb ON q."sentBy" = sb.id
             LEFT JOIN "User" ib ON q."invoicedBy" = ib.id
             WHERE 1=1
-                ${branchRestriction}
+                ${userRestriction}
                 AND (
                     q."ref" ILIKE $1
                     OR cs."name" ILIKE $1

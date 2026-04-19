@@ -49,6 +49,7 @@ async function main() {
       { name: "Income" },
       { name: "Reports" },
       { name: "Settings" },
+      { name: "Customer Equipment" },
     ],
   });
 
@@ -189,6 +190,12 @@ async function main() {
       { name: "Exchange-Rate-View", moduleId: 26 },
       { name: "Exchange-Rate-Create", moduleId: 26 },
       { name: "Exchange-Rate-Edit", moduleId: 26 },
+      { name: "Customer-Equipment-View", moduleId: 27 },
+      { name: "Customer-Equipment-Create", moduleId: 27 },
+      { name: "Customer-Equipment-Edit", moduleId: 27 },
+      { name: "Customer-Equipment-Delete", moduleId: 27 },
+      { name: "Customer-Equipment-Return", moduleId: 27 },
+      { name: "Customer-Equipment-Report", moduleId: 27 },
     ],
   });
 

@@ -326,6 +326,52 @@ export const createSaleReturn = async (
                 }
 
                 /* -----------------------------
+                RESOLVE TARGET VARIANT
+                (New → SecondHand if user chose)
+                ----------------------------- */
+                let targetVariantId = isProduct ? Number(item.productVariantId) : 0;
+                if (isProduct && item.convertToSecondHand) {
+                    const origVariant = await tx.productVariants.findUnique({
+                        where: { id: Number(item.productVariantId) },
+                    });
+                    if (origVariant?.productType === "New") {
+                        let shVariant = await tx.productVariants.findFirst({
+                            where: { productId: origVariant.productId, productType: "SecondHand" },
+                            select: { id: true },
+                        });
+                        if (!shVariant) {
+                            shVariant = await tx.productVariants.create({
+                                data: {
+                                    productId: origVariant.productId,
+                                    productType: "SecondHand",
+                                    sku: origVariant.sku,
+                                    barcode: origVariant.barcode,
+                                    name: origVariant.name,
+                                    trackingType: origVariant.trackingType,
+                                    stockAlert: origVariant.stockAlert,
+                                    purchasePrice: origVariant.purchasePrice,
+                                    purchasePriceUnitId: origVariant.purchasePriceUnitId,
+                                    retailPrice: origVariant.retailPrice,
+                                    retailPriceUnitId: origVariant.retailPriceUnitId,
+                                    wholeSalePrice: origVariant.wholeSalePrice,
+                                    wholeSalePriceUnitId: origVariant.wholeSalePriceUnitId,
+                                    baseUnitId: origVariant.baseUnitId,
+                                    isActive: origVariant.isActive,
+                                    createdBy: userId,
+                                    updatedBy: userId,
+                                    createdAt: currentDate,
+                                    updatedAt: currentDate,
+                                },
+                                select: { id: true },
+                            });
+                            logger.info(`Sale return: auto-created SecondHand variant ${shVariant.id} from New variant ${item.productVariantId}`);
+                        }
+                        targetVariantId = shVariant.id;
+                        logger.info(`Sale return: converting variant ${item.productVariantId} → SecondHand variant ${shVariant.id}`);
+                    }
+                }
+
+                /* -----------------------------
                 CREATE RETURN ITEM
                 ----------------------------- */
                 const returnItem = await tx.saleReturnItems.create({
@@ -417,16 +463,17 @@ export const createSaleReturn = async (
                             }
                         }
 
-                        // 3. Restore asset items
-                        await tx.productAssetItem.updateMany({
-                            where: {
-                                id: { in: item.selectedTrackedItemIds },
-                            },
-                            data: {
-                                status: "IN_STOCK",
-                                soldOrderItemId: null,
-                            },
-                        });
+                        // 3. Restore asset items (loop so we can update productVariantId per serial)
+                        for (const sid of item.selectedTrackedItemIds) {
+                            await tx.productAssetItem.update({
+                                where: { id: sid },
+                                data: {
+                                    status: "IN_STOCK",
+                                    soldOrderItemId: null,
+                                    productVariantId: targetVariantId,
+                                },
+                            });
+                        }
 
                         // 4. Remove link from order
                         await tx.orderItemAssetItem.deleteMany({
@@ -474,7 +521,7 @@ export const createSaleReturn = async (
 
                         await tx.stockMovements.create({
                             data: {
-                                productVariantId: Number(item.productVariantId),
+                                productVariantId: targetVariantId,
                                 branchId: Number(branchId),
                                 orderItemId: saleItemId,
                                 saleReturnItemId: returnItem.id,
@@ -499,16 +546,25 @@ export const createSaleReturn = async (
                         throw new Error("FIFO restore quantity mismatch");
                     }
 
-                    await tx.stocks.update({
+                    await tx.stocks.upsert({
                         where: {
                             productVariantId_branchId: {
-                                productVariantId: Number(item.productVariantId),
+                                productVariantId: targetVariantId,
                                 branchId: Number(branchId),
                             },
                         },
-                        data: {
+                        update: {
                             quantity: { increment: baseQty ?? new Decimal(0) },
                             updatedBy: userId,
+                            updatedAt: currentDate,
+                        },
+                        create: {
+                            productVariantId: targetVariantId,
+                            branchId: Number(branchId),
+                            quantity: baseQty ?? new Decimal(0),
+                            createdBy: userId,
+                            updatedBy: userId,
+                            createdAt: currentDate,
                             updatedAt: currentDate,
                         },
                     });

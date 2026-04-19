@@ -96,6 +96,10 @@ export const upsertProduct = async (productData: ProductType): Promise<ProductTy
     // Base unit (stock stored in this unit)
     formData.append("baseUnitId", String(data.baseUnitId ?? 0));
 
+    if ((data as any).variantId) {
+        formData.append("variantId", String((data as any).variantId));
+    }
+
     // Conversions (array -> JSON string)
     formData.append(
         "unitConversions",

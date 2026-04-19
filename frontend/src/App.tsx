@@ -58,6 +58,7 @@ import ReportQuotation from "./pages/report/ReportQuotation";
 import ReportPurchase from "./pages/report/ReportPurchase";
 import ReportAdjustment from "./pages/report/ReportAdjustment";
 import ReportTransfer from "./pages/report/ReportTransfer";
+import ReportCustomerEquipment from "./pages/report/ReportCustomerEquipment";
 import ReportRequest from "./pages/report/ReportRequest";
 import ReportReturn from "./pages/report/ReportReturn";
 import ReportExpense from "./pages/report/ReportExpense";
@@ -69,6 +70,8 @@ import ExchangeRate from "./pages/setting/ExchangeRate";
 import Pos from "./pages/pos/Pos";
 
 import { Customer } from "./pages/customer/Customer";
+import CustomerEquipment from "./pages/customerequipment/CustomerEquipment";
+import CustomerEquipmentForm from "./pages/customerequipment/CustomerEquipmentForm";
 import NotFound from "./pages/notfound/NotFount";
 
 const App: React.FC = () => {
@@ -101,6 +104,12 @@ const App: React.FC = () => {
 
                         {/* Customer */}
                         <Route path="/customer" element={<PrivateRoute element={<Layout><Customer /></Layout>} />} />
+
+                        {/* Customer Equipment */}
+                        <Route path="/customerequipment" element={<PrivateRoute element={<Layout><CustomerEquipment /></Layout>} />} />
+                        <Route path="/customerequipment/create" element={<PrivateRoute element={<Layout><CustomerEquipmentForm /></Layout>} />} />
+                        <Route path="/customerequipment/:id" element={<PrivateRoute element={<Layout><CustomerEquipmentForm /></Layout>} />} />
+                        <Route path="/customerequipment/:id/edit" element={<PrivateRoute element={<Layout><CustomerEquipmentForm /></Layout>} />} />
 
                         {/* Branch */}
                         <Route path="/branches" element={<PrivateRoute element={<Layout><Branch /></Layout>} />} />
@@ -176,6 +185,7 @@ const App: React.FC = () => {
                         <Route path="/reportPurPayment" element={<PrivateRoute element={<Layout><ReportPaymentPurchase /></Layout>} />} />
                         <Route path="/reportAdjustment" element={<PrivateRoute element={<Layout><ReportAdjustment /></Layout>} />} />
                         <Route path="/reportTransfer" element={<PrivateRoute element={<Layout><ReportTransfer /></Layout>} />} />
+                        <Route path="/reportCustomerEquipment" element={<PrivateRoute element={<Layout><ReportCustomerEquipment /></Layout>} />} />
                         <Route path="/reportRequest" element={<PrivateRoute element={<Layout><ReportRequest /></Layout>} />} />
                         <Route path="/reportReturn" element={<PrivateRoute element={<Layout><ReportReturn /></Layout>} />} />
                         <Route path="/reportExpense" element={<PrivateRoute element={<Layout><ReportExpense /></Layout>} />} />

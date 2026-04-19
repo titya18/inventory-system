@@ -214,19 +214,19 @@ export const upsertReturn = async (req: Request, res: Response): Promise<void> =
 
       const normalizedStatus = StatusType === "APPROVED" ? "APPROVED" : "PENDING";
 
-      const detailCreates: Prisma.ReturnDetailsUncheckedCreateWithoutStockreturnsInput[] =
-        returnDetails.map((detail: any) => ({
-          productId: detail.productId ? Number(detail.productId) : null,
-          productVariantId: Number(detail.productVariantId),
-          unitId: Number(detail.unitId),
-          unitQty: new Decimal(detail.unitQty ?? 0),
-          baseQty: new Decimal(detail.baseQty ?? 0),
-          quantity: Math.round(Number(detail.baseQty ?? 0)),
+      const detailCreates = returnDetails.map((detail: any) => ({
+        ...(detail.productId ? { products: { connect: { id: Number(detail.productId) } } } : {}),
+        productvariants: { connect: { id: Number(detail.productVariantId) } },
+        ...(detail.unitId ? { unit: { connect: { id: Number(detail.unitId) } } } : {}),
+        unitQty: new Decimal(detail.unitQty ?? 0),
+        baseQty: new Decimal(detail.baseQty ?? 0),
+        quantity: Math.round(Number(detail.baseQty ?? 0)),
 
-          // frontend does not send cost now
-          cost: null,
-          costPerBaseUnit: null,
-        }));
+        // frontend does not send cost now
+        cost: null,
+        costPerBaseUnit: null,
+        trackedPayload: detail.trackedPayload ?? null,
+      }));
 
       const basePayload = {
         branchId: Number(branchId),
@@ -333,6 +333,56 @@ export const upsertReturn = async (req: Request, res: Response): Promise<void> =
             note: note || `Stock return #${returnData.ref}`,
             returnDetailId: detail.id,
           });
+
+          // Serial/asset tracking: mark returned items
+          if (detail.trackedPayload) {
+            try {
+              const parsed = JSON.parse(detail.trackedPayload as string);
+              const mode = (parsed.mode ?? "AUTO") as "AUTO" | "MANUAL";
+              const selectedIds = (parsed.selectedIds ?? []) as number[];
+              const returnQty = Math.round(Number(detail.baseQty ?? 0));
+
+              let idsToReturn: number[] = [];
+
+              if (mode === "MANUAL" && selectedIds.length > 0) {
+                const items = await tx.productAssetItem.findMany({
+                  where: {
+                    id: { in: selectedIds },
+                    productVariantId: Number(detail.productVariantId),
+                    branchId: Number(branchId),
+                    status: "IN_STOCK",
+                  },
+                  select: { id: true },
+                });
+                idsToReturn = items.map((i) => i.id);
+              } else {
+                const items = await tx.productAssetItem.findMany({
+                  where: {
+                    productVariantId: Number(detail.productVariantId),
+                    branchId: Number(branchId),
+                    status: "IN_STOCK",
+                  },
+                  orderBy: [{ id: "asc" }],
+                  take: returnQty,
+                  select: { id: true },
+                });
+                idsToReturn = items.map((i) => i.id);
+              }
+
+              if (idsToReturn.length > 0) {
+                await tx.productAssetItem.updateMany({
+                  where: { id: { in: idsToReturn } },
+                  data: {
+                    status: "RETURNED",
+                    updatedAt: currentDate,
+                    updatedBy: loggedInUser.id,
+                  },
+                });
+              }
+            } catch {
+              // skip serial processing if payload is malformed
+            }
+          }
         }
 
         await tx.stockReturns.update({
@@ -390,6 +440,7 @@ export const getStockReturnById = async (
                                 sku: true,
                                 productType: true,
                                 baseUnitId: true,
+                                trackingType: true,
                                 baseUnit: {
                                     select: {
                                         id: true,

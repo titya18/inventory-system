@@ -339,10 +339,147 @@ Invoice:   PENDING → APPROVED → COMPLETED
 - `isTracked` check: `detail.ItemType === "PRODUCT" && productvariants?.trackingType != null && trackingType !== "NONE"` — "Select Serial" button only shown for tracked products
 - Qty Return cell: compact inline stepper `[-] qty/max [+]`
 - `ReturnTrackedModal`: fixed overlay (`position: fixed, inset: 0, zIndex: 1000`), two-panel layout, progress bar, numbered selected items, hover-to-remove buttons
+- **"Return as SecondHand" checkbox**: shown per product line when `productType === "New"` and `currentReturn > 0`; controlled via `secondHandLines` state (Record<detailId, boolean>); sends `convertToSecondHand` flag in submit payload
+- **Serial selection flow**: `clickData` passed as `{ ...detail, orderItemId: detail.id, quantity: currentReturn, selectedTrackedItemIds: currentLine?.selectedTrackedItemIds }` — ensures modal fetches correct serials, enforces return qty (not invoice qty), and restores previous selection on re-open
+
+#### New → SecondHand Conversion on Sale Return (Backend)
+- Triggered when `convertToSecondHand: true` on a return item
+- Backend resolves `targetVariantId`: looks for existing SecondHand variant (`productType: "SecondHand"`) for same `productId`
+- If **not found**: auto-creates SecondHand variant inheriting SKU, barcode, name, pricing, units, trackingType from the New variant; admin can edit price afterward
+- Returned stock (FIFO movement + Stocks upsert) and serial `productVariantId` all point to `targetVariantId`
+- File: `backend/src/controllers/saleReturnController.ts`
 
 ---
 
-## Reports System (15 Report Types)
+## Customer Equipment
+
+Tracks which equipment/products are assigned to customers — sold, rented, or installed at a site. Separate from the invoice/sale system but can be linked to an existing invoice.
+
+### Models
+- **`CustomerEquipment`** — header record: `ref` (CEQ-00001), `customerId`, `branchId`, `assignType` (SOLD | RENTED | INSTALLED), `assignedAt`, `returnedAt`, `orderId` (optional link to `Order`), `note`, audit fields
+- **`CustomerEquipmentItem`** — line items: one row per serial (tracked) or one row per product+qty (non-tracked): `customerEquipmentId`, `productAssetItemId` (nullable), `productVariantId` (nullable), `quantity` (nullable), `unitId` (nullable)
+
+### Assignment Types
+| Type | Serial Status Set | Stock Effect |
+|---|---|---|
+| `SOLD` | `SOLD` | Decrements stock (if no invoice linked) |
+| `RENTED` | `RESERVED` | Decrements stock (if no invoice linked) |
+| `INSTALLED` | `RESERVED` | Decrements stock (if no invoice linked) |
+
+### Stock Logic Rule — Critical
+The `orderId` field on `CustomerEquipment` determines whether stock is affected:
+
+| `orderId` present | Effect |
+|---|---|
+| **Empty (no invoice)** | Stock IS affected — serial status changed + Stocks table decremented |
+| **Filled (invoice linked)** | Stock NOT affected — invoice already handled stock; only serial status tracking |
+
+**Reason**: If a sale invoice already exists, stock was already cut at invoice approval. Linking the invoice prevents a double stock cut. If no invoice exists (free rental, installation, gift), stock must be cut here.
+
+### Item Types
+- **TRACKED** — `productAssetItemId` is set; serial/asset item status changes; quantity/unitId are null
+- **NON_TRACKED** — `productVariantId` + `quantity` + `unitId` are set; stock decremented in **base units** via `computeBaseQty()`
+
+### Unit Conversion for Non-Tracked Items
+All stock effects use `computeBaseQty()` from `utils/uom.ts`:
+- Product with conversion (e.g. 1 box = 10 pcs, base = pcs): assign 2 boxes → stock decremented by 20 pcs
+- Product with single unit: quantity used as-is
+- On return/edit/delete: same `computeBaseQty()` applied in reverse using stored `unitId` from DB
+
+### Serial Status Lifecycle in Customer Equipment
+```
+IN_STOCK → SOLD/RESERVED (on assign without invoice)
+SOLD/RESERVED → IN_STOCK (on return or delete of active record)
+```
+Serials sold via an invoice show as SOLD but disabled in the serial panel with message: `"Sold via ZM2026-00001 (Customer) — link the Order above"`
+
+### Available Serial Panel (Create/Edit Form)
+| Status | Selectable | Label shown |
+|---|---|---|
+| `IN_STOCK` | ✓ Yes | `[IN_STOCK]` |
+| `SOLD` | ✗ No | `Sold via {ref} ({customer}) — link the Order above` (red) |
+| `RESERVED` | ✗ No | `Already assigned to another customer` (orange) |
+| Other | ✗ No | `[{status}]` |
+
+Each serial row has a **🕐 history icon** — clicking it opens a modal showing all past assignments for that serial (customer name, phone, branch, dates, invoice ref, status). Works even when serial is back to `IN_STOCK`.
+
+### Controller Functions (`customerEquipmentController.ts`)
+- **`getAllCustomerEquipments`** — paginated list with search (customer name, phone, serial, product name, ref), filters (status, assignType, branchId)
+- **`getCustomerEquipmentById`** — full record with items + product details
+- **`getSerialHistory`** — all CEQ records for a given `productAssetItemId`, ordered by `assignedAt DESC`
+- **`getAvailableAssetItems`** — all serials for variant+branch (ALL statuses returned; frontend filters selectability)
+- **`getVariantUnits`** — base unit + all conversion units for a variant (used to populate unit dropdown)
+- **`searchOrders`** — search invoices by ref within a branch (for linking orders)
+- **`createCustomerEquipment`** — creates header + items in `$transaction`; applies stock effects if no `orderId`
+- **`returnCustomerEquipment`** — marks returned; reverses stock effects if no `orderId`
+- **`updateCustomerEquipment`** — fetches old items first; reverses old effects **only when `items` are being replaced** (guard: `!oldOrderId && Array.isArray(items)`); replaces items via nested Prisma write; applies new effects in `$transaction`
+- **`deleteCustomerEquipment`** — reverses stock effects if record was active (not returned) and had no `orderId`; then deletes
+
+### Stock Helper Functions (internal, not exported)
+```typescript
+serialStatusForAssign(assignType)          // "SOLD" → "SOLD", else "RESERVED"
+applyDbItemEffects(tx, dbItems, ...)       // Reverse/apply effects for items fetched from DB (includes unitId)
+applyPayloadEffects(tx, reqItems, ...)     // Reverse/apply effects for items from request body
+```
+Both helpers call `computeBaseQty()` for NON_TRACKED items to ensure stock changes are in base units.
+
+### Frontend Routes
+- `/customerequipment` — list page with search, status filter, assignType filter
+- `/customerequipment/create` — create form
+- `/customerequipment/:id` — view (read-only)
+- `/customerequipment/:id/edit` — edit form (branch is read-only; cannot edit returned records)
+
+### Form Mode Detection
+`isEdit = location.pathname.endsWith("/edit")`, `isView = !!id && !isEdit`
+
+Edit mode pre-populates lines: tracked items grouped by variant (multiple serials per line), non-tracked items with unit fetched. Pre-selected serials that are now RESERVED/SOLD are merged into the available list (frontend merge at `fetchRecord`).
+
+### Return Flow (from List Page)
+Click ↩ icon → modal asks for return date + optional note → `PUT /api/customerequipment/:id/return` → stock reversed if no orderId.
+
+### Delete Behaviour
+- **Returned record**: **blocked entirely** — frontend hides delete button; backend returns 400 error. Returned records are permanent audit history and must never be deleted.
+- **Active record, no invoice**: shows warning dialog explaining history loss; restores stock (serials → IN_STOCK, qty restored in base units) then deletes
+- **Active record, with invoice**: shows warning dialog; deletes record only (stock was invoice's responsibility)
+- Recommendation: only delete records created by mistake (wrong customer, wrong product). Always prefer "Mark as Returned" to preserve history.
+
+### Known Limitation
+If a CEQ is edited to **add** an invoice (`orderId`) that was previously absent, REVERSE correctly stops future stock cuts but cannot retroactively fix serial status already set by the invoice approval. This is an extremely rare edge case and is by design.
+
+### API Endpoints (`/api/customerequipment`)
+| Method | Path | Description |
+|---|---|---|
+| GET | `/` | List all (paginated) |
+| POST | `/` | Create |
+| GET | `/:id` | Get by ID |
+| PUT | `/:id` | Update |
+| DELETE | `/:id` | Delete |
+| PUT | `/:id/return` | Mark as returned |
+| GET | `/serial-history/:assetItemId` | Assignment history for a serial |
+| GET | `/asset-items` | Available serials for variant+branch |
+| GET | `/variant-units/:variantId` | Units for a variant |
+| GET | `/search-orders` | Search invoices by ref+branch |
+
+### Usage Guide by Product Type
+
+**Tracked serial products** (Router, Laptop, CCTV):
+1. Search product → serial panel appears
+2. Tick serials to assign (IN_STOCK only; SOLD/RESERVED shown but disabled with explanation)
+3. Click 🕐 on any serial to view full assignment history
+4. If serial shows "Sold via ZM2026-XXXXX" → search that ref in the Order field and link it
+
+**Products with unit conversion** (Cable: 1 roll = 50 m, base = m):
+1. Search product → shows Qty input + unit dropdown
+2. Enter quantity (e.g. 2) + select unit (e.g. roll)
+3. System deducts 2 × 50 = 100 m from stock in base units
+
+**Products with single unit** (WiFi Adapter — pcs only):
+1. Search product → shows Qty input (no dropdown or just one unit shown)
+2. Enter quantity → stock decremented by that exact amount
+
+---
+
+## Reports System (16 Report Types)
 
 ### Financial Reports
 | Report | Description | Key Calculation |
@@ -366,6 +503,7 @@ Invoice:   PENDING → APPROVED → COMPLETED
 | **Sale Return Report** | Customer returns |
 | **Return Report** | Returns to supplier |
 | **Quotation Report** | Quotation pipeline (PENDING/SENT/INVOICED/CANCELLED) |
+| **Customer Equipment Report** | Equipment assigned to customers — summary cards (Total/Active/Returned/Sold/Rented/Installed), filters (date range, status, assignType, branch, search), serial + non-tracked item display, export; requires `Customer-Equipment-Report` permission |
 
 ### Profit Report Logic
 - **Gross Profit**: `SUM(OrderItem.total - OrderItem.cogs)` — all approved invoices
@@ -384,6 +522,7 @@ Invoice:   PENDING → APPROVED → COMPLETED
 | brandController | `/api/brand` | CRUD with soft delete |
 | categoryController | `/api/category` | CRUD with soft delete |
 | customerController | `/api/customer` | CRUD, pagination, search |
+| customerEquipmentController | `/api/customerequipment` | Assign/return/edit equipment; serial history; unit-aware stock effects |
 | exchangeRateController | `/api/exchangerate` | Get/update USD-KHR rate |
 | expenseController | `/api/expense` | CRUD expenses (branch-scoped) |
 | incomeController | `/api/income` | CRUD income (branch-scoped) |
@@ -420,6 +559,7 @@ Invoice:   PENDING → APPROVED → COMPLETED
 | `brand/` | Brand CRUD |
 | `category/` | Product category management |
 | `customer/` | Customer list and details |
+| `customerequipment/` | Equipment assignment — list, create, view, edit; serial history modal |
 | `dashboard/` | Overview metrics + summary cards |
 | `expense/` | Expense entry and list |
 | `income/` | Income entry and list |
@@ -463,7 +603,7 @@ Invoice:   PENDING → APPROVED → COMPLETED
 
 ## Database — 40+ Models
 
-**Core entities**: User, Role, Module, Permission, RoleOnUser, PermissionOnRole, Branch, Categories, Brands, Units, ProductUnitConversion, VariantAttribute, VariantValue, Products, ProductVariants, ProductVariantValues, ProductAssetItem, Stocks, PaymentMethods, Suppliers, Purchases, PurchaseDetails, PurchaseOnPayments, PurchaseAmountAuthorize, Customer, Quotations, QuotationDetails, Order, OrderItem, OrderItemAssetItem, OrderOnPayments, Services, StockMovements, StockAdjustments, AdjustmentDetails, StockTransfers, TransferDetails, StockRequests, RequestDetails, StockReturns, ReturnDetails, SaleReturns, SaleReturnItems, Expenses, Incomes, ExchangeRates, VatSyncLog
+**Core entities**: User, Role, Module, Permission, RoleOnUser, PermissionOnRole, Branch, Categories, Brands, Units, ProductUnitConversion, VariantAttribute, VariantValue, Products, ProductVariants, ProductVariantValues, ProductAssetItem, Stocks, PaymentMethods, Suppliers, Purchases, PurchaseDetails, PurchaseOnPayments, PurchaseAmountAuthorize, Customer, Quotations, QuotationDetails, Order, OrderItem, OrderItemAssetItem, OrderOnPayments, Services, StockMovements, StockAdjustments, AdjustmentDetails, StockTransfers, TransferDetails, StockRequests, RequestDetails, StockReturns, ReturnDetails, SaleReturns, SaleReturnItems, Expenses, Incomes, ExchangeRates, VatSyncLog, **CustomerEquipment**, **CustomerEquipmentItem**
 
 **Key indexes**: `StockMovements[productVariantId, branchId, createdAt]`, `StockMovements[sourceMovementId]`, `ProductAssetItem[productVariantId, branchId, status]`
 
@@ -527,6 +667,22 @@ Invoice:   PENDING → APPROVED → COMPLETED
 | 18 | PurchaseForm auto-reset effect incorrectly reset status to REQUESTED when loading an admin-approved PO (over limit) | `pages/purchase/PurchaseForm.tsx` — effect skips reset when `initialDbStatusRef.current === "APPROVED"` |
 | 19 | PurchaseForm COMPLETED and CANCELLED options were enabled after simple user selected RECEIVED on over-limit PO | `pages/purchase/PurchaseForm.tsx` — both disabled when `isOverPurchaseAuthorizeAmount && initialDbStatusRef.current === "APPROVED"` |
 | 20 | PurchaseForm showed "over PO Authorize Amount" error after admin already approved the PO | `pages/purchase/PurchaseForm.tsx` — error message hidden when `initialDbStatusRef.current !== "APPROVED"` |
+| 21 | CustomerEquipment items not updating on edit — nested Prisma include after separate `deleteMany`+`createMany` in `$transaction` didn't see new rows | `customerEquipmentController.ts` — replaced with Prisma nested write `items: { deleteMany: {}, create: [...] }` inside single `update()` |
+| 22 | Duplicate serial possible — user could select same serial on two different equipment lines | `CustomerEquipmentForm.tsx` — added `isSerialUsedElsewhere()` check; checkboxes disabled with `[used on line above]` label; `buildPayload()` dedup guard with `Set<number>` |
+| 23 | CustomerEquipment had no stock effects — serial status never changed, Stocks table never updated | `customerEquipmentController.ts` — added `applyPayloadEffects` + `applyDbItemEffects` helpers wired into create/return/update/delete; rule: stock affected only when `orderId` is null |
+| 24 | Non-tracked stock delta used raw `quantity` without unit conversion — assigning 2 boxes deducted 2 instead of 20 pcs | `customerEquipmentController.ts` — all stock helpers now call `computeBaseQty()` from `utils/uom.ts`; `unitId` added to all `findMany` selects for existing items |
+| 25 | `getAvailableAssetItems` returned only IN_STOCK serials — SOLD serials were invisible, user couldn't see which invoice to link | `customerEquipmentController.ts` — now returns all statuses; frontend controls selectability; SOLD rows show `"Sold via {ref} ({customer}) — link the Order above"` in red |
+| 26 | `updateCustomerEquipment` ran REVERSE even when `items` not in request body — header-only API calls would reset all serial statuses to IN_STOCK without re-applying them | `customerEquipmentController.ts` — REVERSE now gated on `!oldOrderId && Array.isArray(items)` |
+| 27 | Duplicate `type CEQItemPayload` declaration caused TS2300 compile error | `api/customerEquipment.ts` — removed second duplicate declaration |
+| 28 | Returned CustomerEquipment records could be deleted — permanently erasing assignment history with no warning | `CustomerEquipment.tsx` + `customerEquipmentController.ts` — returned records: delete button hidden in UI, backend returns 400; active records: replaced `ShowDeleteConfirmation` with `window.confirm` warning explaining history loss and suggesting "Mark as Returned" instead |
+| 29 | CustomerEquipment TRACKED serial assignment did not decrement `Stocks` quantity — only serial status changed (RESERVED/SOLD), so Stock On Hand was visually unaffected | `customerEquipmentController.ts` — extracted shared `adjustStocks()` helper; both `applyPayloadEffects` and `applyDbItemEffects` now look up `productVariantId` from the asset item and call `adjustStocks()` (−1 per serial on APPLY, +1 on REVERSE) for TRACKED items |
+| 30 | CEQ routes had no `authorize()` middleware — any authenticated user could create, edit, delete, or return equipment regardless of role | `customerEquipmentRoute.ts` — added `authorize(["Customer-Equipment-*"])` per route; added "Customer Equipment" module + 5 permissions to `seed.ts` and `seed-ceq-permissions.ts` (one-time insert script for existing DBs) |
+| 31 | Return modal had no note field — `returnCustomerEquipment` API accepted a `note` param but UI never sent it | `CustomerEquipment.tsx` — added `returnNote` state + textarea to return modal; passed to `returnCustomerEquipment()` on confirm |
+| 32 | Sidebar Customer Equipment list link gated with `Customer-View` permission instead of `Customer-Equipment-View` — users with only CEQ permissions could not see the menu item; section header also missing `Customer-Equipment-View` in its visibility condition | `Sidebar.tsx` — changed `hasPermission('Customer-View')` → `hasPermission('Customer-Equipment-View')` on the link; added `hasPermission('Customer-Equipment-View')` to the section header `OR` condition |
+| 33 | `<select>` elements in `CustomerEquipmentForm.tsx` used `form-input` class instead of `form-select` — dropdowns rendered with wrong styling (text input appearance, no caret) | `CustomerEquipmentForm.tsx` — all `<select className="form-input">` changed to `form-select`; unit dropdown wrapped in constraining `div` to prevent full-width expansion |
+| 34 | `ReturnTrackedModal` showed "No serials found" — `setClickData(detail)` passed `detail.id` but modal guard checked `clickData.orderItemId` (undefined), so fetch was skipped entirely | `SaleReturnForm.tsx` — changed to `setClickData({ ...detail, orderItemId: detail.id })` |
+| 35 | `ReturnTrackedModal` required selecting ALL invoice qty serials even when user only wanted to return 1 — modal used `clickData.quantity` from invoice detail (e.g. 2) instead of current return qty | `SaleReturnForm.tsx` — added `quantity: currentReturn` to clickData spread |
+| 36 | `ReturnTrackedModal` forgot previously saved serial selection on re-open — `clickData` was rebuilt from `detail` with no `selectedTrackedItemIds`, so modal always started empty | `SaleReturnForm.tsx` — added `selectedTrackedItemIds: currentLine?.selectedTrackedItemIds \|\| []` to clickData spread |
 
 ---
 

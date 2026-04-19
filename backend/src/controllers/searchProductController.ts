@@ -8,14 +8,13 @@ export const searchProducts = async (req: Request, res: Response): Promise<void>
 
     let branchId: number;
 
-    if (req.user?.roleType !== "ADMIN") {
+    if (req.query.branchId) {
+      branchId = Number(req.query.branchId);
+    } else if (req.user?.roleType !== "ADMIN") {
       branchId = Number(req.user?.branchId);
     } else {
-      if (!req.query.branchId) {
-        res.status(400).json({ message: "branchId is required for ADMIN" });
-        return;
-      }
-      branchId = Number(req.query.branchId);
+      res.status(400).json({ message: "branchId is required for ADMIN" });
+      return;
     }
 
     const productVariants = await prisma.productVariants.findMany({

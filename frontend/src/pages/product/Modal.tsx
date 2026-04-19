@@ -69,7 +69,29 @@ interface ModalProps {
 
     trackingType?: TrackingType,
     trackedItems?: ProductTrackedItemType[],
+    variantId?: number | null,
   ) => void;
+
+  secondHandFullData?: {
+    id: number;
+    name: string;
+    sku: string;
+    barcode: string | null;
+    stockAlert: number | null;
+    purchasePrice: number | string;
+    purchasePriceUnitId: number | null;
+    retailPrice: number | string;
+    retailPriceUnitId: number | null;
+    wholeSalePrice: number | string;
+    wholeSalePriceUnitId: number | null;
+    baseUnitId: number | null;
+    trackingType: TrackingType;
+    variantAttributeIds: number[];
+    variantValueIds: number[];
+    stocks: { branchId: number; quantity: number }[];
+    unitConversions: { fromUnitId: number; toUnitId: number; multiplier: number }[];
+    trackedItems: ProductTrackedItemType[];
+  } | null;
 
   product?: {
     id: number | undefined;
@@ -153,7 +175,7 @@ export interface BrandData {
   kh_name: string;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, product }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, product, secondHandFullData }) => {
   const [branches, setBranches] = useState<BranchType[]>([]);
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [brands, setBrands] = useState<BrandData[]>([]);
@@ -171,6 +193,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, product }) => 
 
   const [units, setUnits] = useState<UnitData[]>([]);
   const [variantAttributes, setVariantAttributes] = useState<VarientAttributeType[]>([]);
+
+  const [activeTab, setActiveTab] = useState<"New" | "SecondHand">("New");
 
   const methods = useForm<ProductFormData>({
     defaultValues: {
@@ -526,6 +550,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, product }) => 
     // Only run after branches are fetched and modal is open
     if (!isOpen || branches.length === 0) return;
 
+    setActiveTab("New");
+
     if (product) {
       const stockData = branches.map((branch) => {
         const existing = product.stocks?.find((s) => s.branchId === branch.id);
@@ -774,6 +800,80 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, product }) => 
   //   }
   // };
 
+  const switchToSH = () => {
+    if (!secondHandFullData) return;
+    setActiveTab("SecondHand");
+    const stockData = branches.map((branch) => {
+      const existing = secondHandFullData.stocks?.find((s) => s.branchId === branch.id);
+      return { branchId: branch.id ?? 0, quantity: existing ? Number(existing.quantity) : 0 };
+    });
+    reset({
+      categoryId: product?.categoryId ?? null,
+      brandId: product?.brandId ?? null,
+      name: secondHandFullData.name,
+      note: product?.note ?? "",
+      image: product?.image ?? null,
+      productType: "SecondHand",
+      unitId: null,
+      barcode: secondHandFullData.barcode ?? "",
+      sku: secondHandFullData.sku,
+      stockAlert: secondHandFullData.stockAlert ?? 0,
+      purchasePrice: secondHandFullData.purchasePrice ?? "",
+      purchasePriceUnitId: secondHandFullData.purchasePriceUnitId ?? null,
+      retailPrice: secondHandFullData.retailPrice ?? "",
+      retailPriceUnitId: secondHandFullData.retailPriceUnitId ?? null,
+      wholeSalePrice: secondHandFullData.wholeSalePrice ?? "",
+      wholeSalePriceUnitId: secondHandFullData.wholeSalePriceUnitId ?? null,
+      baseUnitId: secondHandFullData.baseUnitId ?? null,
+      unitConversions: (secondHandFullData.unitConversions ?? []).map((c) => ({
+        fromUnitId: c.fromUnitId, toUnitId: c.toUnitId, multiplier: c.multiplier,
+      })),
+      trackingType: secondHandFullData.trackingType ?? "NONE",
+      trackedItems: secondHandFullData.trackedItems ?? [],
+      variantAttributeIds: secondHandFullData.variantAttributeIds ?? [],
+      variantValueIds: secondHandFullData.variantValueIds ?? [],
+      stocks: stockData,
+      updateStock: false,
+    });
+  };
+
+  const switchToNew = () => {
+    if (!product) return;
+    setActiveTab("New");
+    const stockData = branches.map((branch) => {
+      const existing = product.stocks?.find((s) => s.branchId === branch.id);
+      return { branchId: branch.id ?? 0, quantity: existing ? Number(existing.quantity) : 0 };
+    });
+    reset({
+      categoryId: product.categoryId ?? null,
+      brandId: product.brandId ?? null,
+      name: product.name ?? "",
+      note: product.note ?? "",
+      image: product.image ?? null,
+      productType: product.productType ?? "New",
+      unitId: product.unitId ?? null,
+      barcode: product.barcode ?? "",
+      sku: product.sku ?? "",
+      stockAlert: product.stockAlert ?? 0,
+      purchasePrice: product.purchasePrice ?? "",
+      purchasePriceUnitId: product.purchasePriceUnitId ?? product.baseUnitId ?? null,
+      retailPrice: product.retailPrice ?? "",
+      retailPriceUnitId: product.retailPriceUnitId ?? product.baseUnitId ?? null,
+      wholeSalePrice: product.wholeSalePrice ?? "",
+      wholeSalePriceUnitId: product.wholeSalePriceUnitId ?? product.baseUnitId ?? null,
+      variantAttributeIds: product.variantAttributeIds ?? [],
+      variantValueIds: product.variantValueIds ?? [],
+      stocks: stockData,
+      updateStock: false,
+      baseUnitId: product.baseUnitId ?? null,
+      unitConversions: (product.unitConversions ?? []).map((c) => ({
+        fromUnitId: c.fromUnitId, toUnitId: c.toUnitId, multiplier: c.multiplier,
+      })),
+      trackingType: product.trackingType ?? "NONE",
+      trackedItems: product.trackedItems ?? [],
+    });
+  };
+
   const handleFormSubmit = async (data: ProductFormData) => {
     setIsLoading(true);
 
@@ -852,7 +952,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, product }) => 
         data.updateStock,
 
         data.trackingType,
-        trackedItemsOut
+        trackedItemsOut,
+        activeTab === "SecondHand" ? secondHandFullData?.id ?? null : null,
       );
 
       // ✅ only reset and close when submit success
@@ -860,13 +961,12 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, product }) => 
       onClose();
     } catch (error: any) {
       console.error("Error submitting form:", error);
-      toast.error(error.message, {
+      toast.error(error.message || "Error adding/editing product", {
           position: "top-right",
           autoClose: 4500
       });
       // ✅ do NOT close modal
       // ✅ do NOT reset form
-      // let parent toast show backend error
     } finally {
       setIsLoading(false);
     }
@@ -941,19 +1041,77 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, product }) => 
             </button>
           </div>
 
+          {/* Tab switcher — only in edit mode when SecondHand variant exists */}
+          {secondHandFullData && product?.id && (
+            <div className="flex border-b border-[#e0e6ed] dark:border-[#253a5e] px-5">
+              <button
+                type="button"
+                onClick={switchToNew}
+                className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+                  activeTab === "New"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-white-dark"
+                }`}
+              >
+                New
+              </button>
+              <button
+                type="button"
+                onClick={switchToSH}
+                className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${
+                  activeTab === "SecondHand"
+                    ? "border-amber-500 text-amber-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-white-dark"
+                }`}
+              >
+                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold pr-3">SH</span>
+                <span>SecondHand</span>
+              </button>
+            </div>
+          )}
+
           <FormProvider {...methods}>
             <form onSubmit={handleSubmit(handleFormSubmit)} encType="multipart/form-data">
               <div className="p-5">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-5">
-                  <div className="flex flex-wrap">
-                    <label className="flex cursor-pointer items-center" style={{ marginRight: "20px" }}>
-                      <input type="radio" value="New" className="form-radio" {...register("productType", { required: "Product type is required" })} />
-                      <span className="text-white-dark">New</span>
-                    </label>
-                    <label className="flex cursor-pointer items-center">
-                      <input type="radio" value="SecondHand" className="form-radio" {...register("productType", { required: "Product type is required" })} />
-                      <span className="text-white-dark">Second Hand</span>
-                    </label>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {product ? (
+                      // Edit mode: when tabs are shown, hide the redundant radio buttons
+                      <>
+                        <input type="hidden" {...register("productType")} />
+                        {!secondHandFullData && (
+                          <>
+                            <label className="flex items-center cursor-not-allowed opacity-60" style={{ marginRight: "20px" }}>
+                              <input type="radio" value="New" className="form-radio" readOnly checked={product.productType === "New"} onChange={() => {}} />
+                              <span className="text-white-dark">New</span>
+                            </label>
+                            <label className="flex items-center cursor-not-allowed opacity-60">
+                              <input type="radio" value="SecondHand" className="form-radio" readOnly checked={product.productType === "SecondHand"} onChange={() => {}} />
+                              <span className="text-white-dark">Second Hand</span>
+                            </label>
+                            <span className="text-xs text-gray-400 ml-2">(cannot change after creation)</span>
+                          </>
+                        )}
+                        {secondHandFullData && (
+                          <span className="text-sm font-medium text-amber-600 flex items-center gap-1.5">
+                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold pr-3">SH</span>
+                            Editing: &nbsp;<strong> {activeTab}</strong>&nbsp; variant
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      // Create mode: normal radio buttons with validation
+                      <>
+                        <label className="flex items-center cursor-pointer" style={{ marginRight: "20px" }}>
+                          <input type="radio" value="New" className="form-radio" {...register("productType", { required: "Product type is required" })} />
+                          <span className="text-white-dark">New</span>
+                        </label>
+                        <label className="flex items-center cursor-pointer">
+                          <input type="radio" value="SecondHand" className="form-radio" {...register("productType", { required: "Product type is required" })} />
+                          <span className="text-white-dark">Second Hand</span>
+                        </label>
+                      </>
+                    )}
                   </div>
                   {errors.productType && <span className="error_validate">{errors.productType.message}</span>}
                 </div>
@@ -1052,20 +1210,10 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, product }) => 
 
                 {/* ✅ NEW UOM: unitConversions */}
                 <div className="mb-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="font-semibold">Unit Conversions (optional)</label>
-                    <button
-                      type="button"
-                      className="btn btn-outline-primary"
-                      onClick={() => appendConversion({ fromUnitId: null, toUnitId: null, multiplier: "" })}
-                    >
-                      <FontAwesomeIcon icon={faPlus} className="mr-1" />
-                      Add
-                    </button>
-                  </div>
+                  <label className="font-semibold block mb-2">Unit Conversions (optional)</label>
 
                   {conversionFields.length === 0 && (
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 mb-2">
                       Example: 1 roll = 305 meter → From=roll, To=meter, Multiplier=305
                     </p>
                   )}
@@ -1116,6 +1264,15 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, product }) => 
                       </div>
                     ))}
                   </div>
+
+                  <button
+                    type="button"
+                    className="mt-3 btn btn-outline-primary w-full"
+                    onClick={() => appendConversion({ fromUnitId: null, toUnitId: null, multiplier: "" })}
+                  >
+                    <FontAwesomeIcon icon={faPlus} className="mr-1" />
+                    Add Conversion
+                  </button>
                 </div>
                 
                 {/* Add tracking type */}
@@ -1212,33 +1369,15 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, product }) => 
                 {/* if it is track product stock, show tracked items table instead of stock input, and stock will be auto-calculated from valid tracked items */}
                 {updateStock && trackingType !== "NONE" && (
                   <div className="mb-6 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h6 className="font-bold text-base">Tracked Items</h6>
-                        <p className="text-xs text-gray-600 mt-1">
-                          Quantity is auto-calculated from valid tracked rows.
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="btn btn-outline-primary"
-                        onClick={() =>
-                          appendTrackedItem({
-                            branchId: branches[0]?.id ?? 0,
-                            assetCode: "",
-                            macAddress: "",
-                            serialNumber: "",
-                          })
-                        }
-                      >
-                        <FontAwesomeIcon icon={faPlus} className="mr-1" />
-                        Add Item
-                      </button>
+                    <div className="mb-3">
+                      <h6 className="font-bold text-base">Tracked Items</h6>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Quantity is auto-calculated from valid tracked rows.
+                      </p>
                     </div>
 
                     {trackedItemFields.length === 0 && (
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 mb-3">
                         Add one row per actual device/item in stock.
                       </p>
                     )}
@@ -1328,9 +1467,25 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, product }) => 
                               </button>
                             </div>
                           </div>
-                        );                      
+                        );
                       })}
                     </div>
+
+                    <button
+                      type="button"
+                      className="mt-3 btn btn-outline-primary w-full"
+                      onClick={() =>
+                        appendTrackedItem({
+                          branchId: branches[0]?.id ?? 0,
+                          assetCode: "",
+                          macAddress: "",
+                          serialNumber: "",
+                        })
+                      }
+                    >
+                      <FontAwesomeIcon icon={faPlus} className="mr-1" />
+                      Add Item
+                    </button>
                   </div>
                 )}
 

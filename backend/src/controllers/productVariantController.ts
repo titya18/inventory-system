@@ -385,6 +385,30 @@ export const upsertProductVariant = async (req: Request, res: Response): Promise
     }
 };
 
+export const updateVariantPricing = async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const { purchasePrice, purchasePriceUnitId, retailPrice, retailPriceUnitId, wholeSalePrice, wholeSalePriceUnitId } = req.body;
+    try {
+        const variant = await prisma.productVariants.update({
+            where: { id: Number(id) },
+            data: {
+                purchasePrice: Number(purchasePrice ?? 0),
+                purchasePriceUnitId: purchasePriceUnitId ? Number(purchasePriceUnitId) : null,
+                retailPrice: Number(retailPrice ?? 0),
+                retailPriceUnitId: retailPriceUnitId ? Number(retailPriceUnitId) : null,
+                wholeSalePrice: Number(wholeSalePrice ?? 0),
+                wholeSalePriceUnitId: wholeSalePriceUnitId ? Number(wholeSalePriceUnitId) : null,
+                updatedBy: req.user?.id || null,
+                updatedAt: currentDate,
+            },
+        });
+        res.status(200).json(variant);
+    } catch (error) {
+        logger.error("Error updating variant pricing:", error);
+        res.status(500).json({ message: (error as Error).message });
+    }
+};
+
 // export const upsertProductVariant = async (req: Request, res: Response): Promise<void> => {
 //     const { id } = req.params;
 //     const { productId, unitId, barcode, sku, name, purchasePrice, variantValueIds, retailPrice, wholeSalePrice, isActive, imagesToDelete } = req.body;

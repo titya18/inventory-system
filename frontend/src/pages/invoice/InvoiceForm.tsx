@@ -80,7 +80,13 @@ const InvoiceForm: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [id, setValue]);
+    }, []);
+
+    useEffect(() => {
+        if (!id && user?.branchId && braches.length > 0) {
+            setValue("branchId", user.branchId, { shouldValidate: false });
+        }
+    }, [braches, id, user?.branchId, setValue]);
 
     const fetchCustomers = useCallback(async () => {
         setIsLoading(true);
@@ -310,10 +316,7 @@ const InvoiceForm: React.FC = () => {
 
         const run = async () => {
             // Determine branch based on role
-            const effectiveBranchId =
-                user?.roleType === "USER"
-                    ? user.branchId
-                    : branchId;
+            const effectiveBranchId = branchId;
 
             // No branch → no ref
             if (!effectiveBranchId) {
@@ -429,10 +432,7 @@ const InvoiceForm: React.FC = () => {
             return;
         }
 
-        const selectedBranchId =
-            user?.roleType === "USER"
-                ? user.branchId
-                : watch("branchId");
+        const selectedBranchId = watch("branchId");
 
         if (!selectedBranchId) {
             toast.error("No branch selected", {
@@ -726,10 +726,7 @@ const InvoiceForm: React.FC = () => {
         handleSearchService(term);
     };
 
-    const effectiveBranchId =
-            user?.roleType === "USER"
-                ? user.branchId
-                : watch("branchId");
+    const effectiveBranchId = watch("branchId");
 
     // Function to add or update a product detail
     const addOrUpdateInvoiceDetail = async (newDetail: InvoiceDetailType) => {
@@ -823,7 +820,7 @@ const InvoiceForm: React.FC = () => {
                 serialSelectionMode: InvoiceDetailData.serialSelectionMode ?? "AUTO",
                 selectedTrackedItemIds: InvoiceDetailData.selectedTrackedItemIds ?? [],
                 selectedTrackedItems: InvoiceDetailData.selectedTrackedItems ?? [],
-                branchId: InvoiceDetailData.branchId ?? (user?.roleType === "USER" ? user.branchId : watch("branchId")),
+                branchId: InvoiceDetailData.branchId ?? watch("branchId"),
             };
 
             const existingIndex = findMatchingInvoiceLineIndex(invoiceDetails, newDetail);
@@ -1174,18 +1171,17 @@ const InvoiceForm: React.FC = () => {
                                 </div>
 
                             </div>
-                            <div className={`grid grid-cols-1 gap-4 ${ user?.roleType === "ADMIN" ? 'sm:grid-cols-4' : 'sm:grid-cols-3' } mb-5`}>
-                                {user?.roleType === "ADMIN" &&
-                                    <div>
-                                        <label>Branch <span className="text-danger text-md">*</span></label>
-                                        <select 
-                                            id="branch" className="form-input" 
-                                            disabled={id ? true : false}
-                                            {...register("branchId", { 
-                                                required: "Branch is required"
-                                            })} 
-                                        >
-                                            <option value="">Select a branch</option>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-5">
+                                <div>
+                                    <label>Branch <span className="text-danger text-md">*</span></label>
+                                    <select
+                                        id="branch" className="form-input"
+                                        disabled={!!id}
+                                        {...register("branchId", {
+                                            required: "Branch is required"
+                                        })}
+                                    >
+                                        <option value="">Select a branch</option>
                                             {braches.map((option) => (
                                                 <option key={option.id} value={option.id}>
                                                     {option.name}
@@ -1194,7 +1190,6 @@ const InvoiceForm: React.FC = () => {
                                         </select>
                                         {errors.branchId && <span className="error_validate">{errors.branchId.message}</span>}
                                     </div>
-                                }
 
                                 <div>
                                     <label htmlFor="module">Invoice No <span className="text-danger text-md">*</span></label>

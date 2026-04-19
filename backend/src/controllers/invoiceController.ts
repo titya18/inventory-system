@@ -67,20 +67,9 @@ export const getAllInvoices = async (req: Request, res: Response): Promise<void>
         // Build parameters: $1 = likeTerm, $2..$n = searchword, $n+1 = limit, $n+2 = offset
         const params = [likeTerm, ...searchWords.map(w => `%${w}%`), pageSize, offset];
 
-        // Branch restriction
-        let branchRestriction = "";
-        if (loggedInUser.roleType === "USER" && loggedInUser.branchId) {
-            branchRestriction = `
-                AND rd."branchId" = ${loggedInUser.branchId}
-                AND rd."createdBy" = ${loggedInUser.id}
-            `;
-        }
-
-        // If we want to use this AND condition, we need to copy it and past below WHERE 1=1 ${branchRestriction}
-        // AND (
-        //             rd."status" NOT IN ('COMPLETED', 'CANCELLED')
-        //             OR rd."orderDate"::date >= CURRENT_DATE
-        //         )
+        const userRestriction = loggedInUser.roleType === "USER"
+            ? `AND rd."createdBy" = ${loggedInUser.id}`
+            : "";
 
         // ----- 1) COUNT -----
         const totalResult: any = await prisma.$queryRawUnsafe(`
@@ -92,7 +81,7 @@ export const getAllInvoices = async (req: Request, res: Response): Promise<void>
             LEFT JOIN "User" u ON rd."updatedBy" = u.id
             LEFT JOIN "User" ab ON rd."approvedBy" = ab.id
             WHERE 1=1
-                ${branchRestriction}
+                ${userRestriction}
                 AND (
                     rd."ref" ILIKE $1
                     OR cs."name" ILIKE $1
@@ -110,11 +99,6 @@ export const getAllInvoices = async (req: Request, res: Response): Promise<void>
 
         const total = parseInt(totalResult[0]?.total ?? 0, 10);
 
-        // If we want to use this AND condition, we need to copy it and past below WHERE 1=1 ${branchRestriction}
-        // AND (
-        //     rd."status" NOT IN ('COMPLETED', 'CANCELLED')
-        //     OR rd."orderDate"::date >= CURRENT_DATE
-        // )
         // ----- 2) DATA FETCH -----
         const invoices: any = await prisma.$queryRawUnsafe(`
             SELECT rd.*,
@@ -130,7 +114,7 @@ export const getAllInvoices = async (req: Request, res: Response): Promise<void>
             LEFT JOIN "User" u ON rd."updatedBy" = u.id
             LEFT JOIN "User" ab ON rd."approvedBy" = ab.id
             WHERE 1=1
-                ${branchRestriction}
+                ${userRestriction}
                 AND (
                     rd."ref" ILIKE $1
                     OR cs."name" ILIKE $1

@@ -31945,3 +31945,1134 @@ Unique constraint failed on the fields: (`productVariantId`,`macAddress`)
     at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:1025:13)
     at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
     at async upsertProduct (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:786:20)
+2026-04-08 22:56:32 error: Login error 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `db:5432`
+
+Please make sure your database server is running at `db:5432`. PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `db:5432`
+
+Please make sure your database server is running at `db:5432`.
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async signIn (D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:22)
+2026-04-08 22:56:48 error: Login error 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `db:5432`
+
+Please make sure your database server is running at `db:5432`. PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `db:5432`
+
+Please make sure your database server is running at `db:5432`.
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async signIn (D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:22)
+2026-04-08 22:57:19 error: Login error 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `db:5432`
+
+Please make sure your database server is running at `db:5432`. PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `db:5432`
+
+Please make sure your database server is running at `db:5432`.
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async signIn (D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:22)
+2026-04-08 22:58:18 error: Login error 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `db:5432`
+
+Please make sure your database server is running at `db:5432`. PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `db:5432`
+
+Please make sure your database server is running at `db:5432`.
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async signIn (D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:22)
+2026-04-08 23:01:53 error: Login error 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `db:5432`
+
+Please make sure your database server is running at `db:5432`. PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `db:5432`
+
+Please make sure your database server is running at `db:5432`.
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async signIn (D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:22)
+2026-04-09 08:58:56 error: Token verification error: 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\middlewares\auth.ts:57:40
+
+  54 
+  55 // console.log("Decoded token:", decoded); // Add logging here
+  56 
+→ 57 const user = await prisma.user.findUnique(
+Can't reach database server at `localhost:5432`
+
+Please make sure your database server is running at `localhost:5432`. PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\middlewares\auth.ts:57:40
+
+  54 
+  55 // console.log("Decoded token:", decoded); // Add logging here
+  56 
+→ 57 const user = await prisma.user.findUnique(
+Can't reach database server at `localhost:5432`
+
+Please make sure your database server is running at `localhost:5432`.
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async verifyToken (D:\Citylink-Inventory-claude\backend\src\middlewares\auth.ts:57:22)
+2026-04-09 08:59:27 error: Login error 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `localhost:5432`
+
+Please make sure your database server is running at `localhost:5432`. PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `localhost:5432`
+
+Please make sure your database server is running at `localhost:5432`.
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async signIn (D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:22)
+2026-04-11 09:35:51 error: Error upserting product: 
+Invalid `tx.productAssetItem.createMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:1042:39
+
+  1039 const newRows = cleanedTrackedItems.filter((x) => !x.id);
+  1040 
+  1041 if (newRows.length > 0) {
+→ 1042   await tx.productAssetItem.createMany(
+Unique constraint failed on the fields: (`id`) PrismaClientKnownRequestError: 
+Invalid `tx.productAssetItem.createMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:1042:39
+
+  1039 const newRows = cleanedTrackedItems.filter((x) => !x.id);
+  1040 
+  1041 if (newRows.length > 0) {
+→ 1042   await tx.productAssetItem.createMany(
+Unique constraint failed on the fields: (`id`)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:1042:13)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertProduct (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:786:20)
+2026-04-13 09:06:35 error: Error creating/updating stock return: 
+Invalid `tx.stockReturns.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\stockReturnController.ts:268:33
+
+  265       returnDetails: true,
+  266     },
+  267   })
+→ 268 : await tx.stockReturns.create({
+        data: {
+          branchId: 1,
+          returnBy: 1,
+          returnDate: new Date("2026-04-12T17:00:00.000Z"),
+          StatusType: "PENDING",
+          note: "sdffsdfsdf",
+          updatedAt: new Date("2026-04-13T02:06:35.897Z"),
+          updatedBy: 1,
+          ref: "SRT-00001",
+          createdAt: new Date("2026-04-13T02:06:35.897Z"),
+          createdBy: 1,
+          returnDetails: {
+            create: [
+              {
+                productId: 2,
+                productVariantId: 2,
+                unitId: 1,
+                unitQty: new Prisma.Decimal("3"),
+                baseQty: new Prisma.Decimal("3"),
+                quantity: 3,
+                cost: null,
+                costPerBaseUnit: null,
+                trackedPayload: null
+              }
+            ]
+          }
+        },
+        include: {
+          returnDetails: true
+        }
+      })
+
+Unknown argument `productId`. Did you mean `products`? Available options are marked with ?. PrismaClientValidationError: 
+Invalid `tx.stockReturns.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\stockReturnController.ts:268:33
+
+  265       returnDetails: true,
+  266     },
+  267   })
+→ 268 : await tx.stockReturns.create({
+        data: {
+          branchId: 1,
+          returnBy: 1,
+          returnDate: new Date("2026-04-12T17:00:00.000Z"),
+          StatusType: "PENDING",
+          note: "sdffsdfsdf",
+          updatedAt: new Date("2026-04-13T02:06:35.897Z"),
+          updatedBy: 1,
+          ref: "SRT-00001",
+          createdAt: new Date("2026-04-13T02:06:35.897Z"),
+          createdBy: 1,
+          returnDetails: {
+            create: [
+              {
+                productId: 2,
+                productVariantId: 2,
+                unitId: 1,
+                unitQty: new Prisma.Decimal("3"),
+                baseQty: new Prisma.Decimal("3"),
+                quantity: 3,
+                cost: null,
+                costPerBaseUnit: null,
+                trackedPayload: null
+              }
+            ]
+          }
+        },
+        include: {
+          returnDetails: true
+        }
+      })
+
+Unknown argument `productId`. Did you mean `products`? Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\stockReturnController.ts:268:11)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertReturn (D:\Citylink-Inventory-claude\backend\src\controllers\stockReturnController.ts:135:20)
+2026-04-13 09:22:27 error: Error creating/updating stock return: 
+Invalid `tx.stockReturns.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\stockReturnController.ts:267:33
+
+  264       returnDetails: true,
+  265     },
+  266   })
+→ 267 : await tx.stockReturns.create({
+        data: {
+          branchId: 1,
+          returnBy: 1,
+          returnDate: new Date("2026-04-12T17:00:00.000Z"),
+          StatusType: "PENDING",
+          note: "sdff fsadf sdaf",
+          updatedAt: new Date("2026-04-13T02:22:27.493Z"),
+          updatedBy: 1,
+          ref: "SRT-00001",
+          createdAt: new Date("2026-04-13T02:22:27.493Z"),
+          createdBy: 1,
+          returnDetails: {
+            create: [
+              {
+                products: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                productVariantId: 2,
+                unitId: 1,
+                unitQty: new Prisma.Decimal("3"),
+                baseQty: new Prisma.Decimal("3"),
+                quantity: 3,
+                cost: null,
+                costPerBaseUnit: null,
+                trackedPayload: null
+              }
+            ]
+          }
+        },
+        include: {
+          returnDetails: true
+        }
+      })
+
+Unknown argument `productVariantId`. Did you mean `productvariants`? Available options are marked with ?. PrismaClientValidationError: 
+Invalid `tx.stockReturns.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\stockReturnController.ts:267:33
+
+  264       returnDetails: true,
+  265     },
+  266   })
+→ 267 : await tx.stockReturns.create({
+        data: {
+          branchId: 1,
+          returnBy: 1,
+          returnDate: new Date("2026-04-12T17:00:00.000Z"),
+          StatusType: "PENDING",
+          note: "sdff fsadf sdaf",
+          updatedAt: new Date("2026-04-13T02:22:27.493Z"),
+          updatedBy: 1,
+          ref: "SRT-00001",
+          createdAt: new Date("2026-04-13T02:22:27.493Z"),
+          createdBy: 1,
+          returnDetails: {
+            create: [
+              {
+                products: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                productVariantId: 2,
+                unitId: 1,
+                unitQty: new Prisma.Decimal("3"),
+                baseQty: new Prisma.Decimal("3"),
+                quantity: 3,
+                cost: null,
+                costPerBaseUnit: null,
+                trackedPayload: null
+              }
+            ]
+          }
+        },
+        include: {
+          returnDetails: true
+        }
+      })
+
+Unknown argument `productVariantId`. Did you mean `productvariants`? Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\stockReturnController.ts:267:11)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertReturn (D:\Citylink-Inventory-claude\backend\src\controllers\stockReturnController.ts:135:20)
+2026-04-13 12:15:24 error: Error upserting product: A New product with this name already exists Error: A New product with this name already exists
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:799:15)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertProduct (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:786:20)
+2026-04-13 12:15:36 error: Error upserting product: A New product with this name already exists Error: A New product with this name already exists
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:799:15)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertProduct (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:786:20)
+2026-04-13 12:16:01 error: Error upserting product: A New product with this name already exists Error: A New product with this name already exists
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:799:15)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertProduct (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:786:20)
+2026-04-14 10:05:02 error: Error creating customer equipment: 
+Invalid `prisma.customerEquipment.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:191:55
+
+  188 
+  189 const currentDate = nowDate();
+  190 
+→ 191 const record = await prisma.customerEquipment.create(
+Foreign key constraint violated: `CustomerEquipment_orderId_fkey (index)` PrismaClientKnownRequestError: 
+Invalid `prisma.customerEquipment.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:191:55
+
+  188 
+  189 const currentDate = nowDate();
+  190 
+→ 191 const record = await prisma.customerEquipment.create(
+Foreign key constraint violated: `CustomerEquipment_orderId_fkey (index)`
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async createCustomerEquipment (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:191:24)
+2026-04-14 11:13:16 error: Error creating customer equipment: 
+Invalid `prisma.customerEquipment.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:332:55
+
+  329     }
+  330 });
+  331 
+→ 332 const record = await prisma.customerEquipment.create({
+        data: {
+          ref: "CEQ-00001",
+          customerId: 1,
+          branchId: 1,
+          assignType: "INSTALLED",
+          assignedAt: new Date("2026-04-13T17:00:00.000Z"),
+          orderId: null,
+          note: null,
+          createdAt: new Date("2026-04-14T11:13:16.000Z"),
+          createdBy: 1,
+          updatedAt: new Date("2026-04-14T11:13:16.000Z"),
+          updatedBy: 1,
+          items: {
+            create: [
+              {
+                productAssetItemId: 33
+              },
+              {
+                productVariantId: 2,
+                quantity: 2,
+                unitId: 1
+              },
+              {
+                productVariantId: 1,
+                quantity: 2,
+                unitId: 4
+              }
+            ]
+          },
+      +   customer: {
+      +     create: CustomerCreateWithoutCustomerEquipmentsInput | CustomerUncheckedCreateWithoutCustomerEquipmentsInput,
+      +     connectOrCreate: CustomerCreateOrConnectWithoutCustomerEquipmentsInput,
+      +     connect: CustomerWhereUniqueInput
+      +   }
+        },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              phone: true
+            }
+          },
+          branch: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          items: {
+            include: {
+              productAssetItem: {
+                select: {
+                  id: true,
+                  serialNumber: true,
+                  assetCode: true,
+                  macAddress: true,
+                  status: true,
+                  productVariant: {
+                    select: {
+                      id: true,
+                      sku: true,
+                      barcode: true,
+                      productType: true,
+                      products: {
+                        select: {
+                          id: true,
+                          name: true
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              productVariant: {
+                select: {
+                  id: true,
+                  sku: true,
+                  barcode: true,
+                  productType: true,
+                  products: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  }
+                }
+              },
+              unit: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          }
+        }
+      })
+
+Argument `customer` is missing. PrismaClientValidationError: 
+Invalid `prisma.customerEquipment.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:332:55
+
+  329     }
+  330 });
+  331 
+→ 332 const record = await prisma.customerEquipment.create({
+        data: {
+          ref: "CEQ-00001",
+          customerId: 1,
+          branchId: 1,
+          assignType: "INSTALLED",
+          assignedAt: new Date("2026-04-13T17:00:00.000Z"),
+          orderId: null,
+          note: null,
+          createdAt: new Date("2026-04-14T11:13:16.000Z"),
+          createdBy: 1,
+          updatedAt: new Date("2026-04-14T11:13:16.000Z"),
+          updatedBy: 1,
+          items: {
+            create: [
+              {
+                productAssetItemId: 33
+              },
+              {
+                productVariantId: 2,
+                quantity: 2,
+                unitId: 1
+              },
+              {
+                productVariantId: 1,
+                quantity: 2,
+                unitId: 4
+              }
+            ]
+          },
+      +   customer: {
+      +     create: CustomerCreateWithoutCustomerEquipmentsInput | CustomerUncheckedCreateWithoutCustomerEquipmentsInput,
+      +     connectOrCreate: CustomerCreateOrConnectWithoutCustomerEquipmentsInput,
+      +     connect: CustomerWhereUniqueInput
+      +   }
+        },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              phone: true
+            }
+          },
+          branch: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          items: {
+            include: {
+              productAssetItem: {
+                select: {
+                  id: true,
+                  serialNumber: true,
+                  assetCode: true,
+                  macAddress: true,
+                  status: true,
+                  productVariant: {
+                    select: {
+                      id: true,
+                      sku: true,
+                      barcode: true,
+                      productType: true,
+                      products: {
+                        select: {
+                          id: true,
+                          name: true
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              productVariant: {
+                select: {
+                  id: true,
+                  sku: true,
+                  barcode: true,
+                  productType: true,
+                  products: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  }
+                }
+              },
+              unit: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          }
+        }
+      })
+
+Argument `customer` is missing.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async createCustomerEquipment (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:332:24)
+2026-04-14 11:22:58 error: Error creating customer equipment: 
+Invalid `prisma.customerEquipment.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:332:55
+
+  329     }
+  330 });
+  331 
+→ 332 const record = await prisma.customerEquipment.create({
+        data: {
+          ref: "CEQ-00001",
+          customerId: 1,
+          branchId: 1,
+          assignType: "INSTALLED",
+          assignedAt: new Date("2026-04-13T17:00:00.000Z"),
+          orderId: 2,
+          note: "dsfdsfdsf ",
+          createdAt: new Date("2026-04-14T11:22:58.000Z"),
+          createdBy: 1,
+          updatedAt: new Date("2026-04-14T11:22:58.000Z"),
+          updatedBy: 1,
+          items: {
+            create: [
+              {
+                productAssetItemId: 33
+              },
+              {
+                productVariantId: 2,
+                quantity: 2,
+                unitId: 1
+              },
+              {
+                productVariantId: 1,
+                quantity: 2,
+                unitId: 4
+              }
+            ]
+          },
+      +   customer: {
+      +     create: CustomerCreateWithoutCustomerEquipmentsInput | CustomerUncheckedCreateWithoutCustomerEquipmentsInput,
+      +     connectOrCreate: CustomerCreateOrConnectWithoutCustomerEquipmentsInput,
+      +     connect: CustomerWhereUniqueInput
+      +   }
+        },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              phone: true
+            }
+          },
+          branch: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          items: {
+            include: {
+              productAssetItem: {
+                select: {
+                  id: true,
+                  serialNumber: true,
+                  assetCode: true,
+                  macAddress: true,
+                  status: true,
+                  productVariant: {
+                    select: {
+                      id: true,
+                      sku: true,
+                      barcode: true,
+                      productType: true,
+                      products: {
+                        select: {
+                          id: true,
+                          name: true
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              productVariant: {
+                select: {
+                  id: true,
+                  sku: true,
+                  barcode: true,
+                  productType: true,
+                  products: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  }
+                }
+              },
+              unit: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          }
+        }
+      })
+
+Argument `customer` is missing. PrismaClientValidationError: 
+Invalid `prisma.customerEquipment.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:332:55
+
+  329     }
+  330 });
+  331 
+→ 332 const record = await prisma.customerEquipment.create({
+        data: {
+          ref: "CEQ-00001",
+          customerId: 1,
+          branchId: 1,
+          assignType: "INSTALLED",
+          assignedAt: new Date("2026-04-13T17:00:00.000Z"),
+          orderId: 2,
+          note: "dsfdsfdsf ",
+          createdAt: new Date("2026-04-14T11:22:58.000Z"),
+          createdBy: 1,
+          updatedAt: new Date("2026-04-14T11:22:58.000Z"),
+          updatedBy: 1,
+          items: {
+            create: [
+              {
+                productAssetItemId: 33
+              },
+              {
+                productVariantId: 2,
+                quantity: 2,
+                unitId: 1
+              },
+              {
+                productVariantId: 1,
+                quantity: 2,
+                unitId: 4
+              }
+            ]
+          },
+      +   customer: {
+      +     create: CustomerCreateWithoutCustomerEquipmentsInput | CustomerUncheckedCreateWithoutCustomerEquipmentsInput,
+      +     connectOrCreate: CustomerCreateOrConnectWithoutCustomerEquipmentsInput,
+      +     connect: CustomerWhereUniqueInput
+      +   }
+        },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              phone: true
+            }
+          },
+          branch: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          items: {
+            include: {
+              productAssetItem: {
+                select: {
+                  id: true,
+                  serialNumber: true,
+                  assetCode: true,
+                  macAddress: true,
+                  status: true,
+                  productVariant: {
+                    select: {
+                      id: true,
+                      sku: true,
+                      barcode: true,
+                      productType: true,
+                      products: {
+                        select: {
+                          id: true,
+                          name: true
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              productVariant: {
+                select: {
+                  id: true,
+                  sku: true,
+                  barcode: true,
+                  productType: true,
+                  products: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  }
+                }
+              },
+              unit: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          }
+        }
+      })
+
+Argument `customer` is missing.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async createCustomerEquipment (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:332:24)
+2026-04-14 11:24:52 error: Error creating customer equipment: 
+Invalid `prisma.customerEquipment.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:332:55
+
+  329     }
+  330 });
+  331 
+→ 332 const record = await prisma.customerEquipment.create({
+        data: {
+          ref: "CEQ-00001",
+          customerId: 1,
+          branchId: 1,
+          assignType: "INSTALLED",
+          assignedAt: new Date("2026-04-13T17:00:00.000Z"),
+          orderId: 2,
+          note: "aaaaaaaaa",
+          createdAt: new Date("2026-04-14T11:24:52.000Z"),
+          createdBy: 1,
+          updatedAt: new Date("2026-04-14T11:24:52.000Z"),
+          updatedBy: 1,
+          items: {
+            create: [
+              {
+                productAssetItemId: 33
+              },
+              {
+                productVariantId: 2,
+                quantity: 2,
+                unitId: 1
+              },
+              {
+                productVariantId: 1,
+                quantity: 2,
+                unitId: 4
+              }
+            ]
+          },
+      +   customer: {
+      +     create: CustomerCreateWithoutCustomerEquipmentsInput | CustomerUncheckedCreateWithoutCustomerEquipmentsInput,
+      +     connectOrCreate: CustomerCreateOrConnectWithoutCustomerEquipmentsInput,
+      +     connect: CustomerWhereUniqueInput
+      +   }
+        },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              phone: true
+            }
+          },
+          branch: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          items: {
+            include: {
+              productAssetItem: {
+                select: {
+                  id: true,
+                  serialNumber: true,
+                  assetCode: true,
+                  macAddress: true,
+                  status: true,
+                  productVariant: {
+                    select: {
+                      id: true,
+                      sku: true,
+                      barcode: true,
+                      productType: true,
+                      products: {
+                        select: {
+                          id: true,
+                          name: true
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              productVariant: {
+                select: {
+                  id: true,
+                  sku: true,
+                  barcode: true,
+                  productType: true,
+                  products: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  }
+                }
+              },
+              unit: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          }
+        }
+      })
+
+Argument `customer` is missing. PrismaClientValidationError: 
+Invalid `prisma.customerEquipment.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:332:55
+
+  329     }
+  330 });
+  331 
+→ 332 const record = await prisma.customerEquipment.create({
+        data: {
+          ref: "CEQ-00001",
+          customerId: 1,
+          branchId: 1,
+          assignType: "INSTALLED",
+          assignedAt: new Date("2026-04-13T17:00:00.000Z"),
+          orderId: 2,
+          note: "aaaaaaaaa",
+          createdAt: new Date("2026-04-14T11:24:52.000Z"),
+          createdBy: 1,
+          updatedAt: new Date("2026-04-14T11:24:52.000Z"),
+          updatedBy: 1,
+          items: {
+            create: [
+              {
+                productAssetItemId: 33
+              },
+              {
+                productVariantId: 2,
+                quantity: 2,
+                unitId: 1
+              },
+              {
+                productVariantId: 1,
+                quantity: 2,
+                unitId: 4
+              }
+            ]
+          },
+      +   customer: {
+      +     create: CustomerCreateWithoutCustomerEquipmentsInput | CustomerUncheckedCreateWithoutCustomerEquipmentsInput,
+      +     connectOrCreate: CustomerCreateOrConnectWithoutCustomerEquipmentsInput,
+      +     connect: CustomerWhereUniqueInput
+      +   }
+        },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              phone: true
+            }
+          },
+          branch: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          items: {
+            include: {
+              productAssetItem: {
+                select: {
+                  id: true,
+                  serialNumber: true,
+                  assetCode: true,
+                  macAddress: true,
+                  status: true,
+                  productVariant: {
+                    select: {
+                      id: true,
+                      sku: true,
+                      barcode: true,
+                      productType: true,
+                      products: {
+                        select: {
+                          id: true,
+                          name: true
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              productVariant: {
+                select: {
+                  id: true,
+                  sku: true,
+                  barcode: true,
+                  productType: true,
+                  products: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  }
+                }
+              },
+              unit: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          }
+        }
+      })
+
+Argument `customer` is missing.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async createCustomerEquipment (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:332:24)
+2026-04-14 11:31:12 error: Error creating customer equipment: 
+Invalid `prisma.customerEquipment.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:332:55
+
+  329     }
+  330 });
+  331 
+→ 332 const record = await prisma.customerEquipment.create(
+Null constraint violation on the fields: (`productAssetItemId`) PrismaClientKnownRequestError: 
+Invalid `prisma.customerEquipment.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:332:55
+
+  329     }
+  330 });
+  331 
+→ 332 const record = await prisma.customerEquipment.create(
+Null constraint violation on the fields: (`productAssetItemId`)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async createCustomerEquipment (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:332:24)
+2026-04-17 13:49:19 info: CEQ applyDbItemEffects NON_TRACKED [REVERSE] variantId=2 branchId=1 delta=5 
+2026-04-17 13:49:19 info: CEQ applyDbItemEffects NON_TRACKED [REVERSE] variantId=1 branchId=1 delta=610 
+2026-04-17 13:56:35 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=40 variantId=10 branchId=1 delta=-1 
+2026-04-17 13:57:06 info: CEQ applyDbItemEffects TRACKED [REVERSE] assetId=40 variantId=10 branchId=1 delta=1 
+2026-04-17 14:39:13 info: CEQ applyPayloadEffects NON_TRACKED [APPLY] variantId=2 branchId=1 delta=-5 
+2026-04-17 14:39:13 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=41 variantId=10 branchId=1 delta=-1 
+2026-04-17 14:39:13 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=40 variantId=10 branchId=1 delta=-1 
+2026-04-17 14:42:33 info: CEQ applyDbItemEffects NON_TRACKED [REVERSE] variantId=2 branchId=1 delta=5 
+2026-04-17 14:42:33 info: CEQ applyDbItemEffects TRACKED [REVERSE] assetId=41 variantId=10 branchId=1 delta=1 
+2026-04-17 14:42:33 info: CEQ applyDbItemEffects TRACKED [REVERSE] assetId=40 variantId=10 branchId=1 delta=1 
+2026-04-17 14:43:36 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=40 variantId=10 branchId=1 delta=-1 
+2026-04-17 14:43:57 info: CEQ applyDbItemEffects TRACKED [REVERSE] assetId=40 variantId=10 branchId=1 delta=1 
+2026-04-19 19:58:17 info: Sale return: auto-created SecondHand variant 11 from New variant 10 
+2026-04-19 19:58:17 info: Sale return: converting variant 10 → SecondHand variant 11 
+2026-04-19 20:21:11 info: Sale return: auto-created SecondHand variant 13 from New variant 12 
+2026-04-19 20:21:11 info: Sale return: converting variant 12 → SecondHand variant 13 
+2026-04-19 21:08:23 error: Error upserting product: Cannot access 'variantId2' before initialization ReferenceError: Cannot access 'variantId2' before initialization
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:865:31)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertProduct (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:787:20)

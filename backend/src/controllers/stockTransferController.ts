@@ -198,6 +198,7 @@ export const upsertTransfer = async (req: Request, res: Response): Promise<void>
             unitQty: new Decimal(unitQty),
             baseQty: new Decimal(baseQty),
             quantity: Math.round(Number(baseQty)),
+            trackedPayload: detail.trackedPayload ?? null,
           };
         })
       );
@@ -237,6 +238,7 @@ export const upsertTransfer = async (req: Request, res: Response): Promise<void>
             unitQty: detail.unitQty,
             baseQty: detail.baseQty,
             quantity: detail.quantity,
+            trackedPayload: detail.trackedPayload,
           })),
         },
       };
@@ -309,6 +311,71 @@ export const upsertTransfer = async (req: Request, res: Response): Promise<void>
               updatedAt: currentDate,
             },
           });
+
+          // 2b) handle tracked serial items
+          const variant = await tx.productVariants.findUnique({
+            where: { id: Number(detail.productVariantId) },
+            select: { trackingType: true },
+          });
+
+          if (variant?.trackingType && variant.trackingType !== "NONE") {
+            const transferQty = Math.round(Number(detail.baseQty ?? 0));
+            const rawPayload = (detail as any).trackedPayload as string | null;
+            const payload = rawPayload ? JSON.parse(rawPayload) : null;
+            const serialMode: "AUTO" | "MANUAL" = payload?.mode ?? "AUTO";
+            const selectedIds: number[] = payload?.selectedIds ?? [];
+
+            let idsToTransfer: number[];
+
+            if (serialMode === "MANUAL" && selectedIds.length > 0) {
+              const items = await tx.productAssetItem.findMany({
+                where: {
+                  id: { in: selectedIds },
+                  productVariantId: Number(detail.productVariantId),
+                  branchId: Number(fromBranchId),
+                  status: "IN_STOCK",
+                },
+                select: { id: true, serialNumber: true },
+              });
+
+              if (items.length !== selectedIds.length) {
+                throw new Error(`Some selected serials are no longer available for transfer. Please re-select.`);
+              }
+              if (items.length !== transferQty) {
+                throw new Error(`Selected ${items.length} serial(s) but transfer quantity is ${transferQty}. They must match.`);
+              }
+              idsToTransfer = items.map((i) => i.id);
+            } else {
+              // AUTO: pick oldest available IN_STOCK serials from source branch
+              const items = await tx.productAssetItem.findMany({
+                where: {
+                  productVariantId: Number(detail.productVariantId),
+                  branchId: Number(fromBranchId),
+                  status: "IN_STOCK",
+                },
+                orderBy: [{ id: "asc" }],
+                take: transferQty,
+                select: { id: true },
+              });
+
+              if (items.length < transferQty) {
+                throw new Error(
+                  `Insufficient tracked serials in source branch. Available: ${items.length}, Required: ${transferQty}`
+                );
+              }
+              idsToTransfer = items.map((i) => i.id);
+            }
+
+            // Move serial items to destination branch (keep status IN_STOCK)
+            await tx.productAssetItem.updateMany({
+              where: { id: { in: idsToTransfer } },
+              data: {
+                branchId: Number(toBranchId),
+                updatedAt: currentDate,
+                updatedBy: loggedInUser.id,
+              },
+            });
+          }
 
           // 3) update Stocks destination
           const destStock = await tx.stocks.findUnique({
@@ -391,6 +458,7 @@ export const getStockTransferById = async (
                                 barcode: true,
                                 sku: true,
                                 productType: true,
+                                trackingType: true,
                                 baseUnitId: true,
                                 baseUnit: {
                                     select: {

@@ -20,6 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { FilePenLine, Plus, Trash2 } from "lucide-react";
 import ShowWarningMessage from "../components/ShowWarningMessage";
 import { getStockTransferById, upsertTransfer } from "@/api/stockTransfer";
+import TrackedItemsPickerModal from "@/components/TrackedItemsPickerModal";
 
 type RawUnitRow = {
     unitId?: number;
@@ -74,6 +75,7 @@ const StockTransferForm: React.FC = () => {
     const [transferDetails, setTransferDetails] = useState<StockTransferDetailType[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [statusValue, setStatusValue] = useState<string>("PENDING");
+    const [trackedModalIndex, setTrackedModalIndex] = useState<number | null>(null);
     const [branchInitialized, setBranchInitialized] = useState(false);
 
     const {
@@ -220,6 +222,12 @@ const StockTransferForm: React.FC = () => {
         }
     }, []);
 
+    useEffect(() => {
+        if (!id && user?.branchId && branches.length > 0) {
+            setValue("fromBranchId", user.branchId, { shouldValidate: false });
+        }
+    }, [branches, id, user?.branchId, setValue]);
+
     const fetchStockTransfer = useCallback(async () => {
         if (!id) return;
 
@@ -241,13 +249,29 @@ const StockTransferForm: React.FC = () => {
             setValue("note", transferData.note);
 
             setTransferDetails(
-                (transferData.transferDetails || []).map((detail) => ({
-                    ...detail,
-                    unitId: detail.unitId ?? null,
-                    unitQty: detail.unitQty ?? 1,
-                    baseQty: detail.baseQty ?? detail.quantity ?? 1,
-                    quantity: detail.quantity ?? Number(detail.baseQty ?? 1),
-                }))
+                (transferData.transferDetails || []).map((detail) => {
+                    let serialSelectionMode: "AUTO" | "MANUAL" = "AUTO";
+                    let selectedTrackedItemIds: number[] = [];
+                    if ((detail as any).trackedPayload) {
+                        try {
+                            const payload = JSON.parse((detail as any).trackedPayload);
+                            serialSelectionMode = payload.mode ?? "AUTO";
+                            selectedTrackedItemIds = payload.selectedIds ?? [];
+                        } catch (_e) {}
+                    }
+                    return {
+                        ...detail,
+                        unitId: detail.unitId ?? null,
+                        unitQty: detail.unitQty ?? 1,
+                        baseQty: detail.baseQty ?? detail.quantity ?? 1,
+                        quantity: detail.quantity ?? Number(detail.baseQty ?? 1),
+                        trackingType: (detail.productvariants as any)?.trackingType ?? "NONE",
+                        serialSelectionMode,
+                        selectedTrackedItemIds,
+                        selectedTrackedItems: [],
+                        branchId: (transferData as any).fromBranchId ?? 0,
+                    };
+                })
             );
 
             setStatusValue(transferData.StatusType);
@@ -283,8 +307,7 @@ const StockTransferForm: React.FC = () => {
             return;
         }
 
-        const selectedBranchId =
-            user?.roleType === "USER" ? user.branchId : watch("fromBranchId");
+        const selectedBranchId = watch("fromBranchId");
 
         if (!selectedBranchId) {
             toast.error("No source branch selected", {
@@ -358,6 +381,11 @@ const StockTransferForm: React.FC = () => {
             unitQty: 1,
             baseQty: calculateBaseQty(1, defaultUnit.operationValue, defaultUnit.operator),
             quantity: calculateBaseQty(1, defaultUnit.operationValue, defaultUnit.operator),
+            trackingType: (variant as any).trackingType ?? "NONE",
+            serialSelectionMode: "AUTO",
+            selectedTrackedItemIds: [],
+            selectedTrackedItems: [],
+            branchId: Number(watch("fromBranchId") || 0),
         };
 
         setTransferDetails((prev) => [...prev, newDetail]);
@@ -387,6 +415,11 @@ const StockTransferForm: React.FC = () => {
             unitQty: 1,
             baseQty: calculateBaseQty(1, defaultUnit.operationValue, defaultUnit.operator),
             quantity: calculateBaseQty(1, defaultUnit.operationValue, defaultUnit.operator),
+            trackingType: (detail.productvariants as any)?.trackingType ?? "NONE",
+            serialSelectionMode: "AUTO",
+            selectedTrackedItemIds: [],
+            selectedTrackedItems: [],
+            branchId: Number(watch("fromBranchId") || 0),
         };
 
         setTransferDetails((prev) => [...prev, newDetail]);
@@ -512,6 +545,29 @@ const StockTransferForm: React.FC = () => {
                     setIsLoading(false);
                     return;
                 }
+
+                // Serial tracking validation for MANUAL mode — only enforced on APPROVED
+                if (
+                    formData.StatusType === "APPROVED" &&
+                    row.trackingType &&
+                    row.trackingType !== "NONE" &&
+                    row.serialSelectionMode === "MANUAL"
+                ) {
+                    const productName = row.products?.name || "unknown product";
+                    const requiredQty = Math.round(Number(row.baseQty ?? 0));
+                    const selected = row.selectedTrackedItemIds?.length ?? 0;
+
+                    if (selected === 0) {
+                        toast.error(`"${productName}": Please select serials before approving (or switch to Auto mode).`);
+                        setIsLoading(false);
+                        return;
+                    }
+                    if (selected !== requiredQty) {
+                        toast.error(`"${productName}": Selected ${selected} serial(s) but quantity is ${requiredQty}. They must match.`);
+                        setIsLoading(false);
+                        return;
+                    }
+                }
             }
 
             await queryClient.invalidateQueries({ queryKey: ["validateToken"] });
@@ -519,29 +575,38 @@ const StockTransferForm: React.FC = () => {
             const fromBranch = branches.find((b) => b.id === Number(formData.fromBranchId));
             const toBranch = branches.find((b) => b.id === Number(formData.toBranchId));
 
-            const cleanedDetails: StockTransferDetailType[] = transferDetails.map((detail) => ({
-                id: detail.id ?? 0,
-                productId: Number(detail.productId),
-                productVariantId: Number(detail.productVariantId),
-                unitId: detail.unitId ? Number(detail.unitId) : null,
-                unitQty: detail.unitQty != null ? Number(detail.unitQty) : 0,
-                baseQty: detail.baseQty != null ? Number(detail.baseQty) : 0,
-                quantity: detail.baseQty != null ? Number(detail.baseQty) : 0,
-                products: detail.products ?? null,
-                productvariants: detail.productvariants ?? null,
-                stocks: detail.stocks ?? 0,
-            }));
+            const cleanedDetails: StockTransferDetailType[] = transferDetails.map((detail) => {
+                let trackedPayload: string | null = null;
+                if (detail.trackingType && detail.trackingType !== "NONE") {
+                    const mode = detail.serialSelectionMode ?? "AUTO";
+                    const selectedIds = mode === "MANUAL" ? (detail.selectedTrackedItemIds ?? []) : [];
+                    trackedPayload = JSON.stringify({ mode, selectedIds });
+                }
+                return {
+                    id: detail.id ?? 0,
+                    productId: Number(detail.productId),
+                    productVariantId: Number(detail.productVariantId),
+                    unitId: detail.unitId ? Number(detail.unitId) : null,
+                    unitQty: detail.unitQty != null ? Number(detail.unitQty) : 0,
+                    baseQty: detail.baseQty != null ? Number(detail.baseQty) : 0,
+                    quantity: detail.baseQty != null ? Number(detail.baseQty) : 0,
+                    products: detail.products ?? null,
+                    productvariants: detail.productvariants ?? null,
+                    stocks: detail.stocks ?? 0,
+                    trackedPayload,
+                };
+            });
 
             const transferData: StockTransferType = {
                 id: id ? Number(id) : undefined,
                 ref: "",
-                branchId: Number(formData.fromBranchId ?? user?.branchId),
+                branchId: Number(formData.fromBranchId ?? 0),
                 branch: fromBranch || {
                     id: Number(formData.fromBranchId ?? 0),
                     name: "Default Branch",
                     address: "Default Address",
                 },
-                fromBranchId: Number(formData.fromBranchId ?? user?.branchId),
+                fromBranchId: Number(formData.fromBranchId ?? 0),
                 toBranchId: Number(formData.toBranchId),
                 fromBranch: fromBranch || {
                     id: Number(formData.fromBranchId ?? 0),
@@ -562,7 +627,8 @@ const StockTransferForm: React.FC = () => {
 
             await upsertTransfer(transferData);
 
-            toast.success(id ? "Transfer updated successfully" : "Transfer created successfully", {
+            const statusLabel = formData.StatusType === "APPROVED" ? "approved" : "saved as pending";
+            toast.success(id ? `Transfer updated and ${statusLabel} successfully` : `Transfer created and ${statusLabel} successfully`, {
                 position: "top-right",
                 autoClose: 2000,
             });
@@ -602,35 +668,30 @@ const StockTransferForm: React.FC = () => {
             <div className="mb-5">
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="mb-5">
-                        <div
-                            className={`grid grid-cols-1 gap-4 ${
-                                user?.roleType === "ADMIN" ? "sm:grid-cols-3" : "sm:grid-cols-2"
-                            } mb-5`}
-                        >
-                            {user?.roleType === "ADMIN" && (
-                                <div>
-                                    <label>
-                                        From Branch <span className="text-danger text-md">*</span>
-                                    </label>
-                                    <select
-                                        id="from_branch"
-                                        className="form-input"
-                                        {...register("fromBranchId", {
-                                            required: "From Branch is required",
-                                        })}
-                                    >
-                                        <option value="">Select a branch</option>
-                                        {branches.map((option) => (
-                                            <option key={option.id} value={option.id}>
-                                                {option.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {errors.fromBranchId && (
-                                        <span className="error_validate">{errors.fromBranchId.message}</span>
-                                    )}
-                                </div>
-                            )}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-5">
+                            <div>
+                                <label>
+                                    From Branch <span className="text-danger text-md">*</span>
+                                </label>
+                                <select
+                                    id="from_branch"
+                                    className="form-input"
+                                    disabled={!!id}
+                                    {...register("fromBranchId", {
+                                        required: "From Branch is required",
+                                    })}
+                                >
+                                    <option value="">Select a branch</option>
+                                    {branches.map((option) => (
+                                        <option key={option.id} value={option.id}>
+                                            {option.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.fromBranchId && (
+                                    <span className="error_validate">{errors.fromBranchId.message}</span>
+                                )}
+                            </div>
 
                             <div>
                                 <label>
@@ -668,6 +729,7 @@ const StockTransferForm: React.FC = () => {
                                             <DatePicker
                                                 value={field.value ? new Date(field.value as string) : null}
                                                 onChange={(date) => field.onChange(date)}
+                                                disablePast
                                                 slotProps={{
                                                     textField: {
                                                         fullWidth: true,
@@ -914,10 +976,42 @@ const StockTransferForm: React.FC = () => {
                                                     )}
 
                                                     <td>
+                                                        {detail.trackingType && detail.trackingType !== "NONE" && (() => {
+                                                            const mode = detail.serialSelectionMode ?? "AUTO";
+                                                            const count = detail.selectedTrackedItemIds?.length ?? 0;
+                                                            const requiredQty = Math.round(Number(detail.baseQty ?? 0));
+                                                            const isManualMatch = mode === "MANUAL" && count === requiredQty && count > 0;
+                                                            const isManualMismatch = mode === "MANUAL" && count > 0 && count !== requiredQty;
+                                                            const btnClass = mode === "AUTO"
+                                                                ? "btn-outline-info"
+                                                                : isManualMatch
+                                                                    ? "btn-success"
+                                                                    : isManualMismatch
+                                                                        ? "btn-warning"
+                                                                        : "btn-outline-primary";
+                                                            return (
+                                                                <div className="mb-1">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setTrackedModalIndex(index)}
+                                                                        className={`btn btn-xs ${btnClass}`}
+                                                                    >
+                                                                        {mode === "AUTO"
+                                                                            ? "Auto Assign"
+                                                                            : count > 0
+                                                                                ? `${count} / ${requiredQty} Serial(s)`
+                                                                                : "+ Select Serial"}
+                                                                    </button>
+                                                                    {mode === "MANUAL" && count === 0 && (
+                                                                        <span className="text-xs text-gray-400 block">Required on approve</span>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })()}
                                                         <button
                                                             type="button"
                                                             onClick={() => removeProductFromCart(index)}
-                                                            className="hover:text-danger"
+                                                            className="hover:text-danger block"
                                                             title="Delete"
                                                         >
                                                             <Trash2 color="red" />
@@ -991,6 +1085,30 @@ const StockTransferForm: React.FC = () => {
                     </div>
                 </form>
             </div>
+
+            {trackedModalIndex !== null && (() => {
+                const detail = transferDetails[trackedModalIndex];
+                return detail ? (
+                    <TrackedItemsPickerModal
+                        isOpen={true}
+                        onClose={() => setTrackedModalIndex(null)}
+                        variantId={detail.productVariantId}
+                        branchId={Number(detail.branchId ?? watch("fromBranchId") ?? 0)}
+                        existingItemId={detail.id || null}
+                        mode={detail.serialSelectionMode ?? "AUTO"}
+                        selectedIds={detail.selectedTrackedItemIds ?? []}
+                        onSave={(mode, ids, items) => {
+                            setTransferDetails((prev) =>
+                                prev.map((d, i) =>
+                                    i === trackedModalIndex
+                                        ? { ...d, serialSelectionMode: mode, selectedTrackedItemIds: ids, selectedTrackedItems: items }
+                                        : d
+                                )
+                            );
+                        }}
+                    />
+                ) : null;
+            })()}
         </div>
     );
 };

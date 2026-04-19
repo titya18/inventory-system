@@ -47,6 +47,7 @@ const SaleReturn: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [clickData, setClickData] = useState<any>(null);
   const [returnItems, setReturnItems] = useState<any[]>([]);
+  const [secondHandLines, setSecondHandLines] = useState<Record<number, boolean>>({});
 
   const {
     control,
@@ -312,6 +313,7 @@ const SaleReturn: React.FC = () => {
 
       if (nextQty <= 0) {
         delete clone[item.id];
+        setSecondHandLines((prev) => { const c = { ...prev }; delete c[item.id]; return c; });
       } else {
         clone[item.id] = buildReturnLineFromInvoiceItem(item, nextQty);
       }
@@ -364,6 +366,7 @@ const SaleReturn: React.FC = () => {
         services: line.services ?? null,
 
         selectedTrackedItemIds: (line as any).selectedTrackedItemIds || [],
+        convertToSecondHand: !!secondHandLines[Number(line.saleItemId)],
       }));
 
       if (items.length === 0) {
@@ -377,19 +380,23 @@ const SaleReturn: React.FC = () => {
       const selectedBranch =
         branches.find((b) => b.id === Number(formData.branchId)) || null;
 
-      // ✅ VALIDATE SERIAL TRACKING
+      // VALIDATE SERIAL TRACKING
       for (const line of Object.values(returnLines)) {
+        const trackingType = (line as any)?.productvariants?.trackingType;
         const isTracked =
           line.ItemType === "PRODUCT" &&
-          (line as any)?.productvariants?.isTracked === true;
+          trackingType != null &&
+          trackingType !== "NONE";
 
-        if (!isTracked) continue; // ✅ skip non-tracked
+        if (!isTracked) continue;
 
         const qty = Number(line.unitQty || line.quantity || 0);
         const selected = (line as any).selectedTrackedItemIds || [];
 
         if (selected.length !== qty) {
-          toast.error(`Serial mismatch on item ${line.saleItemId}`);
+          const productName = (line as any)?.productvariants?.name || (line as any)?.products?.name || `item ${line.saleItemId}`;
+          toast.error(`Please select ${qty} serial(s) for "${productName}"`);
+          setIsLoading(false);
           return;
         }
       }
@@ -636,6 +643,26 @@ const SaleReturn: React.FC = () => {
                                 Sold Unit: {soldUnitName}
                               </p>
                             )}
+                            {detail.ItemType === "PRODUCT" &&
+                              detail.productvariants?.productType === "New" &&
+                              currentReturn > 0 && (
+                                <label className="flex items-center justify-center gap-1.5 mt-2 cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    className="form-checkbox"
+                                    checked={!!secondHandLines[detail.id]}
+                                    onChange={(e) =>
+                                      setSecondHandLines((prev) => ({
+                                        ...prev,
+                                        [detail.id]: e.target.checked,
+                                      }))
+                                    }
+                                  />
+                                  <span className="text-xs font-medium text-amber-600">
+                                    Return as SecondHand
+                                  </span>
+                                </label>
+                              )}
                           </td>
 
                           <td>
@@ -698,14 +725,11 @@ const SaleReturn: React.FC = () => {
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        const currentLine = returnLines[detail.id];
-                                        const qty = currentLine ? getLineQty(currentLine) : 0;
-                                        if (qty <= 0) { toast.warn("Please select quantity first"); return; }
                                         setClickData({
                                           ...detail,
                                           orderItemId: detail.id,
+                                          quantity: currentReturn,
                                           selectedTrackedItemIds: (currentLine as any)?.selectedTrackedItemIds || [],
-                                          quantity: qty,
                                         });
                                         setIsModalOpen(true);
                                       }}

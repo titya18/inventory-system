@@ -6,6 +6,7 @@ import timezone from "dayjs/plugin/timezone";
 import { getQueryNumber, getQueryString } from "../utils/request";
 import { buildBranchFilter } from "../utils/branchFilter";
 import { prisma } from "../lib/prisma";
+import logger from "../utils/logger";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -3592,5 +3593,148 @@ export const profitReport = async (req: Request, res: Response) => {
     } catch (error) {
         console.error("profitReport error:", error);
         res.status(500).json({ message: "Failed to load profit report" });
+    }
+};
+
+// ── CUSTOMER EQUIPMENT REPORT ─────────────────────────────────────────────────
+export const getCustomerEquipmentReport = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const loggedInUser = req.user;
+        if (!loggedInUser) { res.status(401).json({ message: "Unauthenticated." }); return; }
+
+        const pageSize   = getQueryNumber(req.query.pageSize, 10)!;
+        const pageNumber = getQueryNumber(req.query.page, 1)!;
+        const offset     = (pageNumber - 1) * pageSize;
+
+        const searchTerm  = getQueryString(req.query.searchTerm, "")!.trim();
+        const startDate   = getQueryString(req.query.startDate, "")!.trim();
+        const endDate     = getQueryString(req.query.endDate, "")!.trim();
+        const statusFilter     = getQueryString(req.query.status, "")!;       // ACTIVE | RETURNED | ""
+        const assignTypeFilter = getQueryString(req.query.assignType, "")!;   // SOLD | RENTED | INSTALLED | ""
+        const branchIdFilter   = req.query.branchId ? Number(req.query.branchId) : null;
+
+        const where: any = {};
+
+        // Branch scoping
+        if (loggedInUser.roleType === "USER" && loggedInUser.branchId) {
+            where.branchId = loggedInUser.branchId;
+        } else if (branchIdFilter) {
+            where.branchId = branchIdFilter;
+        }
+
+        // Status filter
+        if (statusFilter === "ACTIVE")   where.returnedAt = null;
+        if (statusFilter === "RETURNED") where.returnedAt = { not: null };
+
+        // Assign type filter
+        if (assignTypeFilter) where.assignType = assignTypeFilter as any;
+
+        // Date range filter (by assignedAt)
+        if (startDate || endDate) {
+            where.assignedAt = {
+                ...(startDate ? { gte: new Date(startDate) } : {}),
+                ...(endDate   ? { lte: new Date(endDate + "T23:59:59.999Z") } : {}),
+            };
+        }
+
+        // Search
+        if (searchTerm) {
+            where.OR = [
+                { ref:      { contains: searchTerm, mode: "insensitive" } },
+                { customer: { name:  { contains: searchTerm, mode: "insensitive" } } },
+                { customer: { phone: { contains: searchTerm, mode: "insensitive" } } },
+                {
+                    items: {
+                        some: {
+                            productAssetItem: {
+                                OR: [
+                                    { serialNumber: { contains: searchTerm, mode: "insensitive" } },
+                                    { assetCode:    { contains: searchTerm, mode: "insensitive" } },
+                                ],
+                            },
+                        },
+                    },
+                },
+                {
+                    items: {
+                        some: {
+                            productVariant: {
+                                products: { name: { contains: searchTerm, mode: "insensitive" } },
+                            },
+                        },
+                    },
+                },
+            ];
+        }
+
+        const itemInclude = {
+            items: {
+                include: {
+                    productAssetItem: {
+                        select: {
+                            id: true, serialNumber: true, assetCode: true, macAddress: true, status: true,
+                            productVariant: {
+                                select: { id: true, productType: true, products: { select: { id: true, name: true } } },
+                            },
+                        },
+                    },
+                    productVariant: {
+                        select: { id: true, productType: true, products: { select: { id: true, name: true } } },
+                    },
+                    unit: { select: { id: true, name: true } },
+                },
+            },
+        };
+
+        const [data, total, summaryRaw] = await Promise.all([
+            prisma.customerEquipment.findMany({
+                where,
+                skip:    offset,
+                take:    pageSize,
+                orderBy: { assignedAt: "desc" },
+                include: {
+                    customer: { select: { id: true, name: true, phone: true } },
+                    branch:   { select: { id: true, name: true } },
+                    order:    { select: { id: true, ref: true } },
+                    creator:  { select: { id: true, firstName: true, lastName: true } },
+                    ...itemInclude,
+                },
+            }),
+            prisma.customerEquipment.count({ where }),
+            // Summary counts (without pagination, but with same filters except status)
+            prisma.customerEquipment.groupBy({
+                by: ["assignType", "returnedAt"],
+                where: (() => {
+                    const sw = { ...where };
+                    delete sw.returnedAt; // remove status filter so we get full picture
+                    return sw;
+                })(),
+                _count: { id: true },
+            }),
+        ]);
+
+        // Build summary
+        let activeCount = 0, returnedCount = 0;
+        const byType: Record<string, number> = { SOLD: 0, RENTED: 0, INSTALLED: 0 };
+        summaryRaw.forEach((row: any) => {
+            const count = row._count.id;
+            if (row.returnedAt === null) activeCount += count;
+            else returnedCount += count;
+            if (byType[row.assignType] !== undefined) byType[row.assignType] += count;
+        });
+
+        res.status(200).json({
+            data,
+            total,
+            summary: {
+                total: activeCount + returnedCount,
+                active: activeCount,
+                returned: returnedCount,
+                byType,
+            },
+        });
+    } catch (error) {
+        logger.error("Error in getCustomerEquipmentReport:", error);
+        res.status(500).json({ message: "Internal server error" });
     }
 };

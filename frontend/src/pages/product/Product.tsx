@@ -24,6 +24,9 @@ dayjs.extend(timezone);
 const columns = [
     "Image",
     "Product",
+    "Type",
+    "SKU",
+    "Barcode",
     "Category",
     "Brand",
     "Status",
@@ -87,6 +90,26 @@ const Product: React.FC = () => {
     } | null>(null);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [secondHandVariant, setSecondHandVariant] = useState<{
+        id: number;
+        name: string;
+        sku: string;
+        barcode: string | null;
+        stockAlert: number | null;
+        purchasePrice: number | string;
+        purchasePriceUnitId: number | null;
+        retailPrice: number | string;
+        retailPriceUnitId: number | null;
+        wholeSalePrice: number | string;
+        wholeSalePriceUnitId: number | null;
+        baseUnitId: number | null;
+        trackingType: TrackingType;
+        variantAttributeIds: number[];
+        variantValueIds: number[];
+        stocks: { branchId: number; quantity: number }[];
+        unitConversions: { fromUnitId: number; toUnitId: number; multiplier: number }[];
+        trackedItems: ProductTrackedItemType[];
+    } | null>(null);
 
     const [searchParams, setSearchParams] = useSearchParams();
     const search = searchParams.get("search") || "";
@@ -159,6 +182,9 @@ const Product: React.FC = () => {
     const exportData = products.map((product, index) => ({
         "No": (page - 1) * pageSize + index + 1,
         "Product": product.name,
+        "Type": (product as any).productvariants?.map((v: any) => v.productType).join(" / ") || "",
+        "SKU": (product as any).productvariants?.map((v: any) => v.sku).join(" / ") || "",
+        "Barcode": (product as any).productvariants?.map((v: any) => v.barcode || "").join(" / ") || "",
         "Category": product.categoryId ? product.categories?.name : "",
         "Brand": product.brands ? product.brands.en_name : "",
         "Status": product.isActive === 1 ? "Active" : "Inactive",
@@ -204,6 +230,7 @@ const Product: React.FC = () => {
 
         trackingType?: TrackingType,
         trackedItems?: ProductTrackedItemType[],
+        variantId?: number | null,
     ) => {
         try {
             await queryClient.invalidateQueries({ queryKey: ["validateToken"] });
@@ -242,7 +269,8 @@ const Product: React.FC = () => {
 
                 trackingType: trackingType ?? "NONE",
                 trackedItems: trackedItems ?? [],
-            };
+                ...(variantId ? { variantId } : {}),
+            } as any;
 
             await apiClient.upsertProduct(productData);
             toast.success(id ? "Product updated successfully" : "Product created successfully", {
@@ -252,18 +280,8 @@ const Product: React.FC = () => {
             fetchProduct();
             setIsModalOpen(false);
         } catch (error: any) {
-            // Check if error.message is set by your API function
-            if (error.message) {
-                toast.error(error.message, {
-                    position: "top-right",
-                    autoClose: 4500
-                });
-            } else {
-                toast.error("Error adding/editting iterm", {
-                    position: "top-right",
-                    autoClose: 4500
-                });
-            }
+            // Re-throw so Modal.tsx keeps the form open and shows the error
+            throw error;
         }
     };
 
@@ -300,7 +318,39 @@ const Product: React.FC = () => {
             return;
         }
         const getProduct = await apiClient.getProductById(productData.id);
-        const variant = getProduct.productvariants?.[0];
+        // Use the New variant as primary; detect SecondHand variant
+        const variant = getProduct.productvariants?.find((v: any) => v.productType === "New") ?? getProduct.productvariants?.[0];
+        const shVariant = getProduct.productvariants?.find((v: any) => v.productType === "SecondHand") ?? null;
+        setSecondHandVariant(shVariant ? {
+            id: shVariant.id,
+            name: shVariant.name ?? "",
+            sku: shVariant.sku ?? "",
+            barcode: shVariant.barcode ?? null,
+            stockAlert: shVariant.stockAlert ?? 0,
+            purchasePrice: Number(shVariant.purchasePrice) || 0,
+            purchasePriceUnitId: (shVariant as any).purchasePriceUnitId ?? shVariant.baseUnitId ?? null,
+            retailPrice: Number(shVariant.retailPrice) || 0,
+            retailPriceUnitId: shVariant.retailPriceUnitId ?? shVariant.baseUnitId ?? null,
+            wholeSalePrice: Number(shVariant.wholeSalePrice) || 0,
+            wholeSalePriceUnitId: shVariant.wholeSalePriceUnitId ?? shVariant.baseUnitId ?? null,
+            baseUnitId: shVariant.baseUnitId ?? null,
+            trackingType: (shVariant as any).trackingType ?? "NONE",
+            variantAttributeIds: shVariant.productVariantValues
+                ?.map((v: any) => v.variantValue?.variantAttributeId)
+                .filter((id: any): id is number => typeof id === "number") ?? [],
+            variantValueIds: shVariant.productVariantValues?.map((v: any) => v.variantValueId) ?? [],
+            stocks: Array.isArray(shVariant.stocks)
+                ? shVariant.stocks.map((s: any) => ({ branchId: s.branchId, quantity: Number(s.quantity) }))
+                : [],
+            unitConversions: Array.isArray(getProduct.unitConversions)
+                ? getProduct.unitConversions.map((c: any) => ({ fromUnitId: Number(c.fromUnitId), toUnitId: Number(c.toUnitId), multiplier: Number(c.multiplier) }))
+                : [],
+            trackedItems: Array.isArray((shVariant as any).productAssetItems)
+                ? (shVariant as any).productAssetItems
+                    .filter((x: any) => x.status === "IN_STOCK")
+                    .map((x: any) => ({ id: x.id, branchId: x.branchId, assetCode: x.assetCode ?? "", macAddress: x.macAddress ?? "", serialNumber: x.serialNumber ?? "" }))
+                : [],
+        } : null);
 
         const variantAttributeIds =
             variant?.productVariantValues
@@ -515,6 +565,35 @@ const Product: React.FC = () => {
                                                                 {visibleCols.includes("Product") && (
                                                                     <td>{rows.name}</td>
                                                                 )}
+                                                                {visibleCols.includes("Type") && (
+                                                                    <td>
+                                                                        <div className="flex flex-col gap-1">
+                                                                            {(rows as any).productvariants?.map((v: any, i: number) => (
+                                                                                <span key={i} className={`badge ${v.productType === "SecondHand" ? "badge-outline-warning" : "badge-outline-primary"} text-xs`}>
+                                                                                    {v.productType === "SecondHand" ? "SecondHand" : "New"}
+                                                                                </span>
+                                                                            ))}
+                                                                        </div>
+                                                                    </td>
+                                                                )}
+                                                                {visibleCols.includes("SKU") && (
+                                                                    <td>
+                                                                        <div className="flex flex-col gap-1">
+                                                                            {(rows as any).productvariants?.map((v: any, i: number) => (
+                                                                                <span key={i} className="text-sm">{v.sku || "-"}</span>
+                                                                            ))}
+                                                                        </div>
+                                                                    </td>
+                                                                )}
+                                                                {visibleCols.includes("Barcode") && (
+                                                                    <td>
+                                                                        <div className="flex flex-col gap-1">
+                                                                            {(rows as any).productvariants?.map((v: any, i: number) => (
+                                                                                <span key={i} className="text-sm">{v.barcode || "-"}</span>
+                                                                            ))}
+                                                                        </div>
+                                                                    </td>
+                                                                )}
                                                                 {visibleCols.includes("Category") && (
                                                                     <td>{rows.category ? rows.category.name : ""}</td>
                                                                 )}
@@ -592,11 +671,12 @@ const Product: React.FC = () => {
                 </div>
             </div>
 
-            <Modal 
+            <Modal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                onClose={() => { setIsModalOpen(false); setSecondHandVariant(null); }}
                 onSubmit={handleAddorEditProduct}
                 product={selectProduct}
+                secondHandFullData={secondHandVariant}
             />
         </>
     );

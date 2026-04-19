@@ -31,7 +31,8 @@ import {
     ArrowDownNarrowWide,
     Activity,
     ChartCandlestick,
-    Wallet
+    Wallet,
+    MonitorSmartphone
 } from 'lucide-react';
 
 // Define a type for the state
@@ -122,10 +123,11 @@ const Sidebar: React.FC = () => {
 
                         {/* Start I comment this blog for example use later on */}
                             {(
-                                hasPermission('Branch-View') || 
+                                hasPermission('Branch-View') ||
                                 canViewUser ||
                                 hasPermission('Customer-View') ||
-                                hasPermission('Supplier-View')
+                                hasPermission('Supplier-View') ||
+                                hasPermission('Customer-Equipment-View')
                             ) && (
                                 <h2 className="-mx-4 mb-1 flex items-center bg-white-light/30 px-7 py-3 font-extrabold uppercase dark:bg-dark dark:bg-opacity-[0.08]">
                                     <svg
@@ -196,7 +198,7 @@ const Sidebar: React.FC = () => {
                                 </li>
                             )}
 
-                            {hasPermission('Customer-View') && 
+                            {hasPermission('Customer-View') &&
                                 <li className="nav-item">
                                     <ul>
                                         <li className="nav-item" onClick={() => handleToggleMenu(null)}>
@@ -204,6 +206,24 @@ const Sidebar: React.FC = () => {
                                                 <div className="flex items-center">
                                                     <Users />
                                                     <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Customers</span>
+                                                </div>
+                                            </NavLink>
+                                        </li>
+                                    </ul>
+                                </li>
+                            }
+
+                            {hasPermission('Customer-Equipment-View') &&
+                                <li className="nav-item">
+                                    <ul>
+                                        <li className="nav-item" onClick={() => handleToggleMenu(null)}>
+                                            <NavLink
+                                                to="/customerequipment"
+                                                className={['customerequipment'].some(seg => location.pathname.includes(seg)) ? 'active' : ''}
+                                            >
+                                                <div className="flex items-center">
+                                                    <MonitorSmartphone />
+                                                    <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Customer Equipment</span>
                                                 </div>
                                             </NavLink>
                                         </li>
@@ -1055,6 +1075,24 @@ const Sidebar: React.FC = () => {
                                             <div className="flex items-center">
                                                 <HandCoins />
                                                 <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Return Report</span>
+                                            </div>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+
+                        {hasPermission('Customer-Equipment-Report') &&
+                            <li className="nav-item">
+                                <ul>
+                                    <li className="nav-item" onClick={() => handleToggleMenu(null)}>
+                                        <NavLink
+                                            to="/reportCustomerEquipment"
+                                            className={['reportCustomerEquipment'].some(seg => location.pathname.includes(seg)) ? 'active' : ''}
+                                        >
+                                            <div className="flex items-center">
+                                                <MonitorSmartphone />
+                                                <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Equipment Report</span>
                                             </div>
                                         </NavLink>
                                     </li>

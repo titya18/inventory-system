@@ -74,12 +74,17 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
 
         // 2️ Fetch paginated products
         const products: any = await prisma.$queryRawUnsafe(`
-            SELECT 
+            SELECT
                 p.*,
                 json_build_object('id', c.id, 'name', c."name") AS category,
                 json_build_object('id', b.id, 'en_name', b."en_name", 'kh_name', b."kh_name") AS brand,
                 json_build_object('id', cr.id, 'firstName', cr."firstName", 'lastName', cr."lastName") AS creator,
-                json_build_object('id', up.id, 'firstName', up."firstName", 'lastName', up."lastName") AS updater
+                json_build_object('id', up.id, 'firstName', up."firstName", 'lastName', up."lastName") AS updater,
+                (
+                    SELECT json_agg(json_build_object('productType', pv."productType", 'sku', pv."sku", 'barcode', pv."barcode") ORDER BY pv."productType" ASC)
+                    FROM "ProductVariants" pv
+                    WHERE pv."productId" = p.id AND pv."deletedAt" IS NULL
+                ) AS productvariants
             FROM "Products" p
             LEFT JOIN "Categories" c ON p."categoryId" = c.id
             LEFT JOIN "Brands" b ON p."brandId" = b.id
@@ -674,6 +679,7 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
 
     trackingType,
     trackedItems,
+    variantId,
   } = req.body;
 
   const shouldUpdateStock =
@@ -861,9 +867,10 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
         });
       }
 
-      const existingVariant = await tx.productVariants.findFirst({
-        where: { productId: product.id },
-      });
+      const parsedVariantId = variantId ? Number(variantId) : null;
+      const existingVariant = parsedVariantId
+        ? await tx.productVariants.findUnique({ where: { id: parsedVariantId } })
+        : await tx.productVariants.findFirst({ where: { productId: product.id } });
 
       const variantData = {
         productId: product.id,
@@ -892,7 +899,7 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
         updatedBy: req.user?.id || null,
       };
 
-      let variantId: number;
+      let savedVariantId: number;
 
       try {
         if (existingVariant) {
@@ -900,10 +907,10 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
             where: { id: existingVariant.id },
             data: variantData,
           });
-          variantId = updatedVariant.id;
+          savedVariantId = updatedVariant.id;
 
           await tx.productVariantValues.deleteMany({
-            where: { productVariantId: variantId },
+            where: { productVariantId: savedVariantId },
           });
         } else {
           const newVariant = await tx.productVariants.create({
@@ -914,7 +921,7 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
               createdBy: req.user?.id || null,
             },
           });
-          variantId = newVariant.id;
+          savedVariantId = newVariant.id;
         }
       } catch (error: any) {
         if (error.code === "P2002") {
@@ -932,7 +939,7 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
       if (parsedVariantValueIds.length > 0) {
         await tx.productVariantValues.createMany({
           data: parsedVariantValueIds.map((vId) => ({
-            productVariantId: variantId,
+            productVariantId: savedVariantId,
             variantValueId: vId,
           })),
         });
@@ -957,7 +964,7 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
             if (item.serialNumber) {
               const existsSerial = await tx.productAssetItem.findFirst({
                 where: {
-                  productVariantId: variantId,
+                  productVariantId: savedVariantId,
                   serialNumber: item.serialNumber,
                   ...(item.id ? { id: { not: item.id } } : {}),
                 },
@@ -971,7 +978,7 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
             if (item.assetCode) {
               const existsAsset = await tx.productAssetItem.findFirst({
                 where: {
-                  productVariantId: variantId,
+                  productVariantId: savedVariantId,
                   assetCode: item.assetCode,
                   ...(item.id ? { id: { not: item.id } } : {}),
                 },
@@ -985,7 +992,7 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
             if (item.macAddress) {
               const existsMac = await tx.productAssetItem.findFirst({
                 where: {
-                  productVariantId: variantId,
+                  productVariantId: savedVariantId,
                   macAddress: item.macAddress,
                   ...(item.id ? { id: { not: item.id } } : {}),
                 },
@@ -1002,7 +1009,7 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
           // load current in-stock tracked rows
           const existingInStockItems = await tx.productAssetItem.findMany({
             where: {
-              productVariantId: variantId,
+              productVariantId: savedVariantId,
               status: "IN_STOCK",
             },
             select: {
@@ -1039,21 +1046,43 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
           const newRows = cleanedTrackedItems.filter((x) => !x.id);
 
           if (newRows.length > 0) {
-            await tx.productAssetItem.createMany({
-              data: newRows.map((item) => ({
-                productVariantId: variantId,
-                branchId: item.branchId,
-                assetCode: item.assetCode || null,
-                macAddress: item.macAddress || null,
-                serialNumber: item.serialNumber as string,
-                status: "IN_STOCK",
-                sourceType: productId ? "PRODUCT_EDIT" : "OPENING",
-                createdBy: req.user?.id || null,
-                updatedBy: req.user?.id || null,
-                createdAt: currentDate,
-                updatedAt: currentDate,
-              })),
-            });
+            // Resync the sequence to prevent id collision when rows were inserted outside normal flow
+            await tx.$executeRaw`SELECT setval(pg_get_serial_sequence('"ProductAssetItem"', 'id'), COALESCE((SELECT MAX(id) FROM "ProductAssetItem"), 0), true)`;
+
+            for (const item of newRows) {
+              try {
+                await tx.productAssetItem.create({
+                  data: {
+                    productVariantId: savedVariantId,
+                    branchId: item.branchId,
+                    assetCode: item.assetCode || null,
+                    macAddress: item.macAddress || null,
+                    serialNumber: item.serialNumber as string,
+                    status: "IN_STOCK",
+                    sourceType: productId ? "PRODUCT_EDIT" : "OPENING",
+                    createdBy: req.user?.id || null,
+                    updatedBy: req.user?.id || null,
+                    createdAt: currentDate,
+                    updatedAt: currentDate,
+                  },
+                });
+              } catch (err: any) {
+                if (err.code === "P2002") {
+                  const fields: string[] = err.meta?.target ?? [];
+                  if (fields.includes("serialNumber")) {
+                    throw new Error(`Serial number "${item.serialNumber}" already exists for this product.`);
+                  }
+                  if (fields.includes("assetCode") && item.assetCode) {
+                    throw new Error(`Asset code "${item.assetCode}" already exists for this product.`);
+                  }
+                  if (fields.includes("macAddress") && item.macAddress) {
+                    throw new Error(`MAC address "${item.macAddress}" already exists for this product.`);
+                  }
+                  throw new Error(`Duplicate entry for serial "${item.serialNumber}". Please check the data and try again.`);
+                }
+                throw err;
+              }
+            }
           }
 
           // mark removed rows instead of deleting
@@ -1082,7 +1111,7 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
           const existingStock = await tx.stocks.findUnique({
             where: {
               productVariantId_branchId: {
-                productVariantId: variantId,
+                productVariantId: savedVariantId,
                 branchId: branchIdNum,
               },
             },
@@ -1098,7 +1127,7 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
           if (!existingStock) {
             await tx.stocks.create({
               data: {
-                productVariantId: variantId,
+                productVariantId: savedVariantId,
                 branchId: branchIdNum,
                 quantity: newQty,
                 createdBy: req.user?.id || null,
@@ -1111,7 +1140,7 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
             if (newQty.gt(0)) {
               await addPositiveAdjustmentLayer({
                 tx,
-                productVariantId: variantId,
+                productVariantId: savedVariantId,
                 branchId: branchIdNum,
                 qtyToAdd: newQty,
                 unitCost: openingUnitCost,
@@ -1147,7 +1176,7 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
 
             await addPositiveAdjustmentLayer({
               tx,
-              productVariantId: variantId,
+              productVariantId: savedVariantId,
               branchId: branchIdNum,
               qtyToAdd: diffQty,
               unitCost: openingUnitCost,
@@ -1164,7 +1193,7 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
 
             await consumeFifoForNegativeAdjustment({
               tx,
-              productVariantId: variantId,
+              productVariantId: savedVariantId,
               branchId: branchIdNum,
               qtyToReduce: reduceQty,
               userId: req.user?.id || null,

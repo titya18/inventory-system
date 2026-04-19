@@ -1,4 +1,4 @@
-import { StockAdjustmentType } from "../data_types/types";
+import { StockAdjustmentType, ProductTrackedItemType } from "../data_types/types";
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 export const upsertAdjustment = async (adjustmentData: StockAdjustmentType): Promise<StockAdjustmentType> => {
@@ -64,6 +64,14 @@ export const getStockAdjustmentById = async (id: number): Promise<StockAdjustmen
         throw new Error("Error fetching adjustment");
     }
 
+    return response.json();
+};
+
+export const getReactivatableItems = async (variantId: number, branchId: number): Promise<ProductTrackedItemType[]> => {
+    const response = await fetch(`${API_BASE_URL}/api/stockadjustment/reactivatable-items?variantId=${variantId}&branchId=${branchId}`, {
+        credentials: "include",
+    });
+    if (!response.ok) throw new Error("Error fetching reactivatable items");
     return response.json();
 };
 

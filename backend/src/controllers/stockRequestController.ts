@@ -218,9 +218,8 @@ export const upsertRequest = async (req: Request, res: Response): Promise<void> 
                         unitId: Number(detail.unitId),
                         unitQty: new Decimal(detail.unitQty ?? 0),
                         baseQty: new Decimal(detail.baseQty ?? 0),
-
-                        // optional legacy field
                         quantity: Math.round(Number(detail.baseQty ?? 0)),
+                        trackedPayload: detail.trackedPayload ?? null,
                     })),
                 },
             };
@@ -313,6 +312,71 @@ export const upsertRequest = async (req: Request, res: Response): Promise<void> 
                             approvedBy: loggedInUser.id,
                         },
                     });
+
+                    // Handle tracked serial items
+                    const variant = await tx.productVariants.findUnique({
+                        where: { id: Number(detail.productVariantId) },
+                        select: { trackingType: true },
+                    });
+
+                    if (variant?.trackingType && variant.trackingType !== "NONE") {
+                        const transferQty = Math.abs(Math.round(Number(detail.baseQty ?? 0)));
+                        const rawPayload = (detail as any).trackedPayload as string | null;
+                        const payload = rawPayload ? JSON.parse(rawPayload) : null;
+                        const serialMode: "AUTO" | "MANUAL" = payload?.mode ?? "AUTO";
+                        const selectedIds: number[] = payload?.selectedIds ?? [];
+
+                        let idsToProcess: number[];
+
+                        if (serialMode === "MANUAL" && selectedIds.length > 0) {
+                            const items = await tx.productAssetItem.findMany({
+                                where: {
+                                    id: { in: selectedIds },
+                                    productVariantId: Number(detail.productVariantId),
+                                    branchId: Number(branchId),
+                                    status: "IN_STOCK",
+                                },
+                                select: { id: true },
+                            });
+
+                            if (items.length !== selectedIds.length) {
+                                throw new Error(`Some selected serials are no longer available. Please re-select.`);
+                            }
+                            if (items.length !== transferQty) {
+                                throw new Error(`Selected ${items.length} serial(s) but request quantity is ${transferQty}. They must match.`);
+                            }
+                            idsToProcess = items.map((i) => i.id);
+                        } else {
+                            // AUTO: pick oldest available IN_STOCK serials from branch
+                            const items = await tx.productAssetItem.findMany({
+                                where: {
+                                    productVariantId: Number(detail.productVariantId),
+                                    branchId: Number(branchId),
+                                    status: "IN_STOCK",
+                                },
+                                orderBy: [{ id: "asc" }],
+                                take: transferQty,
+                                select: { id: true },
+                            });
+
+                            if (items.length < transferQty) {
+                                throw new Error(
+                                    `Insufficient tracked serials in branch. Available: ${items.length}, Required: ${transferQty}`
+                                );
+                            }
+                            idsToProcess = items.map((i) => i.id);
+                        }
+
+                        // Mark serial items as transferred out of this branch
+                        await tx.productAssetItem.updateMany({
+                            where: { id: { in: idsToProcess } },
+                            data: {
+                                status: "TRANSFERRED",
+                                updatedAt: currentDate,
+                                updatedBy: loggedInUser.id,
+                            },
+                        });
+                    }
                 }
 
                 await tx.stockRequests.update({
@@ -362,6 +426,7 @@ export const getStockRequestById = async (
                                 barcode: true,
                                 sku: true,
                                 productType: true,
+                                trackingType: true,
                                 baseUnitId: true,
                                 baseUnit: {
                                     select: {

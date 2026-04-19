@@ -5,12 +5,12 @@ import { NavLink, useNavigate, useParams } from "react-router-dom";
 import {
     BranchType,
     ProductVariantType,
-    StockReturnType,
-    StockReturnDetailType,
+    StockRequestType,
+    StockRequestDetailType,
 } from "@/data_types/types";
 import { getAllBranches } from "@/api/branch";
 import { searchProduct } from "@/api/searchProduct";
-import { upsertReturn, getStockReturnById } from "@/api/stockReturn";
+import { upsertRequest, getStockRequestById } from "@/api/stockRequest";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useAppContext } from "@/hooks/useAppContext";
@@ -20,6 +20,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { useQueryClient } from "@tanstack/react-query";
 import { FilePenLine, Plus, Trash2 } from "lucide-react";
 import ShowWarningMessage from "../components/ShowWarningMessage";
+import TrackedItemsPickerModal from "@/components/TrackedItemsPickerModal";
 
 type RawUnitRow = {
     unitId?: number;
@@ -30,14 +31,8 @@ type RawUnitRow = {
     operator?: string;
     isBaseUnit?: boolean;
     isBase?: boolean;
-    Units?: {
-        id?: number;
-        name?: string;
-    };
-    unit?: {
-        id?: number;
-        name?: string;
-    };
+    Units?: { id?: number; name?: string };
+    unit?: { id?: number; name?: string };
 };
 
 type VariantUnitType = {
@@ -61,7 +56,7 @@ type ProductVariantWithUnits = ProductVariantType & {
     products?: any;
 };
 
-const StockReturnForm: React.FC = () => {
+const StockRequestForm: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
@@ -71,9 +66,11 @@ const StockReturnForm: React.FC = () => {
     const [branches, setBranches] = useState<BranchType[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [productResults, setProductResults] = useState<ProductVariantWithUnits[]>([]);
-    const [returnDetails, setReturnDetails] = useState<StockReturnDetailType[]>([]);
+    const [requestDetails, setRequestDetails] = useState<StockRequestDetailType[]>([]);
+    const [trackedModalIndex, setTrackedModalIndex] = useState<number | null>(null);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [branchInitialized, setBranchInitialized] = useState(false);
+    const [initialDbStatus, setInitialDbStatus] = useState<string>("PENDING");
 
     const {
         control,
@@ -83,10 +80,8 @@ const StockReturnForm: React.FC = () => {
         watch,
         reset,
         formState: { errors },
-    } = useForm<StockReturnType>({
-        defaultValues: {
-            StatusType: "PENDING",
-        },
+    } = useForm<StockRequestType>({
+        defaultValues: { StatusType: "PENDING" },
     });
 
     const wrapperStyle = useMemo(() => ({ width: "100%" }), []);
@@ -95,25 +90,11 @@ const StockReturnForm: React.FC = () => {
 
     const normalizeUnit = (raw: RawUnitRow): VariantUnitType | null => {
         const unitId = Number(raw.unitId ?? raw.id ?? raw.unit?.id ?? raw.Units?.id ?? 0);
-        const unitName =
-            raw.unitName ??
-            raw.name ??
-            raw.unit?.name ??
-            raw.Units?.name ??
-            "";
-
+        const unitName = raw.unitName ?? raw.name ?? raw.unit?.name ?? raw.Units?.name ?? "";
         const operationValue = Number(raw.operationValue ?? 1) || 1;
         const isBaseUnit = Boolean(raw.isBaseUnit ?? raw.isBase ?? false);
-
         if (!unitId || !unitName) return null;
-
-        return {
-            unitId,
-            unitName,
-            operationValue,
-            operator: raw.operator ?? "*",
-            isBaseUnit,
-        };
+        return { unitId, unitName, operationValue, operator: raw.operator ?? "*", isBaseUnit };
     };
 
     const getVariantUnits = (variant: ProductVariantType | null | undefined): VariantUnitType[] => {
@@ -137,22 +118,13 @@ const StockReturnForm: React.FC = () => {
             ...(Array.isArray(v.products?.units) ? v.products.units : []),
         ];
 
-        const normalized = rawUnits
-            .map(normalizeUnit)
-            .filter((u): u is VariantUnitType => u !== null);
-
-        const unique = normalized.filter(
-            (item, index, arr) =>
-                arr.findIndex((x) => x.unitId === item.unitId) === index
-        );
-
-        return unique;
+        const normalized = rawUnits.map(normalizeUnit).filter((u): u is VariantUnitType => u !== null);
+        return normalized.filter((item, index, arr) => arr.findIndex((x) => x.unitId === item.unitId) === index);
     };
 
     const getDefaultUnitData = (variant: ProductVariantType | null | undefined) => {
         const units = getVariantUnits(variant);
         const defaultUnit = units.find((u) => u.isBaseUnit) || units[0] || null;
-
         return {
             unitId: defaultUnit?.unitId ?? null,
             unitName: defaultUnit?.unitName ?? "",
@@ -168,46 +140,29 @@ const StockReturnForm: React.FC = () => {
     ) => {
         const qty = Number(unitQty ?? 0);
         const opValue = Number(operationValue || 1);
-
-        if (operator === "/") {
-            return opValue === 0 ? 0 : qty / opValue;
-        }
-
-        return qty * opValue;
+        return operator === "/" ? (opValue === 0 ? 0 : qty / opValue) : qty * opValue;
     };
 
-    const getSelectedUnit = (detail: StockReturnDetailType): VariantUnitType | null => {
+    const getSelectedUnit = (detail: StockRequestDetailType): VariantUnitType | null => {
         const units = getVariantUnits(detail.productvariants);
         return units.find((u) => Number(u.unitId) === Number(detail.unitId ?? 0)) || null;
     };
 
-    const recalcDetail = (detail: StockReturnDetailType): StockReturnDetailType => {
+    const recalcDetail = (detail: StockRequestDetailType): StockRequestDetailType => {
         const selectedUnit = getSelectedUnit(detail);
         const operationValue = Number(selectedUnit?.operationValue ?? 1) || 1;
         const operator = selectedUnit?.operator ?? "*";
-
         const baseQty = calculateBaseQty(detail.unitQty, operationValue, operator);
-
-        return {
-            ...detail,
-            baseQty,
-            quantity: baseQty,
-        };
+        return { ...detail, baseQty, quantity: baseQty };
     };
 
-    const getDisplayStockInSelectedUnit = (detail: StockReturnDetailType) => {
+    const getDisplayStockInSelectedUnit = (detail: StockRequestDetailType) => {
         const selectedUnit = getSelectedUnit(detail);
         const operationValue = Number(selectedUnit?.operationValue ?? 1) || 1;
         const operator = selectedUnit?.operator ?? "*";
         const stockBaseQty = Number(detail.stocks ?? 0);
-
         if (!operationValue) return 0;
-
-        const result =
-            operator === "/"
-                ? stockBaseQty * operationValue
-                : stockBaseQty / operationValue;
-
+        const result = operator === "/" ? stockBaseQty * operationValue : stockBaseQty / operationValue;
         return Number(result.toFixed(4));
     };
 
@@ -224,33 +179,46 @@ const StockReturnForm: React.FC = () => {
         }
     }, []);
 
-    const fetchStockReturn = useCallback(async () => {
+    const fetchStockRequest = useCallback(async () => {
         if (!id) return;
-
         setIsLoading(true);
         try {
-            const returnData: StockReturnType = await getStockReturnById(parseInt(id, 10));
+            const requestData: StockRequestType = await getStockRequestById(parseInt(id, 10));
 
-            setValue("branchId", returnData.branchId);
-            setValue(
-                "returnDate",
-                returnData.returnDate ? new Date(returnData.returnDate) : null
-            );
-            setValue("StatusType", returnData.StatusType || "PENDING");
-            setValue("note", returnData.note || "");
+            setValue("branchId", requestData.branchId);
+            setValue("requestDate", requestData.requestDate ?? null);
+            setValue("StatusType", requestData.StatusType || "PENDING");
+            setValue("note", requestData.note || "");
+            setInitialDbStatus(requestData.StatusType || "PENDING");
 
-            setReturnDetails(
-                (returnData.returnDetails || []).map((detail) => ({
-                    ...detail,
-                    unitId: detail.unitId ?? null,
-                    unitQty: detail.unitQty ?? 1,
-                    baseQty: detail.baseQty ?? detail.quantity ?? 1,
-                    quantity: detail.quantity ?? Number(detail.baseQty ?? 1),
-                }))
+            setRequestDetails(
+                (requestData.requestDetails || []).map((detail) => {
+                    let serialSelectionMode: "AUTO" | "MANUAL" = "AUTO";
+                    let selectedTrackedItemIds: number[] = [];
+                    if ((detail as any).trackedPayload) {
+                        try {
+                            const payload = JSON.parse((detail as any).trackedPayload);
+                            serialSelectionMode = payload.mode ?? "AUTO";
+                            selectedTrackedItemIds = payload.selectedIds ?? [];
+                        } catch (_e) {}
+                    }
+                    return {
+                        ...detail,
+                        unitId: detail.unitId ?? null,
+                        unitQty: detail.unitQty ?? 1,
+                        baseQty: detail.baseQty ?? detail.quantity ?? 1,
+                        quantity: detail.quantity ?? Number(detail.baseQty ?? 1),
+                        trackingType: (detail.productvariants as any)?.trackingType ?? "NONE",
+                        serialSelectionMode,
+                        selectedTrackedItemIds,
+                        selectedTrackedItems: [],
+                        branchId: requestData.branchId,
+                    };
+                })
             );
         } catch (error) {
-            console.error("Error fetching stock return:", error);
-            toast.error("Failed to fetch stock return");
+            console.error("Error fetching stock request:", error);
+            toast.error("Failed to fetch stock request");
         } finally {
             setIsLoading(false);
         }
@@ -261,23 +229,22 @@ const StockReturnForm: React.FC = () => {
     }, [fetchBranches]);
 
     useEffect(() => {
-        fetchStockReturn();
-    }, [fetchStockReturn]);
+        fetchStockRequest();
+    }, [fetchStockRequest]);
 
     useEffect(() => {
-        if (user?.roleType === "USER" && user.branchId) {
-            setValue("branchId", Number(user.branchId));
+        if (!id && user?.branchId && branches.length > 0) {
+            setValue("branchId", user.branchId, { shouldValidate: false });
         }
-    }, [user, setValue]);
+    }, [branches, id, user?.branchId, setValue]);
 
     useEffect(() => {
         if (!branchInitialized) {
             setBranchInitialized(true);
             return;
         }
-
         if (!id) {
-            setReturnDetails([]);
+            setRequestDetails([]);
             setSearchTerm("");
         }
     }, [branchId, id, branchInitialized]);
@@ -289,24 +256,15 @@ const StockReturnForm: React.FC = () => {
             return;
         }
 
-        const selectedBranchId =
-            user?.roleType === "USER" ? user.branchId : watch("branchId");
-
+        const selectedBranchId = watch("branchId");
         if (!selectedBranchId) {
-            toast.error("No branch selected", {
-                position: "top-right",
-                autoClose: 4000,
-            });
+            toast.error("No branch selected", { position: "top-right", autoClose: 4000 });
             return;
         }
 
         try {
             const response = (await searchProduct(term, selectedBranchId)) as ProductVariantWithUnits[];
-
-            const matches = response.filter(
-                (p) => p.barcode === term || p.sku === term
-            );
-
+            const matches = response.filter((p) => p.barcode === term || p.sku === term);
             if (matches.length === 0) {
                 setProductResults(response);
                 setShowSuggestions(true);
@@ -324,9 +282,7 @@ const StockReturnForm: React.FC = () => {
         }
     };
 
-    const handleFocus = () => {
-        setShowSuggestions(false);
-    };
+    const handleFocus = () => setShowSuggestions(false);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const term = e.target.value;
@@ -335,18 +291,13 @@ const StockReturnForm: React.FC = () => {
     };
 
     const addToCartDirectly = (variant: ProductVariantWithUnits) => {
-        const stockQty =
-            Number(
-                Array.isArray(variant.stocks)
-                    ? (variant.stocks[0] as any)?.quantity ?? 0
-                    : (variant.stocks as any)?.quantity ?? 0
-            ) || 0;
+        const stockQty = Number(
+            Array.isArray(variant.stocks)
+                ? (variant.stocks[0] as any)?.quantity ?? 0
+                : (variant.stocks as any)?.quantity ?? 0
+        ) || 0;
 
-        const existingIndex = returnDetails.findIndex(
-            (item) => item.productVariantId === variant.id
-        );
-
-        if (existingIndex !== -1) {
+        if (requestDetails.findIndex((item) => item.productVariantId === variant.id) !== -1) {
             toast.warning("Product already added");
             return;
         }
@@ -354,195 +305,215 @@ const StockReturnForm: React.FC = () => {
         const defaultUnit = getDefaultUnitData(variant);
         const baseQty = calculateBaseQty(1, defaultUnit.operationValue, defaultUnit.operator);
 
-        const newDetail: StockReturnDetailType = {
-            id: 0,
-            productId: variant.products?.id || 0,
-            productVariantId: variant.id,
-            products: variant.products || null,
-            productvariants: variant,
-            stocks: stockQty,
-            unitId: defaultUnit.unitId,
-            unitQty: 1,
-            baseQty,
-            quantity: baseQty,
-        };
-
-        setReturnDetails((prev) => [...prev, newDetail]);
+        setRequestDetails((prev) => [
+            ...prev,
+            {
+                id: 0,
+                productId: variant.products?.id || 0,
+                productVariantId: variant.id,
+                products: variant.products || null,
+                productvariants: variant,
+                stocks: stockQty,
+                unitId: defaultUnit.unitId,
+                unitQty: 1,
+                baseQty,
+                quantity: baseQty,
+                trackingType: (variant as any).trackingType ?? "NONE",
+                serialSelectionMode: "AUTO",
+                selectedTrackedItemIds: [],
+                selectedTrackedItems: [],
+                branchId: Number(watch("branchId") || 0),
+            },
+        ]);
     };
 
-    const addOrUpdateReturnDetail = async (detail: StockReturnDetailType) => {
-        const exists = returnDetails.find(
-            (item) => item.productVariantId === detail.productVariantId
-        );
-
-        if (exists) {
+    const addOrUpdateRequestDetail = async (detail: StockRequestDetailType) => {
+        if (requestDetails.find((item) => item.productVariantId === detail.productVariantId)) {
             await ShowWarningMessage("Product already in cart");
             return;
         }
 
-        const variant = detail.productvariants;
-        const defaultUnit = getDefaultUnitData(variant);
+        const defaultUnit = getDefaultUnitData(detail.productvariants);
         const baseQty = calculateBaseQty(1, defaultUnit.operationValue, defaultUnit.operator);
 
-        const newDetail: StockReturnDetailType = {
-            id: detail.id ?? 0,
-            productId: detail.productId ?? 0,
-            productVariantId: detail.productVariantId ?? 0,
-            products: detail.products ?? null,
-            productvariants: detail.productvariants ?? null,
-            stocks: detail.stocks ?? 0,
-            unitId: defaultUnit.unitId,
-            unitQty: 1,
-            baseQty,
-            quantity: baseQty,
-        };
-
-        setReturnDetails((prev) => [...prev, newDetail]);
+        setRequestDetails((prev) => [
+            ...prev,
+            {
+                id: detail.id ?? 0,
+                productId: detail.productId ?? 0,
+                productVariantId: detail.productVariantId ?? 0,
+                products: detail.products ?? null,
+                productvariants: detail.productvariants ?? null,
+                stocks: detail.stocks ?? 0,
+                unitId: defaultUnit.unitId,
+                unitQty: 1,
+                baseQty,
+                quantity: baseQty,
+                trackingType: (detail.productvariants as any)?.trackingType ?? "NONE",
+                serialSelectionMode: "AUTO",
+                selectedTrackedItemIds: [],
+                selectedTrackedItems: [],
+                branchId: Number(watch("branchId") || 0),
+            },
+        ]);
         setSearchTerm("");
         setShowSuggestions(false);
     };
 
     const handleUnitChange = (index: number, unitId: number) => {
-        setReturnDetails((prev) =>
-            prev.map((detail, i) => {
-                if (i !== index) return detail;
-                return recalcDetail({ ...detail, unitId });
-            })
+        setRequestDetails((prev) =>
+            prev.map((detail, i) => (i !== index ? detail : recalcDetail({ ...detail, unitId })))
         );
     };
 
     const handleUnitQtyChange = (index: number, value: string) => {
         let cleaned = value.replace(/[^0-9.]/g, "");
         const parts = cleaned.split(".");
-        if (parts.length > 2) {
-            cleaned = `${parts[0]}.${parts.slice(1).join("")}`;
-        }
+        if (parts.length > 2) cleaned = `${parts[0]}.${parts.slice(1).join("")}`;
 
-        setReturnDetails((prev) =>
-            prev.map((detail, i) => {
-                if (i !== index) return detail;
-                return recalcDetail({ ...detail, unitQty: cleaned });
-            })
+        setRequestDetails((prev) =>
+            prev.map((detail, i) => (i !== index ? detail : recalcDetail({ ...detail, unitQty: cleaned })))
         );
     };
 
     const increaseUnitQty = (index: number) => {
-        setReturnDetails((prev) =>
+        setRequestDetails((prev) =>
             prev.map((detail, i) => {
                 if (i !== index) return detail;
-                const currentQty = Number(detail.unitQty ?? 0);
-                return recalcDetail({ ...detail, unitQty: currentQty + 1 });
+                return recalcDetail({ ...detail, unitQty: Number(detail.unitQty ?? 0) + 1 });
             })
         );
     };
 
     const decreaseUnitQty = (index: number) => {
-        setReturnDetails((prev) =>
+        setRequestDetails((prev) =>
             prev.map((detail, i) => {
                 if (i !== index) return detail;
-                const currentQty = Number(detail.unitQty ?? 0);
-                const nextQty = currentQty > 1 ? currentQty - 1 : 1;
+                const nextQty = Number(detail.unitQty ?? 0) > 1 ? Number(detail.unitQty ?? 0) - 1 : 1;
                 return recalcDetail({ ...detail, unitQty: nextQty });
             })
         );
     };
 
     const removeProductFromCart = (index: number) => {
-        setReturnDetails((prev) => prev.filter((_, i) => i !== index));
+        setRequestDetails((prev) => prev.filter((_, i) => i !== index));
     };
 
-    const onSubmit: SubmitHandler<StockReturnType> = async (formData) => {
+    const onSubmit: SubmitHandler<StockRequestType> = async (formData) => {
         setIsLoading(true);
 
         try {
-            if (returnDetails.length === 0) {
+            if (requestDetails.length === 0) {
                 toast.error("Please add at least one product");
                 setIsLoading(false);
                 return;
             }
 
-            for (const row of returnDetails) {
+            for (const row of requestDetails) {
                 if (!row.unitId) {
                     toast.error(`Please select unit for product ${row.products?.name || ""}`);
                     setIsLoading(false);
                     return;
                 }
-
                 if (!row.unitQty || Number(row.unitQty) <= 0) {
                     toast.error(`Please enter valid quantity for product ${row.products?.name || ""}`);
                     setIsLoading(false);
                     return;
                 }
-
                 if (!row.baseQty || Number(row.baseQty) <= 0) {
                     toast.error(`Invalid base quantity for product ${row.products?.name || ""}`);
                     setIsLoading(false);
                     return;
                 }
+                if (
+                    formData.StatusType === "APPROVED" &&
+                    Number(row.baseQty) > Number(row.stocks ?? 0)
+                ) {
+                    toast.error(`Insufficient stock for ${row.products?.name || ""}`);
+                    setIsLoading(false);
+                    return;
+                }
+
+                // Serial tracking validation — MANUAL mode only, enforced on APPROVED
+                if (
+                    formData.StatusType === "APPROVED" &&
+                    row.trackingType &&
+                    row.trackingType !== "NONE" &&
+                    row.serialSelectionMode === "MANUAL"
+                ) {
+                    const productName = row.products?.name || "unknown product";
+                    const requiredQty = Math.round(Number(row.baseQty ?? 0));
+                    const selected = row.selectedTrackedItemIds?.length ?? 0;
+
+                    if (selected === 0) {
+                        toast.error(`"${productName}": Please select serials before approving (or switch to Auto mode).`);
+                        setIsLoading(false);
+                        return;
+                    }
+                    if (selected !== requiredQty) {
+                        toast.error(`"${productName}": Selected ${selected} serial(s) but quantity is ${requiredQty}. They must match.`);
+                        setIsLoading(false);
+                        return;
+                    }
+                }
             }
 
             await queryClient.invalidateQueries({ queryKey: ["validateToken"] });
 
-            const cleanedDetails = returnDetails.map((detail) => ({
-                id: detail.id ?? 0,
-                productId: Number(detail.productId),
-                productVariantId: Number(detail.productVariantId),
-                unitId: detail.unitId ? Number(detail.unitId) : null,
-                unitQty: detail.unitQty != null ? Number(detail.unitQty) : 0,
-                baseQty: detail.baseQty != null ? Number(detail.baseQty) : 0,
-                quantity: detail.baseQty != null ? Number(detail.baseQty) : 0,
-            }));
+            const cleanedDetails: StockRequestDetailType[] = requestDetails.map((detail) => {
+                let trackedPayload: string | null = null;
+                if (detail.trackingType && detail.trackingType !== "NONE") {
+                    const mode = detail.serialSelectionMode ?? "AUTO";
+                    const selectedIds = mode === "MANUAL" ? (detail.selectedTrackedItemIds ?? []) : [];
+                    trackedPayload = JSON.stringify({ mode, selectedIds });
+                }
+                return {
+                    id: detail.id ?? 0,
+                    productId: Number(detail.productId),
+                    productVariantId: Number(detail.productVariantId),
+                    unitId: detail.unitId ? Number(detail.unitId) : null,
+                    unitQty: detail.unitQty != null ? Number(detail.unitQty) : 0,
+                    baseQty: detail.baseQty != null ? Number(detail.baseQty) : 0,
+                    quantity: detail.baseQty != null ? Number(detail.baseQty) : 0,
+                    products: detail.products ?? null,
+                    productvariants: detail.productvariants ?? null,
+                    stocks: detail.stocks ?? 0,
+                    trackedPayload,
+                };
+            });
 
-            const normalizedReturnDate =
-                formData.returnDate instanceof Date
-                    ? formData.returnDate.toISOString()
-                    : formData.returnDate
-                    ? new Date(formData.returnDate as any).toISOString()
-                    : null;
+            const normalizedRequestDate = formData.requestDate
+                ? new Date(formData.requestDate as any).toISOString()
+                : null;
 
-            const returnData: StockReturnType = {
+            const requestData: StockRequestType = {
                 id: id ? Number(id) : undefined,
                 ref: "",
-                branchId: Number(formData.branchId ?? user?.branchId),
-                returnBy: Number(user?.id),
-                branch: {
-                    id: Number(formData.branchId ?? 0),
-                    name: "Default Branch",
-                    address: "Default Address",
-                },
-                returnDate: normalizedReturnDate,
+                branchId: Number(formData.branchId ?? 0),
+                requestBy: Number(user?.id),
+                branch: { id: Number(formData.branchId ?? 0), name: "", address: "" },
+                requestDate: normalizedRequestDate,
                 StatusType: formData.StatusType,
                 note: formData.note,
                 delReason: "",
-                returnDetails: cleanedDetails,
+                requestDetails: cleanedDetails,
             };
 
-            await upsertReturn(returnData);
+            await upsertRequest(requestData);
 
+            const statusLabel = formData.StatusType === "APPROVED" ? "approved" : "saved as pending";
             toast.success(
-                id ? "Stock Return updated successfully" : "Stock Return created successfully",
-                {
-                    position: "top-right",
-                    autoClose: 2000,
-                }
+                id ? `Stock Request updated and ${statusLabel} successfully` : `Stock Request created and ${statusLabel} successfully`,
+                { position: "top-right", autoClose: 2000 }
             );
 
-            reset({
-                id: undefined,
-                branchId: user?.roleType === "USER" ? Number(user.branchId) : undefined,
-                returnDate: undefined,
-                StatusType: "PENDING",
-                note: undefined,
-                returnDetails: [],
-            });
-
-            setReturnDetails([]);
+            reset({ id: undefined, branchId: undefined, requestDate: undefined, StatusType: "PENDING", note: undefined, requestDetails: [] });
+            setRequestDetails([]);
             setSearchTerm("");
             setShowSuggestions(false);
-
-            navigate("/stockreturn");
+            navigate("/stockrequest");
         } catch (err: any) {
-            toast.error(err.message || "Error adding/editing stock return", {
+            toast.error(err.message || "Error adding/editing stock request", {
                 position: "top-right",
                 autoClose: 3000,
             });
@@ -556,42 +527,35 @@ const StockReturnForm: React.FC = () => {
             <div className="mb-5">
                 <h5 className="flex items-center text-lg font-semibold dark:text-white-light gap-2">
                     {id ? <FilePenLine /> : <Plus />}
-                    {id ? "Update Stock Return" : "Add Stock Return"}
+                    {id ? "Update Stock Request" : "Add Stock Request"}
                 </h5>
             </div>
 
             <div className="mb-5">
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="mb-5">
-                        <div
-                            className={`grid grid-cols-1 gap-4 ${
-                                user?.roleType === "ADMIN" ? "sm:grid-cols-2" : "sm:grid-cols-1"
-                            } mb-5`}
-                        >
-                            {user?.roleType === "ADMIN" && (
-                                <div>
-                                    <label>
-                                        Branch <span className="text-danger text-md">*</span>
-                                    </label>
-                                    <select
-                                        id="branch"
-                                        className="form-input"
-                                        {...register("branchId", {
-                                            required: "Branch is required",
-                                        })}
-                                    >
-                                        <option value="">Select a branch</option>
-                                        {branches.map((option) => (
-                                            <option key={option.id} value={option.id}>
-                                                {option.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {errors.branchId && (
-                                        <span className="error_validate">{errors.branchId.message}</span>
-                                    )}
-                                </div>
-                            )}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-5">
+                            <div>
+                                <label>
+                                    Branch <span className="text-danger text-md">*</span>
+                                </label>
+                                <select
+                                    id="branch"
+                                    className="form-input"
+                                    disabled={!!id}
+                                    {...register("branchId", { required: "Branch is required" })}
+                                >
+                                    <option value="">Select a branch</option>
+                                    {branches.map((option) => (
+                                        <option key={option.id} value={option.id}>
+                                            {option.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.branchId && (
+                                    <span className="error_validate">{errors.branchId.message}</span>
+                                )}
+                            </div>
 
                             <div style={wrapperStyle}>
                                 <label htmlFor="date-picker">
@@ -599,25 +563,26 @@ const StockReturnForm: React.FC = () => {
                                 </label>
                                 <LocalizationProvider dateAdapter={AdapterDateFns}>
                                     <Controller
-                                        name="returnDate"
+                                        name="requestDate"
                                         control={control}
-                                        rules={{ required: "Return date is required" }}
+                                        rules={{ required: "Request date is required" }}
                                         render={({ field }) => (
                                             <DatePicker
                                                 value={field.value ? new Date(field.value as any) : null}
                                                 onChange={(date) => field.onChange(date)}
+                                                disablePast
                                                 slotProps={{
                                                     textField: {
                                                         fullWidth: true,
-                                                        error: !!errors.returnDate,
+                                                        error: !!errors.requestDate,
                                                     },
                                                 }}
                                             />
                                         )}
                                     />
                                 </LocalizationProvider>
-                                {errors.returnDate && (
-                                    <span className="error_validate">{errors.returnDate.message}</span>
+                                {errors.requestDate && (
+                                    <span className="error_validate">{errors.requestDate.message}</span>
                                 )}
                             </div>
                         </div>
@@ -639,28 +604,9 @@ const StockReturnForm: React.FC = () => {
                                     type="button"
                                     className="absolute inset-0 h-9 w-9 appearance-none peer-focus:text-primary ltr:right-auto rtl:left-auto"
                                 >
-                                    <svg
-                                        className="mx-auto"
-                                        width="16"
-                                        height="16"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                        <circle
-                                            cx="11.5"
-                                            cy="11.5"
-                                            r="9.5"
-                                            stroke="currentColor"
-                                            strokeWidth="1.5"
-                                            opacity="0.5"
-                                        ></circle>
-                                        <path
-                                            d="M18.5 18.5L22 22"
-                                            stroke="currentColor"
-                                            strokeWidth="1.5"
-                                            strokeLinecap="round"
-                                        ></path>
+                                    <svg className="mx-auto" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="11.5" cy="11.5" r="9.5" stroke="currentColor" strokeWidth="1.5" opacity="0.5"></circle>
+                                        <path d="M18.5 18.5L22 22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
                                     </svg>
                                 </button>
                             </div>
@@ -683,25 +629,20 @@ const StockReturnForm: React.FC = () => {
                                     {productResults.map((variant) => (
                                         <li
                                             key={variant.id}
-                                            style={{
-                                                padding: "8px",
-                                                cursor: "pointer",
-                                                borderBottom: "1px solid #eee",
-                                            }}
+                                            style={{ padding: "8px", cursor: "pointer", borderBottom: "1px solid #eee" }}
                                             onClick={() =>
-                                                addOrUpdateReturnDetail({
+                                                addOrUpdateRequestDetail({
                                                     id: 0,
                                                     productId: variant.products?.id || 0,
                                                     productVariantId: variant.id,
                                                     products: variant.products || null,
                                                     productvariants: variant,
                                                     quantity: 1,
-                                                    stocks:
-                                                        Number(
-                                                            Array.isArray(variant.stocks)
-                                                                ? (variant.stocks[0] as any)?.quantity ?? 0
-                                                                : (variant.stocks as any)?.quantity ?? 0
-                                                        ) || 0,
+                                                    stocks: Number(
+                                                        Array.isArray(variant.stocks)
+                                                            ? (variant.stocks[0] as any)?.quantity ?? 0
+                                                            : (variant.stocks as any)?.quantity ?? 0
+                                                    ) || 0,
                                                     unitId: null,
                                                     unitQty: 1,
                                                     baseQty: 1,
@@ -728,16 +669,15 @@ const StockReturnForm: React.FC = () => {
                                         <th></th>
                                     </tr>
                                 </thead>
-
                                 <tbody>
-                                    {returnDetails.length === 0 ? (
+                                    {requestDetails.length === 0 ? (
                                         <tr>
                                             <td colSpan={7} className="text-center py-4">
                                                 No products added
                                             </td>
                                         </tr>
                                     ) : (
-                                        returnDetails.map((detail, index) => {
+                                        requestDetails.map((detail, index) => {
                                             const units = getVariantUnits(detail.productvariants);
                                             const selectedUnit = getSelectedUnit(detail);
                                             const stockInSelectedUnit = getDisplayStockInSelectedUnit(detail);
@@ -747,9 +687,7 @@ const StockReturnForm: React.FC = () => {
                                                     <td>{index + 1}</td>
 
                                                     <td>
-                                                        <p>
-                                                            {detail.products?.name} ({detail.productvariants?.productType})
-                                                        </p>
+                                                        <p>{detail.products?.name} ({detail.productvariants?.productType})</p>
                                                         <p className="text-center">
                                                             <span className="badge badge-outline-primary rounded-full">
                                                                 {detail.productvariants?.barcode}
@@ -761,9 +699,7 @@ const StockReturnForm: React.FC = () => {
                                                         <select
                                                             className="form-input"
                                                             value={detail.unitId ?? ""}
-                                                            onChange={(e) =>
-                                                                handleUnitChange(index, Number(e.target.value))
-                                                            }
+                                                            onChange={(e) => handleUnitChange(index, Number(e.target.value))}
                                                         >
                                                             <option value="">Select unit</option>
                                                             {units.map((unit) => (
@@ -781,49 +717,23 @@ const StockReturnForm: React.FC = () => {
                                                                 onClick={() => decreaseUnitQty(index)}
                                                                 className="flex items-center justify-center border border-r-0 border-danger bg-danger px-3 font-semibold text-white ltr:rounded-l-md rtl:rounded-r-md"
                                                             >
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    width="24px"
-                                                                    height="24px"
-                                                                    viewBox="0 0 24 24"
-                                                                    fill="none"
-                                                                    stroke="currentColor"
-                                                                    strokeWidth="1.5"
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    className="h-5 w-5"
-                                                                >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
                                                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                                                 </svg>
                                                             </button>
-
                                                             <input
                                                                 type="text"
                                                                 className="form-input rounded-none text-center"
                                                                 value={detail.unitQty ?? ""}
-                                                                onChange={(e) =>
-                                                                    handleUnitQtyChange(index, e.target.value)
-                                                                }
+                                                                onChange={(e) => handleUnitQtyChange(index, e.target.value)}
                                                                 placeholder="Qty"
                                                             />
-
                                                             <button
                                                                 type="button"
                                                                 onClick={() => increaseUnitQty(index)}
                                                                 className="flex items-center justify-center border border-l-0 border-warning bg-warning px-3 font-semibold text-white ltr:rounded-r-md rtl:rounded-l-md"
                                                             >
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    width="24px"
-                                                                    height="24px"
-                                                                    viewBox="0 0 24 24"
-                                                                    fill="none"
-                                                                    stroke="currentColor"
-                                                                    strokeWidth="1.5"
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    className="h-5 w-5"
-                                                                >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
                                                                     <line x1="12" y1="5" x2="12" y2="19"></line>
                                                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                                                 </svg>
@@ -852,10 +762,42 @@ const StockReturnForm: React.FC = () => {
                                                     )}
 
                                                     <td>
+                                                        {detail.trackingType && detail.trackingType !== "NONE" && (() => {
+                                                            const mode = detail.serialSelectionMode ?? "AUTO";
+                                                            const count = detail.selectedTrackedItemIds?.length ?? 0;
+                                                            const requiredQty = Math.round(Number(detail.baseQty ?? 0));
+                                                            const isManualMatch = mode === "MANUAL" && count === requiredQty && count > 0;
+                                                            const isManualMismatch = mode === "MANUAL" && count > 0 && count !== requiredQty;
+                                                            const btnClass = mode === "AUTO"
+                                                                ? "btn-outline-info"
+                                                                : isManualMatch
+                                                                    ? "btn-success"
+                                                                    : isManualMismatch
+                                                                        ? "btn-warning"
+                                                                        : "btn-outline-primary";
+                                                            return (
+                                                                <div className="mb-1">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setTrackedModalIndex(index)}
+                                                                        className={`btn btn-xs ${btnClass}`}
+                                                                    >
+                                                                        {mode === "AUTO"
+                                                                            ? "Auto Assign"
+                                                                            : count > 0
+                                                                                ? `${count} / ${requiredQty} Serial(s)`
+                                                                                : "+ Select Serial"}
+                                                                    </button>
+                                                                    {mode === "MANUAL" && count === 0 && (
+                                                                        <span className="text-xs text-gray-400 block">Required on approve</span>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })()}
                                                         <button
                                                             type="button"
                                                             onClick={() => removeProductFromCart(index)}
-                                                            className="hover:text-danger"
+                                                            className="hover:text-danger block"
                                                             title="Delete"
                                                         >
                                                             <Trash2 color="red" />
@@ -877,13 +819,11 @@ const StockReturnForm: React.FC = () => {
                                 <select
                                     id="status"
                                     className="form-input"
-                                    {...register("StatusType", {
-                                        required: "Status is required",
-                                    })}
+                                    {...register("StatusType", { required: "Status is required" })}
                                 >
                                     <option value="">Select a status...</option>
                                     <option value="PENDING">Pending</option>
-                                    {hasPermission("Stock-Return-Approve") && (
+                                    {hasPermission("Stock-Request-Approve") && (
                                         <option value="APPROVED">Approved</option>
                                     )}
                                 </select>
@@ -900,14 +840,15 @@ const StockReturnForm: React.FC = () => {
                     </div>
 
                     <div className="flex justify-end items-center mt-8">
-                        <NavLink to="/stockreturn" type="button" className="btn btn-outline-warning">
+                        <NavLink to="/stockrequest" type="button" className="btn btn-outline-warning">
                             <FontAwesomeIcon icon={faArrowLeft} className="mr-1" />
                             Go Back
                         </NavLink>
 
-                        {(hasPermission("Stock-Return-Create") ||
-                            hasPermission("Stock-Return-Edit") ||
-                            hasPermission("Stock-Return-Approve")) && (
+                        {initialDbStatus !== "APPROVED" &&
+                            (hasPermission("Stock-Request-Create") ||
+                                hasPermission("Stock-Request-Edit") ||
+                                hasPermission("Stock-Request-Approve")) && (
                             <button
                                 type="submit"
                                 className="btn btn-primary ltr:ml-4 rtl:mr-4"
@@ -920,8 +861,32 @@ const StockReturnForm: React.FC = () => {
                     </div>
                 </form>
             </div>
+
+            {trackedModalIndex !== null && (() => {
+                const detail = requestDetails[trackedModalIndex];
+                return detail ? (
+                    <TrackedItemsPickerModal
+                        isOpen={true}
+                        onClose={() => setTrackedModalIndex(null)}
+                        variantId={detail.productVariantId}
+                        branchId={Number(detail.branchId ?? watch("branchId") ?? 0)}
+                        existingItemId={detail.id || null}
+                        mode={detail.serialSelectionMode ?? "AUTO"}
+                        selectedIds={detail.selectedTrackedItemIds ?? []}
+                        onSave={(mode, ids, items) => {
+                            setRequestDetails((prev) =>
+                                prev.map((d, i) =>
+                                    i === trackedModalIndex
+                                        ? { ...d, serialSelectionMode: mode, selectedTrackedItemIds: ids, selectedTrackedItems: items }
+                                        : d
+                                )
+                            );
+                        }}
+                    />
+                ) : null;
+            })()}
         </div>
     );
 };
 
-export default StockReturnForm;
+export default StockRequestForm;

@@ -238,6 +238,7 @@ export interface UnitOptionType {
     operationValue?: number;
     isBaseUnit?: boolean;
     operator?: string;
+    suggestedPurchaseCost?: number;
 }
 
 export interface ProductVariantType {
@@ -591,9 +592,65 @@ export interface CustomerType {
     address?: string;
     createdAt?: Date;
     updatedAt?: Date;
-    
+
     creator?: UserType | null;
     updater?: UserType | null;
+}
+
+export type AssignType = "SOLD" | "RENTED" | "INSTALLED";
+
+export interface CustomerEquipmentItemType {
+    id?: number;
+    customerEquipmentId?: number;
+    // tracked item (serial)
+    productAssetItemId?: number | null;
+    productAssetItem?: {
+        id: number;
+        serialNumber: string;
+        assetCode?: string | null;
+        macAddress?: string | null;
+        status: string;
+        productVariant?: {
+            id: number;
+            sku: string;
+            barcode: string;
+            productType?: string;
+            products?: { id: number; name: string } | null;
+        } | null;
+    } | null;
+    // non-tracked item (qty only)
+    productVariantId?: number | null;
+    quantity?: number | null;
+    unitId?: number | null;
+    unit?: { id: number; name: string } | null;
+    productVariant?: {
+        id: number;
+        sku: string;
+        barcode: string;
+        productType?: string;
+        products?: { id: number; name: string } | null;
+    } | null;
+}
+
+export interface CustomerEquipmentType {
+    id?: number;
+    ref?: string;
+    customerId: number;
+    branchId: number;
+    assignType: AssignType;
+    assignedAt: string | Date;
+    returnedAt?: string | Date | null;
+    orderId?: number | null;
+    note?: string | null;
+    createdAt?: Date;
+    updatedAt?: Date;
+
+    customer?: { id: number; name: string; phone?: string; email?: string; address?: string } | null;
+    branch?: { id: number; name: string } | null;
+    order?: { id: number; ref: string } | null;
+    creator?: { id: number; firstName: string; lastName: string } | null;
+    updater?: { id: number; firstName: string; lastName: string } | null;
+    items?: CustomerEquipmentItemType[];
 }
 
 export interface InvoiceType {
@@ -708,12 +765,31 @@ export interface StockAdjustmentDetailType {
     productvariants: ProductVariantType | null;
     stocks?: number | null;
 
-    // ✅ Add these for unit conversion
     unitId?: number | null;
     unitQty?: number | string | null;
     baseQty?: number | string | null;
     cost?: number | string | null;
     costPerBaseUnit?: number | string | null;
+
+    trackingType?: "NONE" | "ASSET_ONLY" | "MAC_ONLY" | "ASSET_AND_MAC" | null;
+    serialSelectionMode?: "AUTO" | "MANUAL";
+    selectedTrackedItemIds?: number[];
+    selectedTrackedItems?: ProductTrackedItemType[];
+    branchId?: number | null;
+
+    // Tracked item data for stock adjustment serial handling
+    adjustmentTrackedMode?: "NEW" | "REACTIVATE";
+    newSerials?: Array<{ serialNumber: string; assetCode?: string | null; macAddress?: string | null }>;
+    reactivateIds?: number[];
+    reactivateItems?: ProductTrackedItemType[];
+    selectedToRemoveIds?: number[];
+    selectedToRemoveItems?: ProductTrackedItemType[];
+    trackedItemData?: {
+        type: "NEW" | "REACTIVATE" | "SELECT";
+        newSerials?: Array<{ serialNumber: string; assetCode?: string | null; macAddress?: string | null }>;
+        reactivateIds?: number[];
+        selectedIds?: number[];
+    };
 }
 
 export interface StockTransferType {
@@ -756,10 +832,16 @@ export interface StockTransferDetailType {
     productvariants: ProductVariantType | null;
     stocks?: number | null;
 
-    // ✅ Add these for unit conversion
     unitId?: number | null;
     unitQty?: number | string | null;
     baseQty?: number | string | null;
+
+    trackingType?: "NONE" | "ASSET_ONLY" | "MAC_ONLY" | "ASSET_AND_MAC" | null;
+    serialSelectionMode?: "AUTO" | "MANUAL";
+    selectedTrackedItemIds?: number[];
+    selectedTrackedItems?: ProductTrackedItemType[];
+    branchId?: number | null;
+    trackedPayload?: string | null;
 }
 
 export interface StockRequestType {
@@ -798,10 +880,16 @@ export interface StockRequestDetailType {
     productvariants: ProductVariantType | null;
     stocks?: number | null;
 
-    // ✅ Add these for unit conversion
     unitId?: number | null;
     unitQty?: number | string | null;
     baseQty?: number | string | null;
+
+    trackingType?: "NONE" | "ASSET_ONLY" | "MAC_ONLY" | "ASSET_AND_MAC" | null;
+    serialSelectionMode?: "AUTO" | "MANUAL";
+    selectedTrackedItemIds?: number[];
+    selectedTrackedItems?: ProductTrackedItemType[];
+    branchId?: number | null;
+    trackedPayload?: string | null;
 }
 
 export interface StockReturnType {
@@ -847,6 +935,13 @@ export interface StockReturnDetailType {
 
     cost?: number | string | null;
     costPerBaseUnit?: number | string | null;
+
+    trackingType?: "NONE" | "ASSET_ONLY" | "MAC_ONLY" | "ASSET_AND_MAC" | null;
+    serialSelectionMode?: "AUTO" | "MANUAL";
+    selectedTrackedItemIds?: number[];
+    selectedTrackedItems?: ProductTrackedItemType[];
+    branchId?: number | null;
+    trackedPayload?: string | null;
 }
 
 export interface ExpenseType {

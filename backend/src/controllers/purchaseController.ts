@@ -226,14 +226,9 @@ export const getAllPurchases = async (req: Request, res: Response): Promise<void
         // Build parameters: $1 = likeTerm, $2..$n = searchword, $n+1 = limit, $n+2 = offset
         const params = [likeTerm, ...searchWords.map(w => `%${w}%`), pageSize, offset];
 
-        // Branch restriction
-        let branchRestriction = "";
-        if (loggedInUser.roleType === "USER" && loggedInUser.branchId) {
-            branchRestriction = `
-                AND p."branchId" = ${loggedInUser.branchId}
-                AND p."createdBy" = ${loggedInUser.id}
-            `;
-        }
+        const userRestriction = loggedInUser.roleType === "USER"
+            ? `AND p."createdBy" = ${loggedInUser.id}`
+            : "";
 
         // ----- 1) COUNT -----
         const totalResult: any = await prisma.$queryRawUnsafe(`
@@ -244,7 +239,7 @@ export const getAllPurchases = async (req: Request, res: Response): Promise<void
             LEFT JOIN "User" c ON p."createdBy" = c.id
             LEFT JOIN "User" u ON p."updatedBy" = u.id
             WHERE 1=1
-                /* ${branchRestriction} */
+                ${userRestriction}
                 AND (
                     p."ref" ILIKE $1
                     OR su."name" ILIKE $1
@@ -273,7 +268,7 @@ export const getAllPurchases = async (req: Request, res: Response): Promise<void
             LEFT JOIN "User" c ON p."createdBy" = c.id
             LEFT JOIN "User" u ON p."updatedBy" = u.id
             WHERE 1=1
-                /* ${branchRestriction} */
+                ${userRestriction}
                 AND (
                     p."ref" ILIKE $1
                     OR su."name" ILIKE $1
@@ -457,22 +452,31 @@ export const upsertPurchase = async (req: Request, res: Response): Promise<void>
       });
       return;
     }
-    // Simple users can only set RECEIVED if the current DB status is already APPROVED by an admin
+    // Simple users and RECEIVED:
+    //   - Amount <= PO Authorize Amount → allowed directly
+    //   - Amount >  PO Authorize Amount → only allowed if current DB status is already APPROVED
     if (status === "RECEIVED") {
-      const purchaseId = id ? Number(Array.isArray(id) ? id[0] : id) : 0;
-      let currentStatus: string | null = null;
-      if (purchaseId) {
-        const existing = await prisma.purchases.findUnique({
-          where: { id: purchaseId },
-          select: { status: true },
-        });
-        currentStatus = existing?.status ?? null;
-      }
-      if (currentStatus !== "APPROVED") {
-        res.status(400).json({
-          message: "You can only receive a purchase after it has been approved by an admin.",
-        });
-        return;
+      const authorizeRecord = await prisma.purchaseAmountAuthorize.findFirst();
+      const isOverLimit = authorizeRecord
+        ? Number(grandTotal) > Number(authorizeRecord.amount)
+        : false;
+
+      if (isOverLimit) {
+        const purchaseId = id ? Number(Array.isArray(id) ? id[0] : id) : 0;
+        let currentStatus: string | null = null;
+        if (purchaseId) {
+          const existing = await prisma.purchases.findUnique({
+            where: { id: purchaseId },
+            select: { status: true },
+          });
+          currentStatus = existing?.status ?? null;
+        }
+        if (currentStatus !== "APPROVED") {
+          res.status(400).json({
+            message: `Purchase amount exceeds the PO Authorize Amount (${Number(authorizeRecord!.amount).toFixed(2)}). Please wait for admin approval before receiving.`,
+          });
+          return;
+        }
       }
     }
   }
@@ -1020,6 +1024,7 @@ export const getPurchaseById = async (
 
                 return {
                     ...detail,
+                    branchId,          // propagate purchase's branchId to each detail for modal queries
                     name: detail.productvariants.name,
                     barcode: detail.productvariants.barcode,
                     sku: detail.productvariants.sku,

@@ -11,6 +11,7 @@ import {
 import { getAllBranches } from "@/api/branch";
 import { searchProduct } from "@/api/searchProduct";
 import { upsertAdjustment, getStockAdjustmentById } from "@/api/stockAdjustment";
+import StockAdjustmentTrackedModal from "@/components/StockAdjustmentTrackedModal";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useAppContext } from "@/hooks/useAppContext";
@@ -46,6 +47,7 @@ type VariantUnitType = {
     operationValue: number;
     operator?: string;
     isBaseUnit?: boolean;
+    suggestedPurchaseCost?: number;
 };
 
 type ProductVariantWithUnits = ProductVariantType & {
@@ -55,6 +57,7 @@ type ProductVariantWithUnits = ProductVariantType & {
         operationValue: number;
         isBaseUnit?: boolean;
         operator?: string;
+        suggestedPurchaseCost?: number;
     }[];
     units?: RawUnitRow[];
     productUnitRelations?: RawUnitRow[];
@@ -75,6 +78,7 @@ const StockAdjustmentForm: React.FC = () => {
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [statusValue, setStatusValue] = useState<string>("PENDING");
     const [branchInitialized, setBranchInitialized] = useState(false);
+    const [trackedModalIndex, setTrackedModalIndex] = useState<number | null>(null);
 
     const {
         control,
@@ -123,6 +127,7 @@ const StockAdjustmentForm: React.FC = () => {
                 operationValue: Number(u.operationValue ?? 1),
                 isBaseUnit: Boolean(u.isBaseUnit),
                 operator: u.operator ?? "*",
+                suggestedPurchaseCost: Number(u.suggestedPurchaseCost ?? 0),
             }));
         }
 
@@ -154,7 +159,17 @@ const StockAdjustmentForm: React.FC = () => {
             unitName: defaultUnit?.unitName ?? "",
             operationValue: Number(defaultUnit?.operationValue ?? 1) || 1,
             operator: defaultUnit?.operator ?? "*",
+            suggestedPurchaseCost: Number(defaultUnit?.suggestedPurchaseCost ?? 0),
         };
+    };
+
+    const getSuggestedCostForUnit = (
+        variant: ProductVariantType | null | undefined,
+        unitId: number
+    ): number => {
+        const units = getVariantUnits(variant);
+        const unit = units.find((u) => u.unitId === unitId);
+        return Number(unit?.suggestedPurchaseCost ?? 0);
     };
 
     const calculateBaseQty = (
@@ -219,6 +234,12 @@ const StockAdjustmentForm: React.FC = () => {
         }
     }, []);
 
+    useEffect(() => {
+        if (!id && user?.branchId && branches.length > 0) {
+            setValue("branchId", user.branchId, { shouldValidate: false });
+        }
+    }, [branches, id, user?.branchId, setValue]);
+
     const fetchStockAdjustment = useCallback(async () => {
         if (!id) return;
 
@@ -239,15 +260,32 @@ const StockAdjustmentForm: React.FC = () => {
             setValue("note", adjustmentData.note);
 
             setAdjustmentDetails(
-                (adjustmentData.adjustmentDetails || []).map((detail) => ({
-                    ...detail,
-                    unitId: detail.unitId ?? null,
-                    unitQty: detail.unitQty ?? 1,
-                    baseQty: detail.baseQty ?? detail.quantity ?? 1,
-                    quantity: detail.quantity ?? Number(detail.baseQty ?? 1),
-                    cost: detail.cost ?? "",
-                    costPerBaseUnit: detail.costPerBaseUnit ?? 0,
-                }))
+                (adjustmentData.adjustmentDetails || []).map((detail: any) => {
+                    let tracked: any = {};
+                    if (detail.trackedPayload) {
+                        try {
+                            const payload = JSON.parse(detail.trackedPayload);
+                            if (payload.type === "NEW") {
+                                tracked = { adjustmentTrackedMode: "NEW", newSerials: payload.newSerials ?? [] };
+                            } else if (payload.type === "REACTIVATE") {
+                                tracked = { adjustmentTrackedMode: "REACTIVATE", reactivateIds: payload.reactivateIds ?? [] };
+                            } else if (payload.type === "SELECT") {
+                                tracked = { selectedToRemoveIds: payload.selectedIds ?? [] };
+                            }
+                        } catch (_e) { /* ignore parse error */ }
+                    }
+                    return {
+                        ...detail,
+                        unitId: detail.unitId ?? null,
+                        unitQty: detail.unitQty ?? 1,
+                        baseQty: detail.baseQty ?? detail.quantity ?? 1,
+                        quantity: detail.quantity ?? Number(detail.baseQty ?? 1),
+                        cost: detail.cost ?? "",
+                        costPerBaseUnit: detail.costPerBaseUnit ?? 0,
+                        trackingType: detail.productvariants?.trackingType ?? "NONE",
+                        ...tracked,
+                    };
+                })
             );
 
             setStatusValue(adjustmentData.StatusType);
@@ -283,8 +321,7 @@ const StockAdjustmentForm: React.FC = () => {
             return;
         }
 
-        const selectedBranchId =
-            user?.roleType === "USER" ? user.branchId : watch("branchId");
+        const selectedBranchId = watch("branchId");
 
         if (!selectedBranchId) {
             toast.error("No branch selected", {
@@ -346,6 +383,10 @@ const StockAdjustmentForm: React.FC = () => {
         }
 
         const defaultUnit = getDefaultUnitData(variant);
+        const isPositive = watch("AdjustMentType") === "POSITIVE";
+        const autoCost = isPositive && defaultUnit.suggestedPurchaseCost > 0
+            ? String(defaultUnit.suggestedPurchaseCost)
+            : "";
 
         const newDetail: StockAdjustmentDetailType = {
             id: 0,
@@ -358,8 +399,13 @@ const StockAdjustmentForm: React.FC = () => {
             unitQty: 1,
             baseQty: calculateBaseQty(1, defaultUnit.operationValue, defaultUnit.operator),
             quantity: calculateBaseQty(1, defaultUnit.operationValue, defaultUnit.operator),
-            cost: "",
-            costPerBaseUnit: 0
+            cost: autoCost,
+            costPerBaseUnit: 0,
+            trackingType: (variant as any).trackingType ?? "NONE",
+            serialSelectionMode: "AUTO",
+            selectedTrackedItemIds: [],
+            selectedTrackedItems: [],
+            branchId: Number(watch("branchId") || 0),
         };
 
         setAdjustmentDetails((prev) => [...prev, newDetail]);
@@ -377,6 +423,10 @@ const StockAdjustmentForm: React.FC = () => {
 
         const variant = detail.productvariants;
         const defaultUnit = getDefaultUnitData(variant);
+        const isPositive = watch("AdjustMentType") === "POSITIVE";
+        const autoCost = isPositive && defaultUnit.suggestedPurchaseCost > 0
+            ? String(defaultUnit.suggestedPurchaseCost)
+            : "";
 
         const newDetail: StockAdjustmentDetailType = {
             id: detail.id ?? 0,
@@ -389,6 +439,13 @@ const StockAdjustmentForm: React.FC = () => {
             unitQty: 1,
             baseQty: calculateBaseQty(1, defaultUnit.operationValue, defaultUnit.operator),
             quantity: calculateBaseQty(1, defaultUnit.operationValue, defaultUnit.operator),
+            cost: autoCost,
+            costPerBaseUnit: 0,
+            trackingType: (detail.productvariants as any)?.trackingType ?? "NONE",
+            serialSelectionMode: "AUTO",
+            selectedTrackedItemIds: [],
+            selectedTrackedItems: [],
+            branchId: Number(watch("branchId") || 0),
         };
 
         setAdjustmentDetails((prev) => [...prev, newDetail]);
@@ -397,14 +454,18 @@ const StockAdjustmentForm: React.FC = () => {
     };
 
     const handleUnitChange = (index: number, unitId: number) => {
+        const isPositiveAdj = watch("AdjustMentType") === "POSITIVE";
         setAdjustmentDetails((prev) =>
             prev.map((detail, i) => {
                 if (i !== index) return detail;
 
-                const updated = {
-                    ...detail,
-                    unitId,
-                };
+                const updated: StockAdjustmentDetailType = { ...detail, unitId };
+
+                // Auto-update cost for USER role or when cost hasn't been manually set
+                if (isPositiveAdj && user?.roleType === "USER") {
+                    const suggested = getSuggestedCostForUnit(detail.productvariants, unitId);
+                    if (suggested > 0) updated.cost = String(suggested);
+                }
 
                 return recalcDetailBaseQty(updated);
             })
@@ -520,11 +581,11 @@ const StockAdjustmentForm: React.FC = () => {
                     return;
                 }
 
-                if (
-                    formData.AdjustMentType === "POSITIVE" &&
-                    (!row.cost || Number(row.cost) <= 0)
-                ) {
-                    toast.error(`Please enter valid cost for product ${row.products?.name || ""}`);
+                if (formData.AdjustMentType === "POSITIVE" && (!row.cost || Number(row.cost) <= 0)) {
+                    const msg = user?.roleType === "USER"
+                        ? `No purchase cost found for "${row.products?.name || ""}". Please contact your manager.`
+                        : `Please enter valid cost for product ${row.products?.name || ""}`;
+                    toast.error(msg);
                     setIsLoading(false);
                     return;
                 }
@@ -538,11 +599,61 @@ const StockAdjustmentForm: React.FC = () => {
                     setIsLoading(false);
                     return;
                 }
+
+                // Serial tracking validation — only enforced on APPROVED
+                if (
+                    formData.StatusType === "APPROVED" &&
+                    row.trackingType &&
+                    row.trackingType !== "NONE"
+                ) {
+                    const productName = row.products?.name || "unknown product";
+                    const requiredQty = Math.round(Number(row.baseQty ?? 0));
+
+                    if (formData.AdjustMentType === "POSITIVE") {
+                        if (row.adjustmentTrackedMode === "REACTIVATE") {
+                            const selected = row.reactivateIds?.length ?? 0;
+                            if (selected === 0) {
+                                toast.error(`"${productName}": Please select serials to reactivate before approving.`);
+                                setIsLoading(false);
+                                return;
+                            }
+                            if (selected !== requiredQty) {
+                                toast.error(`"${productName}": Selected ${selected} serial(s) but quantity is ${requiredQty}. They must match.`);
+                                setIsLoading(false);
+                                return;
+                            }
+                        } else {
+                            const entered = (row.newSerials ?? []).filter(s => s.serialNumber?.trim()).length;
+                            if (entered === 0) {
+                                toast.error(`"${productName}": Please enter serial numbers before approving.`);
+                                setIsLoading(false);
+                                return;
+                            }
+                            if (entered !== requiredQty) {
+                                toast.error(`"${productName}": Entered ${entered} serial(s) but quantity is ${requiredQty}. They must match.`);
+                                setIsLoading(false);
+                                return;
+                            }
+                        }
+                    } else {
+                        const selected = row.selectedToRemoveIds?.length ?? 0;
+                        if (selected === 0) {
+                            toast.error(`"${productName}": Please select serials to remove before approving.`);
+                            setIsLoading(false);
+                            return;
+                        }
+                        if (selected !== requiredQty) {
+                            toast.error(`"${productName}": Selected ${selected} serial(s) but quantity is ${requiredQty}. They must match.`);
+                            setIsLoading(false);
+                            return;
+                        }
+                    }
+                }
             }
 
             await queryClient.invalidateQueries({ queryKey: ["validateToken"] });
 
-            const cleanedDetails: StockAdjustmentDetailType[] = adjustmentDetails.map((detail) => ({
+            const cleanedDetails = adjustmentDetails.map((detail) => ({
                 id: detail.id ?? 0,
                 productId: Number(detail.productId),
                 productVariantId: Number(detail.productVariantId),
@@ -555,9 +666,22 @@ const StockAdjustmentForm: React.FC = () => {
                 products: detail.products ?? null,
                 productvariants: detail.productvariants ?? null,
                 stocks: detail.stocks ?? 0,
+                trackedItemData: (() => {
+                    if (!detail.trackingType || detail.trackingType === "NONE") return undefined;
+                    if (formData.AdjustMentType === "POSITIVE") {
+                        if (detail.adjustmentTrackedMode === "REACTIVATE") {
+                            return { type: "REACTIVATE" as const, reactivateIds: detail.reactivateIds ?? [] };
+                        }
+                        return {
+                            type: "NEW" as const,
+                            newSerials: (detail.newSerials ?? []).filter((s) => s.serialNumber?.trim()),
+                        };
+                    }
+                    return { type: "SELECT" as const, selectedIds: detail.selectedToRemoveIds ?? [] };
+                })(),
             }));
 
-            const effectiveBranchId = Number(formData.branchId ?? user?.branchId ?? 0);
+            const effectiveBranchId = Number(formData.branchId ?? 0);
 
             const adjustmentData: StockAdjustmentType = {
                 id: id ? Number(id) : undefined,
@@ -620,35 +744,30 @@ const StockAdjustmentForm: React.FC = () => {
             <div className="mb-5">
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="mb-5">
-                        <div
-                            className={`grid grid-cols-1 gap-4 ${
-                                user?.roleType === "ADMIN" ? "sm:grid-cols-3" : "sm:grid-cols-2"
-                            } mb-5`}
-                        >
-                            {user?.roleType === "ADMIN" && (
-                                <div>
-                                    <label>
-                                        Branch <span className="text-danger text-md">*</span>
-                                    </label>
-                                    <select
-                                        id="branch"
-                                        className="form-input"
-                                        {...register("branchId", {
-                                            required: "Branch is required",
-                                        })}
-                                    >
-                                        <option value="">Select a branch</option>
-                                        {branches.map((option) => (
-                                            <option key={option.id} value={option.id}>
-                                                {option.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {errors.branchId && (
-                                        <span className="error_validate">{errors.branchId.message}</span>
-                                    )}
-                                </div>
-                            )}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-5">
+                            <div>
+                                <label>
+                                    Branch <span className="text-danger text-md">*</span>
+                                </label>
+                                <select
+                                    id="branch"
+                                    className="form-input"
+                                    disabled={!!id}
+                                    {...register("branchId", {
+                                        required: "Branch is required",
+                                    })}
+                                >
+                                    <option value="">Select a branch</option>
+                                    {branches.map((option) => (
+                                        <option key={option.id} value={option.id}>
+                                            {option.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.branchId && (
+                                    <span className="error_validate">{errors.branchId.message}</span>
+                                )}
+                            </div>
 
                             <div>
                                 <label>
@@ -683,6 +802,7 @@ const StockAdjustmentForm: React.FC = () => {
                                             <DatePicker
                                                 value={field.value ? new Date(field.value as string) : null}
                                                 onChange={(date) => field.onChange(date)}
+                                                disablePast
                                                 slotProps={{
                                                     textField: {
                                                         fullWidth: true,
@@ -795,7 +915,9 @@ const StockAdjustmentForm: React.FC = () => {
                         <div className="dataTable-container">
                             {watch("AdjustMentType") === "POSITIVE" && (
                                 <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
-                                    For positive adjustment, cost is entered per selected unit. The system will convert it to base-unit cost for FIFO.
+                                    {user?.roleType === "USER"
+                                        ? "Cost is automatically determined from the product's last purchase price."
+                                        : "Cost is pre-filled from the product master price. You may override it per unit for FIFO accuracy."}
                                 </div>
                             )}
                             <table id="myTable1" className="whitespace-nowrap dataTable-table">
@@ -805,7 +927,7 @@ const StockAdjustmentForm: React.FC = () => {
                                         <th>Product</th>
                                         <th>Unit</th>
                                         <th>Qty</th>
-                                        {watch("AdjustMentType") === "POSITIVE" && <th>Cost</th>}
+                                        {watch("AdjustMentType") === "POSITIVE" && user?.roleType !== "USER" && <th>Cost</th>}
                                         <th>Base Qty</th>
                                         {statusValue === "PENDING" && <th>Qty On Hand</th>}
                                         <th></th>
@@ -914,7 +1036,7 @@ const StockAdjustmentForm: React.FC = () => {
                                                         </div>
                                                     </td>
 
-                                                    {watch("AdjustMentType") === "POSITIVE" && (
+                                                    {watch("AdjustMentType") === "POSITIVE" && user?.roleType !== "USER" && (
                                                         <td style={{ minWidth: "160px" }}>
                                                             <input
                                                                 type="text"
@@ -947,10 +1069,66 @@ const StockAdjustmentForm: React.FC = () => {
                                                     )}
 
                                                     <td>
+                                                        {detail.trackingType && detail.trackingType !== "NONE" && (() => {
+                                                            const adjType = watch("AdjustMentType");
+                                                            const requiredQty = Math.round(Number(detail.baseQty ?? 0));
+                                                            let count = 0;
+                                                            if (adjType === "POSITIVE") {
+                                                                if (detail.adjustmentTrackedMode === "REACTIVATE") {
+                                                                    count = detail.reactivateIds?.length ?? 0;
+                                                                } else {
+                                                                    count = detail.newSerials?.filter(s => s.serialNumber?.trim()).length ?? 0;
+                                                                }
+                                                            } else {
+                                                                count = detail.selectedToRemoveIds?.length ?? 0;
+                                                            }
+                                                            const isMatch = count === requiredQty && count > 0;
+                                                            const isMismatch = count > 0 && count !== requiredQty;
+                                                            return (
+                                                                <div className="flex flex-col items-start gap-1">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setTrackedModalIndex(index)}
+                                                                    className="mb-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                                                                    style={isMatch
+                                                                        ? { background: "linear-gradient(135deg,#17c653,#10a944)", color: "#fff", boxShadow: "0 2px 8px rgba(23,198,83,.35)" }
+                                                                        : isMismatch
+                                                                        ? { background: "linear-gradient(135deg,#fff3cd,#ffeaa0)", color: "#856404", border: "1px solid #ffc107" }
+                                                                        : { background: "linear-gradient(135deg,#e8f0ff,#dce8ff)", color: "#4361ee", border: "1px solid #b8caff" }
+                                                                    }
+                                                                >
+                                                                    {isMatch ? (
+                                                                        <>
+                                                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                                                            {count} Serial{count > 1 ? "s" : ""}
+                                                                        </>
+                                                                    ) : isMismatch ? (
+                                                                        <>
+                                                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+                                                                            {count}/{requiredQty} Serials
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                                                                            Select Serial
+                                                                        </>
+                                                                    )}
+                                                                </button>
+                                                                {isMismatch && (
+                                                                    <span className="text-xs" style={{ color: "#856404" }}>
+                                                                        Need {requiredQty - count} more
+                                                                    </span>
+                                                                )}
+                                                                {count === 0 && statusValue === "PENDING" && (
+                                                                    <span className="text-xs text-gray-400">Required on approve</span>
+                                                                )}
+                                                                </div>
+                                                            );
+                                                        })()}
                                                         <button
                                                             type="button"
                                                             onClick={() => removeProductFromCart(index)}
-                                                            className="hover:text-danger"
+                                                            className="hover:text-danger block"
                                                             title="Delete"
                                                         >
                                                             <Trash2 color="red" />
@@ -1025,6 +1203,43 @@ const StockAdjustmentForm: React.FC = () => {
                     </div>
                 </form>
             </div>
+
+            {trackedModalIndex !== null && (() => {
+                const detail = adjustmentDetails[trackedModalIndex];
+                const adjType = watch("AdjustMentType") as "POSITIVE" | "NEGATIVE";
+                return detail && adjType ? (
+                    <StockAdjustmentTrackedModal
+                        isOpen={true}
+                        onClose={() => setTrackedModalIndex(null)}
+                        adjustmentType={adjType}
+                        trackingType={(detail.trackingType as any) ?? "NONE"}
+                        variantId={detail.productVariantId}
+                        branchId={Number(detail.branchId ?? watch("branchId") ?? 0)}
+                        expectedQty={Number(detail.baseQty ?? 0)}
+                        adjustmentTrackedMode={detail.adjustmentTrackedMode}
+                        newSerials={detail.newSerials}
+                        reactivateIds={detail.reactivateIds}
+                        selectedToRemoveIds={detail.selectedToRemoveIds}
+                        onSave={(data) => {
+                            setAdjustmentDetails((prev) =>
+                                prev.map((d, i) =>
+                                    i === trackedModalIndex
+                                        ? {
+                                            ...d,
+                                            adjustmentTrackedMode: data.adjustmentTrackedMode,
+                                            newSerials: data.newSerials,
+                                            reactivateIds: data.reactivateIds,
+                                            reactivateItems: data.reactivateItems,
+                                            selectedToRemoveIds: data.selectedToRemoveIds,
+                                            selectedToRemoveItems: data.selectedToRemoveItems,
+                                        }
+                                        : d
+                                )
+                            );
+                        }}
+                    />
+                ) : null;
+            })()}
         </div>
     );
 };

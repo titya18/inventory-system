@@ -229,7 +229,13 @@ const QuotationForm: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [id, setValue]);
+    }, []);
+
+    useEffect(() => {
+        if (!id && user?.branchId && braches.length > 0) {
+            setValue("branchId", user.branchId, { shouldValidate: false });
+        }
+    }, [braches, id, user?.branchId, setValue]);
 
     const fetchCustomers = useCallback(async () => {
         setIsLoading(true);
@@ -496,10 +502,7 @@ const QuotationForm: React.FC = () => {
 
         const run = async () => {
             // Determine branch based on role
-            const effectiveBranchId =
-                user?.roleType === "USER"
-                    ? user.branchId
-                    : branchId;
+            const effectiveBranchId = branchId;
 
             // No branch → no ref
             if (!effectiveBranchId) {
@@ -544,7 +547,7 @@ const QuotationForm: React.FC = () => {
             setSearchTerm("");
         };
         run();
-    }, [branchId, user, id, setValue]);
+    }, [branchId, id, setValue]);
 
     // Watch the "shipping" field
     const shippingValue = String(watch("shipping") || "0"); // Force it to be a string
@@ -615,10 +618,7 @@ const QuotationForm: React.FC = () => {
             return;
         }
 
-        const selectedBranchId =
-            user?.roleType === "USER"
-                ? user.branchId
-                : watch("branchId");
+        const selectedBranchId = watch("branchId");
 
         if (!selectedBranchId) {
             toast.error("No branch selected", {
@@ -687,10 +687,7 @@ const QuotationForm: React.FC = () => {
         }
     };
 
-    const effectiveBranchId =
-        user?.roleType === "USER"
-            ? user.branchId
-            : watch("branchId");
+    const effectiveBranchId = watch("branchId");
 
     const getVariantUnitOptions = (variant: any) => {
         return Array.isArray(variant?.unitOptions) ? variant.unitOptions : [];
@@ -799,6 +796,7 @@ const QuotationForm: React.FC = () => {
             serialSelectionMode: "AUTO",
             selectedTrackedItemIds: [],
             selectedTrackedItems: [],
+            branchId: Number(watch("branchId") || 0),
         };
     };
 
@@ -1006,7 +1004,7 @@ const QuotationForm: React.FC = () => {
                 serialSelectionMode: QuotationDetailData.serialSelectionMode ?? "AUTO",
                 selectedTrackedItemIds: QuotationDetailData.selectedTrackedItemIds ?? [],
                 selectedTrackedItems: QuotationDetailData.selectedTrackedItems ?? [],
-                branchId: QuotationDetailData.branchId ?? (user?.roleType === "USER" ? user.branchId : watch("branchId")),
+                branchId: QuotationDetailData.branchId ?? watch("branchId"),
             };
 
             const existingIndex = findMatchingQuotationLineIndex(quotationDetails, newDetail);
@@ -1378,7 +1376,7 @@ const QuotationForm: React.FC = () => {
                     : Array.isArray(savedSelection?.selectedTrackedItems)
                     ? savedSelection.selectedTrackedItems
                     : (newDetail.selectedTrackedItems ?? []),
-            branchId: newDetail.branchId ?? (user?.roleType === "USER" ? user.branchId : watch("branchId")),
+            branchId: newDetail.branchId ?? watch("branchId"),
         });
         setIsModalOpen(true);
     }
@@ -1442,27 +1440,25 @@ const QuotationForm: React.FC = () => {
                                     {errors.branchId && <span className="error_validate">{errors.branchId.message}</span>}
                                 </div>
                             } */}
-                            <div className={`grid grid-cols-1 gap-4 ${ user?.roleType === "ADMIN" ? 'sm:grid-cols-4' : 'sm:grid-cols-3' } mb-5`}>
-                                {user?.roleType === "ADMIN" &&
-                                    <div>
-                                        <label>Branch <span className="text-danger text-md">*</span></label>
-                                        <select 
-                                            id="branch" className="form-input" 
-                                            disabled={id ? true : false}
-                                            {...register("branchId", { 
-                                                required: "Branch is required"
-                                            })} 
-                                        >
-                                            <option value="">Select a branch</option>
-                                            {braches.map((option) => (
-                                                <option key={option.id} value={option.id}>
-                                                    {option.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {errors.branchId && <span className="error_validate">{errors.branchId.message}</span>}
-                                    </div>
-                                }
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-5">
+                                <div>
+                                    <label>Branch <span className="text-danger text-md">*</span></label>
+                                    <select
+                                        id="branch" className="form-input"
+                                        disabled={!!id}
+                                        {...register("branchId", {
+                                            required: "Branch is required"
+                                        })}
+                                    >
+                                        <option value="">Select a branch</option>
+                                        {braches.map((option) => (
+                                            <option key={option.id} value={option.id}>
+                                                {option.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {errors.branchId && <span className="error_validate">{errors.branchId.message}</span>}
+                                </div>
 
                                 <div>
                                     <label htmlFor="module">Quotation No <span className="text-danger text-md">*</span></label>
