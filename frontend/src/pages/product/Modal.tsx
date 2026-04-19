@@ -1100,7 +1100,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, product, secon
                         )}
                       </>
                     ) : (
-                      // Create mode: normal radio buttons with validation
+                      // Create mode: normal radio buttons with validation.
                       <>
                         <label className="flex items-center cursor-pointer" style={{ marginRight: "20px" }}>
                           <input type="radio" value="New" className="form-radio" {...register("productType", { required: "Product type is required" })} />
