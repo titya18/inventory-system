@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowUpZA, faArrowDownAZ } from "@fortawesome/free-solid-svg-icons";
+import { ScanBarcode, X } from "lucide-react";
 import Pagination from "../components/Pagination";
 import VisibleColumnsSelector from "@/components/VisibleColumnsSelector";
 import ExportDropdown from "@/components/ExportDropdown";
@@ -9,6 +10,7 @@ import { StockSummaryRow, BranchType } from "@/data_types/types";
 import * as apiClient from "@/api/stock";
 import { getAllBranches } from "@/api/branch";
 import { useAppContext } from "@/hooks/useAppContext";
+import dayjs from "dayjs";
 
 const columns = [
   "No",
@@ -20,6 +22,7 @@ const columns = [
   "Quantity",
   "Alert Qty",
   "Status",
+  "Serials",
 ];
 
 const sortFields: Record<string, string> = {
@@ -82,6 +85,10 @@ const StockSummary: React.FC = () => {
     outOfStock: 0,
   });
 
+  const [serialModal, setSerialModal] = useState<{ row: StockSummaryRow; statusFilter: string } | null>(null);
+  const [serialItems, setSerialItems] = useState<any[]>([]);
+  const [serialLoading, setSerialLoading] = useState(false);
+
   const search = searchParams.get("search") || "";
   const page = Number(searchParams.get("page") || 1);
   const pageSize = Number(searchParams.get("pageSize") || 10);
@@ -116,6 +123,16 @@ const StockSummary: React.FC = () => {
   useEffect(() => {
     fetchBranches();
   }, [fetchBranches]);
+
+  useEffect(() => {
+    if (!serialModal) return;
+    const { row, statusFilter } = serialModal;
+    setSerialLoading(true);
+    apiClient.getSerialsByVariant(row.variantId, row.branchId!, statusFilter || undefined)
+      .then((res) => setSerialItems(res.data))
+      .catch(() => setSerialItems([]))
+      .finally(() => setSerialLoading(false));
+  }, [serialModal]);
 
   useEffect(() => {
     const branchId =
@@ -199,6 +216,7 @@ const StockSummary: React.FC = () => {
   }, [rows, page, pageSize]);
 
   return (
+    <>
     <div className="pt-0">
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -379,6 +397,23 @@ const StockSummary: React.FC = () => {
                                 </span>
                               </td>
                             )}
+                            {visibleCols.includes("Serials") && (
+                              <td>
+                                {r.trackingType && r.trackingType !== "NONE" ? (
+                                  <button
+                                    type="button"
+                                    title="View Serials"
+                                    className="btn btn-sm btn-outline-primary flex items-center gap-1 px-2 py-1"
+                                    onClick={() => setSerialModal({ row: r, statusFilter: "" })}
+                                  >
+                                    <ScanBarcode size={14} />
+                                    <span className="text-xs">Serials</span>
+                                  </button>
+                                ) : (
+                                  <span className="text-gray-400 text-xs">—</span>
+                                )}
+                              </td>
+                            )}
                           </tr>
                         ))
                       ) : (
@@ -403,6 +438,80 @@ const StockSummary: React.FC = () => {
         </div>
       </div>
     </div>
+
+    {/* Serial Modal */}
+    {serialModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="bg-white dark:bg-[#1b2e4b] rounded-lg shadow-xl w-full max-w-3xl mx-4 flex flex-col max-h-[85vh]">
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b dark:border-gray-700">
+            <div>
+              <h2 className="text-base font-semibold">{serialModal.row.productName} — Serials</h2>
+              <p className="text-xs text-gray-500 mt-0.5">Branch: {serialModal.row.branchName}{" | "}SKU: {serialModal.row.sku}</p>
+            </div>
+            <button type="button" onClick={() => setSerialModal(null)} className="text-gray-400 hover:text-gray-600">
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Status filter */}
+          <div className="px-5 py-3 border-b dark:border-gray-700 flex flex-wrap items-center gap-2">
+            <span className="text-sm text-gray-500 shrink-0">Filter:</span>
+            {["", "IN_STOCK", "SOLD", "RESERVED", "TRANSFERRED", "DAMAGED", "LOST", "REMOVED"].map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setSerialModal((prev) => prev ? { ...prev, statusFilter: s } : null)}
+                className={`px-2 py-0.5 rounded text-xs border transition-colors shrink-0 ${serialModal.statusFilter === s ? "bg-primary text-white border-primary" : "border-gray-300 text-gray-600 hover:border-primary hover:text-primary"}`}
+              >
+                {s || "All"}
+              </button>
+            ))}
+          </div>
+
+          {/* Table */}
+          <div className="overflow-y-auto flex-1 px-5 py-3">
+            {serialLoading ? (
+              <p className="text-center text-sm text-gray-500 py-6">Loading...</p>
+            ) : serialItems.length === 0 ? (
+              <p className="text-center text-sm text-gray-500 py-6">No serials found</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-gray-500 border-b dark:border-gray-700">
+                    <th className="pb-2 pr-4">Serial No</th>
+                    <th className="pb-2 pr-4">Asset Code</th>
+                    <th className="pb-2 pr-4">MAC Address</th>
+                    <th className="pb-2 pr-4">Status</th>
+                    <th className="pb-2">Created At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {serialItems.map((item) => (
+                    <tr key={item.id} className="border-b dark:border-gray-700 last:border-0">
+                      <td className="py-2 pr-4 font-mono text-xs">{item.serialNumber || "—"}</td>
+                      <td className="py-2 pr-4 font-mono text-xs">{item.assetCode || "—"}</td>
+                      <td className="py-2 pr-4 font-mono text-xs">{item.macAddress || "—"}</td>
+                      <td className="py-2 pr-4">
+                        <span className={`badge text-xs ${item.status === "IN_STOCK" ? "bg-success" : item.status === "SOLD" ? "bg-danger" : item.status === "RESERVED" ? "bg-warning" : "bg-secondary"}`}>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="py-2 text-xs text-gray-500">{dayjs(item.createdAt).format("DD/MMM/YYYY")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          <div className="px-5 py-3 border-t dark:border-gray-700 text-right text-xs text-gray-500">
+            Total: {serialItems.length} item(s)
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 

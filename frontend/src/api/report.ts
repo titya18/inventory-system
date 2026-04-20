@@ -56,7 +56,8 @@ interface ReportAdjustmentParams {
     startDate?: string; // YYYY-MM-DD
     endDate?: string;   // YYYY-MM-DD
     adjustType?: "POSITIVE" | "NEGATIVE";
-    status?: string;    // PENDING, COMPLETED, etc (CANCELLED excluded in backend)
+    status?: string;
+    reason?: string;
     branchId?: number;
 }
 
@@ -515,6 +516,7 @@ export const getAllReportAdjustments = async ({
     endDate,
     adjustType,
     status,
+    reason,
     branchId
 }: ReportAdjustmentParams): Promise<{ data: StockAdjustmentType[], total: number }> => {
 
@@ -533,6 +535,7 @@ export const getAllReportAdjustments = async ({
     if (endDate) params.set("endDate", endDate);
     if (adjustType) params.set("adjustType", adjustType);
     if (status) params.set("status", status);
+    if (reason) params.set("reason", reason);
     if (branchId) params.set("branchId", String(branchId));
 
     const url = `${API_BASE_URL}/api/report/reportAdjustments?${params.toString()}`;

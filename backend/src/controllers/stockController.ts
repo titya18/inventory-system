@@ -99,6 +99,7 @@ export const stockSummary = async (req: Request, res: Response) => {
         pv.barcode,
         pv."baseUnitId" AS "baseUnitId",
         pv."stockAlert" AS "stockAlert",
+        pv."trackingType" AS "trackingType",
 
         u.id AS "unitId",
         u.name AS "unitName",
@@ -168,6 +169,7 @@ export const stockSummary = async (req: Request, res: Response) => {
         pv.barcode,
         pv."baseUnitId",
         pv."stockAlert",
+        pv."trackingType",
         u.id,
         u.name,
         u.type,
@@ -233,6 +235,7 @@ export const stockSummary = async (req: Request, res: Response) => {
       quantity: Number(r.quantity || 0),
       stockAlert: r.stockAlert != null ? Number(r.stockAlert) : null,
       stockStatus: r.stockStatus,
+      trackingType: r.trackingType ?? "NONE",
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
       createdBy: r.createdById
@@ -427,6 +430,7 @@ export const lowStockReport = async (req: Request, res: Response) => {
         pv.barcode,
         pv."baseUnitId",
         pv."stockAlert",
+        pv."trackingType",
         u.id,
         u.name,
         u.type,
@@ -925,5 +929,157 @@ export const stockValuationReport = async (req: Request, res: Response) => {
     res.status(500).json({
       message: "Failed to load stock valuation report",
     });
+  }
+};
+
+// GET /api/stock/serials?variantId=X&branchId=X — serials for one variant/branch (modal)
+export const getSerialsByVariant = async (req: Request, res: Response) => {
+  try {
+    const variantId = getQueryNumber(req.query.variantId, 0)!;
+    const branchId = getQueryNumber(req.query.branchId, 0)!;
+    const status = getQueryString(req.query.status, "")!.trim().toUpperCase();
+
+    if (!variantId || !branchId) {
+      res.status(400).json({ message: "variantId and branchId are required" });
+      return;
+    }
+
+    const whereClause: any = { productVariantId: variantId, branchId };
+    if (status) whereClause.status = status;
+
+    const items = await prisma.productAssetItem.findMany({
+      where: whereClause,
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        serialNumber: true,
+        assetCode: true,
+        macAddress: true,
+        status: true,
+        sourceType: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    res.json({ data: items, total: items.length });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to load serials" });
+  }
+};
+
+// GET /api/stock/asset-report — paginated cross-product serial/asset report
+export const getAssetReport = async (req: Request, res: Response) => {
+  try {
+    const pageSize = getQueryNumber(req.query.pageSize, 20)!;
+    const pageNumber = getQueryNumber(req.query.page, 1)!;
+    const searchTerm = getQueryString(req.query.searchTerm, "")!.trim();
+    const status = getQueryString(req.query.status, "")!.trim().toUpperCase();
+    const trackingType = getQueryString(req.query.trackingType, "")!.trim();
+    const offset = (pageNumber - 1) * pageSize;
+    const likeTerm = `%${searchTerm}%`;
+
+    const branchFilter = buildBranchFilter(req.user, req.query);
+    const branchCondition = branchFilter?.branchId
+      ? `AND ai."branchId" = ${branchFilter.branchId}`
+      : "";
+    const statusCondition = status ? `AND ai.status = '${status}'` : "";
+    const trackingCondition = trackingType ? `AND pv."trackingType" = '${trackingType}'` : "";
+
+    const totalResult: any[] = await prisma.$queryRawUnsafe(
+      `SELECT COUNT(*) AS total
+       FROM "ProductAssetItem" ai
+       JOIN "ProductVariants" pv ON ai."productVariantId" = pv.id
+       JOIN "Products" p ON pv."productId" = p.id
+       JOIN "Branch" b ON ai."branchId" = b.id
+       WHERE (
+         p.name ILIKE $1
+         OR pv.sku ILIKE $1
+         OR COALESCE(pv.barcode, '') ILIKE $1
+         OR COALESCE(ai."serialNumber", '') ILIKE $1
+         OR COALESCE(ai."assetCode", '') ILIKE $1
+         OR COALESCE(ai."macAddress", '') ILIKE $1
+       )
+       ${branchCondition}
+       ${statusCondition}
+       ${trackingCondition}
+      `,
+      likeTerm
+    );
+
+    const total = Number(totalResult[0]?.total || 0);
+
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT
+         ai.id,
+         ai."serialNumber",
+         ai."assetCode",
+         ai."macAddress",
+         ai.status,
+         ai."sourceType",
+         ai."createdAt",
+         ai."updatedAt",
+         pv.id AS "variantId",
+         pv.name AS "variantName",
+         pv."productType",
+         pv.sku,
+         pv.barcode,
+         pv."trackingType",
+         p.id AS "productId",
+         p.name AS "productName",
+         b.id AS "branchId",
+         b.name AS "branchName"
+       FROM "ProductAssetItem" ai
+       JOIN "ProductVariants" pv ON ai."productVariantId" = pv.id
+       JOIN "Products" p ON pv."productId" = p.id
+       JOIN "Branch" b ON ai."branchId" = b.id
+       WHERE (
+         p.name ILIKE $1
+         OR pv.sku ILIKE $1
+         OR COALESCE(pv.barcode, '') ILIKE $1
+         OR COALESCE(ai."serialNumber", '') ILIKE $1
+         OR COALESCE(ai."assetCode", '') ILIKE $1
+         OR COALESCE(ai."macAddress", '') ILIKE $1
+       )
+       ${branchCondition}
+       ${statusCondition}
+       ${trackingCondition}
+       ORDER BY ai."createdAt" DESC
+       LIMIT $2 OFFSET $3
+      `,
+      likeTerm, pageSize, offset
+    );
+
+    const statusCounts = rows.reduce((acc: any, r: any) => {
+      acc[r.status] = (acc[r.status] || 0) + 1;
+      return acc;
+    }, {});
+
+    res.json({
+      data: rows.map((r) => ({
+        id: r.id,
+        serialNumber: r.serialNumber,
+        assetCode: r.assetCode,
+        macAddress: r.macAddress,
+        status: r.status,
+        sourceType: r.sourceType,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+        variantId: r.variantId,
+        variantName: r.variantName,
+        productType: r.productType,
+        sku: r.sku,
+        barcode: r.barcode,
+        trackingType: r.trackingType,
+        productId: r.productId,
+        productName: r.productName,
+        branchId: r.branchId,
+        branchName: r.branchName,
+      })),
+      summary: statusCounts,
+      pagination: { total, page: pageNumber, pageSize, totalPages: Math.ceil(total / pageSize) },
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to load asset report" });
   }
 };

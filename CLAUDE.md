@@ -316,6 +316,18 @@ Invoice:   PENDING → APPROVED → COMPLETED
 - POSITIVE: adds new FIFO layer (`remainingQty = qty`)
 - NEGATIVE: consumes existing FIFO layers; validates sufficient stock
 
+#### Negative Adjustment Reason (per detail line)
+Every NEGATIVE adjustment line has a `reason` field stored in `AdjustmentDetails.reason` (DB migration `20260420022409_add_reason_to_adjustment_details`):
+- `REMOVED` (default) — stock written off
+- `DAMAGED` — stock physically damaged
+- `LOST` — stock lost/missing
+
+**Tracked products**: the chosen reason becomes the `ProductAssetItem.status` for each selected serial — making DAMAGED and LOST statuses actually reachable. Previously only REMOVED was ever set (hardcoded).
+**Non-tracked products**: `reason` is stored on `AdjustmentDetails` only (no per-item record exists); visible in the Adjustment Report.
+
+Frontend: `StockAdjustmentForm.tsx` shows a **Reason** dropdown per row whenever `AdjustMentType === "NEGATIVE"`.
+Backend: `stockAdjustmentController.ts` builds a `reasonMap` keyed by `productVariantId`; applies the reason as `status` on `productAssetItem.updateMany()` for tracked items.
+
 ### Stock Transfer (Inter-branch)
 - Source branch: OUT movement (negative qty) consuming FIFO batches
 - Destination branch: IN movement (positive qty) with same cost basis
@@ -479,7 +491,7 @@ If a CEQ is edited to **add** an invoice (`orderId`) that was previously absent,
 
 ---
 
-## Reports System (16 Report Types)
+## Reports System (17 Report Types)
 
 ### Financial Reports
 | Report | Description | Key Calculation |
@@ -497,7 +509,8 @@ If a CEQ is edited to **add** an invoice (`orderId`) that was previously absent,
 | Report | Description |
 |--------|-------------|
 | **Stock Report** | Current stock levels, low stock alerts (`qty ≤ stockAlert`) |
-| **Adjustment Report** | All manual adjustments (POSITIVE/NEGATIVE) |
+| **Serial / Asset Report** | All `ProductAssetItem` records — filterable by branch, status (IN_STOCK/SOLD/DAMAGED/LOST/REMOVED/etc.), tracking type; searchable by product/serial/asset/MAC; summary cards; export. Route `/asset-report`, gated on `Stock-Summary-Report` permission. Also accessible as a per-variant modal (ScanBarcode button) in Stock Summary. |
+| **Adjustment Report** | All manual adjustments (POSITIVE/NEGATIVE); filter by Reason (REMOVED/DAMAGED/LOST); Reason shown as badge per adjustment row and per detail line in the detail modal |
 | **Transfer Report** | Inter-branch transfer history |
 | **Request Report** | Stock request history |
 | **Sale Return Report** | Customer returns |
@@ -539,7 +552,7 @@ If a CEQ is edited to **add** an invoice (`orderId`) that was previously absent,
 | searchProductController | `/api/searchProductRoute` | Search by name/barcode/SKU |
 | searchServiceController | `/api/searchServiceRoute` | Search services |
 | serviceController | `/api/service` | CRUD non-inventory services |
-| stockController | `/api/stock` | Stock summary, low stock, valuation |
+| stockController | `/api/stock` | Stock summary, low stock, valuation, `/serials` (per-variant serial lookup), `/asset-report` (paginated asset item report) |
 | stockAdjustmentController | `/api/stockadjustment` | Create/approve adjustments, FIFO |
 | stockRequestController | `/api/stockrequest` | Inter-branch requests |
 | stockReturnController | `/api/stockreturn` | Return to supplier |
@@ -643,6 +656,9 @@ If a CEQ is edited to **add** an invoice (`orderId`) that was previously absent,
 | 13 | `Products.name @unique` constraint prevented same product name with different `productType` | `prisma/schema.prisma` (migration `20260403064752_remove_product_name_unique`) |
 | 14 | Product uniqueness check used `products.findFirst({ where: { name } })` — missed productType scope | `productController.ts` — now uses `productVariants.findFirst({ where: { productType, products: { name } } })` |
 | 15 | Simple user could bypass PO Authorize Amount by submitting APPROVED/RECEIVED status — no backend guard existed | `purchaseController.ts` — added pre-transaction check; allows RECEIVED only if current DB status is APPROVED |
+| 16 | `let variantId: number` inside `$transaction` callback shadowed outer `variantId` from `req.body` — TypeScript compiled outer to `variantId2`, accessed before inner `let` initialized → TDZ crash (500 on PUT /api/product/:id) | `productController.ts` — renamed inner variable to `savedVariantId` throughout the transaction block |
+| 17 | `validateRoleandPermissionRequest` checked `body("module")` but frontend sends `name` and controller reads `name` — every POST/PUT to `/api/module_permission` returned 400 | `middlewares/validation.ts` — changed `body("module")` → `body("name")` |
+| 18 | PostgreSQL sequences for `Module` and `Permission` tables out of sync after seed inserts with explicit IDs — `prisma.module.create()` always threw P2002 unique constraint on `id` | `module_permissionController.ts` — resync both sequences via `setval('"Module_id_seq"', MAX(id)+1, false)` and `setval('"Permission_id_seq"', MAX(id)+1, false)` before every create |
 
 ### Frontend
 | # | Issue | File |
@@ -683,6 +699,22 @@ If a CEQ is edited to **add** an invoice (`orderId`) that was previously absent,
 | 34 | `ReturnTrackedModal` showed "No serials found" — `setClickData(detail)` passed `detail.id` but modal guard checked `clickData.orderItemId` (undefined), so fetch was skipped entirely | `SaleReturnForm.tsx` — changed to `setClickData({ ...detail, orderItemId: detail.id })` |
 | 35 | `ReturnTrackedModal` required selecting ALL invoice qty serials even when user only wanted to return 1 — modal used `clickData.quantity` from invoice detail (e.g. 2) instead of current return qty | `SaleReturnForm.tsx` — added `quantity: currentReturn` to clickData spread |
 | 36 | `ReturnTrackedModal` forgot previously saved serial selection on re-open — `clickData` was rebuilt from `detail` with no `selectedTrackedItemIds`, so modal always started empty | `SaleReturnForm.tsx` — added `selectedTrackedItemIds: currentLine?.selectedTrackedItemIds \|\| []` to clickData spread |
+| 37 | Product edit modal: `let variantId` inside `$transaction` caused TDZ crash; SecondHand tab showed "Product type is required" because hidden `<input type="hidden" {...register("productType")} />` was inside `!secondHandFullData` block and not rendered when tabs are shown | `productController.ts` (renamed to `savedVariantId`); `pages/product/Modal.tsx` (moved hidden input outside the condition so it always renders in edit mode) |
+| 38 | Product list didn't show Type, SKU, or Barcode — `getAllProducts` raw SQL didn't join `ProductVariants` | `productController.ts` — added correlated subquery `(SELECT json_agg(...) FROM ProductVariants WHERE productId = p.id)` as `productvariants`; `pages/product/Product.tsx` — added "Type", "SKU", "Barcode" columns with badge styling |
+| 39 | `DAMAGED` and `LOST` statuses on `ProductAssetItem` were never reachable — negative stock adjustment hardcoded `status: "REMOVED"` regardless of intent | `AdjustmentDetails` model: added `reason String?` (migration `20260420022409`); `stockAdjustmentController.ts`: builds `reasonMap`, applies chosen reason as asset item status; `StockAdjustmentForm.tsx`: added Reason dropdown per NEGATIVE line |
+| 40 | Adjustment Report had no per-line reason visibility — `AdjustmentDetails.reason` was stored in DB but never surfaced in the report | `reportController.ts`: added `reason` filter (EXISTS subquery) + `array_agg(DISTINCT ad."reason")` as `reasons`; `ReportAdjustment.tsx`: added Reason filter dropdown, Reason column with badges, Reason column in detail modal |
+
+---
+
+## CI/CD Notes
+
+### GitHub Actions Deployment Workflows
+- **Files**: `frontend/.github/workflows/pos_react_frontend.yml`, `backend/.github/workflows/pos_note_backend.yml`
+- **Fixed**: Removed `--no-cache` from `docker compose build` — was rebuilding all layers (including `npm install`) on every deploy, causing 10+ minute builds that hit CI timeout
+- **Fixed**: Added SSH keepalive (`-o ServerAliveInterval=30 -o ServerAliveCountMax=20`) to prevent SSH session drop during long builds
+- **Fixed**: Added `timeout-minutes: 20` to deploy steps (default was too short)
+- **Pattern**: SSH into VPS → git pull → `docker compose build {service}` → `docker compose up -d --no-deps {service}`
+- **Sequences note**: If a new database is seeded with explicit IDs, PostgreSQL sequences for tables like `Module` and `Permission` may be out of sync. Run: `SELECT setval('"Module_id_seq"', (SELECT MAX(id) FROM "Module") + 1, false);` and same for Permission.
 
 ---
 

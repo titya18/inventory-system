@@ -39,6 +39,7 @@ import StockSummary from "./pages/stock/StockSummary";
 import LowStockReport from "./pages/stock/LowStockReport";
 import StockValuationReport from "./pages/stock/StockValuationReport";
 import StockMovementReport from "./pages/stock/StockMovementReport";
+import AssetReport from "./pages/stock/AssetReport";
 import StockAdjustment from "./pages/stockadjustment/StockAdjustment";
 import StockAdjustmentForm from "./pages/stockadjustment/StockAdjustmentForm";
 import StockTransfer from "./pages/stocktransfer/StockTransfer";
@@ -155,6 +156,7 @@ const App: React.FC = () => {
                         <Route path="/low-stock" element={<PrivateRoute element={<Layout><LowStockReport /></Layout>} />} />
                         <Route path="/stock-movements" element={<PrivateRoute element={<Layout><StockMovementReport /></Layout>} />} />
                         <Route path="/stock-valuations" element={<PrivateRoute element={<Layout><StockValuationReport /></Layout>} />} />
+                        <Route path="/asset-report" element={<PrivateRoute element={<Layout><AssetReport /></Layout>} />} />
                         {/* Stock Adjustment */}
                         <Route path="/adjuststock" element={<PrivateRoute element={<Layout><StockAdjustment /></Layout>} />} />
                         <Route path="/addadjuststock" element={<PrivateRoute element={<Layout><StockAdjustmentForm /></Layout>} />} />

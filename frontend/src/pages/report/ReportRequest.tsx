@@ -537,7 +537,7 @@ const ReportRequest: React.FC = () => {
             {showDetailModal && (
                 <div className="fixed inset-0 bg-[black]/60 z-[999] overflow-y-auto">
                     <div className="flex items-center justify-center min-h-screen px-4">
-                        <div className="panel border-0 p-0 rounded-lg overflow-hidden w-full max-w-6xl my-8">
+                        <div className="panel border-0 p-0 rounded-lg overflow-hidden w-full max-w-5xl my-8">
                             <div className="flex bg-[#fbfbfb] dark:bg-[#121c2c] items-center justify-between px-5 py-3">
                                 <h5 className="flex font-bold text-lg">
                                     <Eye size={18} className="mr-2" /> Stock Request Details

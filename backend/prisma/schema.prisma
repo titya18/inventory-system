@@ -1227,6 +1227,7 @@ model AdjustmentDetails {
   cost            Decimal? @db.Decimal(10, 4)      // ✅ NEW
   costPerBaseUnit Decimal? @db.Decimal(10, 4)      // ✅ NEW
   trackedPayload  String?  @db.Text
+  reason          String?  @db.VarChar(20)
 
   stockadjustments StockAdjustments @relation(fields: [adjustmentId], references: [id])
   products         Products?        @relation(fields: [productId], references: [id])

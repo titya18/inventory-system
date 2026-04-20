@@ -26,6 +26,7 @@ const columns = [
     "Adjustment Date",
     "Branch",
     "Adjustment Type",
+    "Reason",
     "Status",
     "Total QTY",
     "Approved At",
@@ -46,10 +47,17 @@ const DEFAULT_VISIBLE_COLUMNS = [
     "Adjustment Date",
     "Branch",
     "Adjustment Type",
+    "Reason",
     "Status",
     "Total QTY",
     "Actions",
 ];
+
+const reasonBadge: Record<string, string> = {
+    REMOVED: "badge bg-secondary",
+    DAMAGED: "badge bg-warning",
+    LOST: "badge bg-danger",
+};
 
 const sortFields: Record<string, string> = {
     "No": "id",
@@ -102,6 +110,7 @@ const ReportAdjustment: React.FC = () => {
     const endDate = searchParams.get("endDate") || today;
     const adjustType = searchParams.get("adjustType") || "ALL";
     const status = searchParams.get("status") || "";
+    const reason = searchParams.get("reason") || "";
     const branchId = searchParams.get("branchId")
         ? parseInt(searchParams.get("branchId")!, 10)
         : undefined;
@@ -155,6 +164,7 @@ const ReportAdjustment: React.FC = () => {
                 endDate: endDate || undefined,
                 adjustType: normalizedAdjustType,
                 status: status || undefined,
+                reason: reason || undefined,
                 branchId,
             };
 
@@ -167,7 +177,7 @@ const ReportAdjustment: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [sortField, sortOrder, page, pageSize, search, startDate, endDate, adjustType, status, branchId]);
+    }, [sortField, sortOrder, page, pageSize, search, startDate, endDate, adjustType, status, reason, branchId]);
 
     useEffect(() => {
         fetchBranches();
@@ -208,6 +218,7 @@ const ReportAdjustment: React.FC = () => {
         "Cancelled At": formatDateTime(row.deletedAt),
         "Cancelled By": fullName(row.deleter),
         "Cancelled Reason": row.delReason || "",
+        "Reason": row.AdjustMentType === "NEGATIVE" ? (row.reasons ?? []).join(", ") : "",
         "Created At": formatDateTime(row.createdAt),
         "Created By": fullName(row.creator),
         "Updated At": formatDateTime(row.updatedAt),
@@ -295,6 +306,20 @@ const ReportAdjustment: React.FC = () => {
                                         <option value="PENDING">Pending</option>
                                         <option value="APPROVED">Approved</option>
                                         <option value="CANCELLED">Cancelled</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label>Reason</label>
+                                    <select
+                                        value={reason}
+                                        onChange={(e) => updateParams({ reason: e.target.value, page: 1 })}
+                                        className="form-select"
+                                    >
+                                        <option value="">All</option>
+                                        <option value="REMOVED">Removed</option>
+                                        <option value="DAMAGED">Damaged</option>
+                                        <option value="LOST">Lost</option>
                                     </select>
                                 </div>
 
@@ -407,6 +432,19 @@ const ReportAdjustment: React.FC = () => {
                                                                     <span className={`badge rounded-full ${row.AdjustMentType === "POSITIVE" ? "bg-primary" : "bg-danger"}`}>
                                                                         {row.AdjustMentType}
                                                                     </span>
+                                                                </td>
+                                                            )}
+
+                                                            {visibleCols.includes("Reason") && (
+                                                                <td>
+                                                                    {row.AdjustMentType === "NEGATIVE" && Array.isArray(row.reasons) && row.reasons.length > 0
+                                                                        ? row.reasons.map((r) => (
+                                                                            <span key={r} className={`${reasonBadge[r] ?? "badge bg-secondary"} text-xs mr-1`}>
+                                                                                {r}
+                                                                            </span>
+                                                                        ))
+                                                                        : <span className="text-gray-400 text-xs">—</span>
+                                                                    }
                                                                 </td>
                                                             )}
 
@@ -561,7 +599,7 @@ const ReportAdjustment: React.FC = () => {
             {showDetailModal && (
                 <div className="fixed inset-0 bg-[black]/60 z-[999] overflow-y-auto">
                     <div className="flex items-center justify-center min-h-screen px-4">
-                        <div className="panel border-0 p-0 rounded-lg overflow-hidden w-full max-w-7xl my-8">
+                        <div className="panel border-0 p-0 rounded-lg overflow-hidden w-full max-w-5xl my-8">
                             <div className="flex bg-[#fbfbfb] dark:bg-[#121c2c] items-center justify-between px-5 py-3">
                                 <h5 className="flex font-bold text-lg">
                                     <Eye size={18} className="mr-2" /> Stock Adjustment Details
@@ -627,6 +665,9 @@ const ReportAdjustment: React.FC = () => {
                                                         <th className="border px-3 py-2 text-right">Base Qty</th>
                                                         <th className="border px-3 py-2 text-right">Cost</th>
                                                         <th className="border px-3 py-2 text-right">Cost/Base Unit</th>
+                                                        {selectedAdjustment.AdjustMentType === "NEGATIVE" && (
+                                                            <th className="border px-3 py-2 text-left">Reason</th>
+                                                        )}
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -662,11 +703,18 @@ const ReportAdjustment: React.FC = () => {
                                                                         ? detail.costPerBaseUnit ?? 0
                                                                         : "—"}
                                                                 </td>
+                                                                {selectedAdjustment.AdjustMentType === "NEGATIVE" && (
+                                                                    <td className="border px-3 py-2">
+                                                                        {detail.reason
+                                                                            ? <span className={`${reasonBadge[detail.reason] ?? "badge bg-secondary"} text-xs`}>{detail.reason}</span>
+                                                                            : "—"}
+                                                                    </td>
+                                                                )}
                                                             </tr>
                                                         ))
                                                     ) : (
                                                         <tr>
-                                                            <td colSpan={9} className="border px-3 py-2 text-center">
+                                                            <td colSpan={selectedAdjustment.AdjustMentType === "NEGATIVE" ? 10 : 9} className="border px-3 py-2 text-center">
                                                                 No detail lines found
                                                             </td>
                                                         </tr>

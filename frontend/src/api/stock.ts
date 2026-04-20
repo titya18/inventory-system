@@ -1,4 +1,4 @@
-import { StockSummaryRow, LowStockRow, StockValuationRow} from "@/data_types/types";
+import { StockSummaryRow, LowStockRow, StockValuationRow, AssetReportRow } from "@/data_types/types";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
@@ -156,5 +156,51 @@ export const getStockValuation = async (
 
   if (!response.ok) throw new Error("Error fetching stock valuation");
 
+  return response.json();
+};
+
+export const getSerialsByVariant = async (
+  variantId: number,
+  branchId: number,
+  status?: string
+): Promise<{ data: { id: number; serialNumber: string | null; assetCode: string | null; macAddress: string | null; status: string; sourceType: string | null; createdAt: string }[]; total: number }> => {
+  const params = new URLSearchParams();
+  params.set("variantId", String(variantId));
+  params.set("branchId", String(branchId));
+  if (status) params.set("status", status);
+
+  const response = await fetch(`${API_BASE_URL}/api/stock/serials?${params.toString()}`, {
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Error fetching serials");
+  return response.json();
+};
+
+export interface AssetReportResponse {
+  data: AssetReportRow[];
+  summary: Record<string, number>;
+  pagination: Pagination;
+}
+
+export const getAssetReport = async (
+  page: number,
+  pageSize: number,
+  searchTerm?: string,
+  branchId?: number,
+  status?: string,
+  trackingType?: string
+): Promise<AssetReportResponse> => {
+  const params = new URLSearchParams();
+  params.set("page", String(page));
+  params.set("pageSize", String(pageSize));
+  if (searchTerm) params.set("searchTerm", searchTerm);
+  if (branchId) params.set("branchId", String(branchId));
+  if (status) params.set("status", status);
+  if (trackingType) params.set("trackingType", trackingType);
+
+  const response = await fetch(`${API_BASE_URL}/api/stock/asset-report?${params.toString()}`, {
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Error fetching asset report");
   return response.json();
 };

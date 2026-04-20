@@ -164,12 +164,14 @@ export const upsertAdjustment = async (req: Request, res: Response): Promise<voi
         }
       }
 
-      // Build a map of trackedItemData keyed by productVariantId for use in APPROVED block
+      // Build maps keyed by productVariantId for use in APPROVED block
       const trackedMap = new Map<number, any>();
+      const reasonMap = new Map<number, string>();
       if (Array.isArray(adjustmentDetails)) {
         for (const orig of adjustmentDetails) {
-          if (orig.productVariantId && orig.trackedItemData) {
-            trackedMap.set(Number(orig.productVariantId), orig.trackedItemData);
+          if (orig.productVariantId) {
+            if (orig.trackedItemData) trackedMap.set(Number(orig.productVariantId), orig.trackedItemData);
+            reasonMap.set(Number(orig.productVariantId), orig.reason ?? "REMOVED");
           }
         }
       }
@@ -245,6 +247,7 @@ export const upsertAdjustment = async (req: Request, res: Response): Promise<voi
             cost,
             costPerBaseUnit,
             trackedPayload: detail.trackedItemData ? JSON.stringify(detail.trackedItemData) : null,
+            reason: AdjustMentType === "NEGATIVE" ? (detail.reason ?? "REMOVED") : null,
           };
         })
       );
@@ -269,6 +272,7 @@ export const upsertAdjustment = async (req: Request, res: Response): Promise<voi
             cost: detail.cost,
             costPerBaseUnit: detail.costPerBaseUnit,
             trackedPayload: detail.trackedPayload ?? null,
+            reason: detail.reason ?? null,
           })),
         },
       };
@@ -415,6 +419,7 @@ export const upsertAdjustment = async (req: Request, res: Response): Promise<voi
             // Handle tracked items for NEGATIVE adjustment
             const trackedDataNeg = trackedMap.get(Number(detail.productVariantId));
             if (trackedDataNeg?.type === "SELECT" && Array.isArray(trackedDataNeg.selectedIds) && trackedDataNeg.selectedIds.length > 0) {
+              const assetStatus = reasonMap.get(Number(detail.productVariantId)) ?? "REMOVED";
               await tx.productAssetItem.updateMany({
                 where: {
                   id: { in: trackedDataNeg.selectedIds.map(Number) },
@@ -422,7 +427,7 @@ export const upsertAdjustment = async (req: Request, res: Response): Promise<voi
                   branchId: Number(branchId),
                 },
                 data: {
-                  status: "REMOVED",
+                  status: assetStatus as any,
                   updatedBy: loggedInUser.id,
                   updatedAt: currentDate,
                 },

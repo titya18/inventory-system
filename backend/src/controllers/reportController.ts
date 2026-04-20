@@ -1639,6 +1639,7 @@ export const getAllReportAdjustments = async (
         const endDate = getQueryString(req.query.endDate, "")!.trim();
         const adjustType = getQueryString(req.query.adjustType, "")!.trim();
         const status = getQueryString(req.query.status, "")!.trim();
+        const reason = getQueryString(req.query.reason, "")!.trim();
         const branchId = req.query.branchId ? Number(req.query.branchId) : null;
 
         const loggedInUser = req.user;
@@ -1705,6 +1706,11 @@ export const getAllReportAdjustments = async (
         if (status) {
             params.push(status);
             whereParts.push(`sam."StatusType"::text = $${params.length}`);
+        }
+
+        if (reason) {
+            params.push(reason);
+            whereParts.push(`EXISTS (SELECT 1 FROM "AdjustmentDetails" ad2 WHERE ad2."adjustmentId" = sam.id AND ad2."reason" = $${params.length})`);
         }
 
         if (searchTerm) {
@@ -1780,6 +1786,7 @@ export const getAllReportAdjustments = async (
             SELECT 
                 sam.*,
                 COALESCE(SUM(ad."baseQty"), 0) AS "totalQuantity",
+                array_agg(DISTINCT ad."reason") FILTER (WHERE ad."reason" IS NOT NULL) AS reasons,
 
                 json_build_object(
                     'id', br.id,

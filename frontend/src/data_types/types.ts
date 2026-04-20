@@ -369,6 +369,28 @@ export interface StockSummaryRow {
 
     variantId: number;
     branchId?: number;
+    trackingType?: "NONE" | "ASSET_ONLY" | "MAC_ONLY" | "ASSET_AND_MAC";
+}
+
+export interface AssetReportRow {
+    id: number;
+    serialNumber: string | null;
+    assetCode: string | null;
+    macAddress: string | null;
+    status: string;
+    sourceType: string | null;
+    createdAt: string;
+    updatedAt: string;
+    variantId: number;
+    variantName: string;
+    productType: string;
+    sku: string;
+    barcode: string | null;
+    trackingType: string;
+    productId: number;
+    productName: string;
+    branchId: number;
+    branchName: string;
 }
 
 export interface PurchaseType {
@@ -753,6 +775,7 @@ export interface StockAdjustmentType {
     adjustmentDetails: StockAdjustmentDetailType[];
 
     totalQuantity?: number;
+    reasons?: string[];
 }
 
 export interface StockAdjustmentDetailType {
@@ -776,6 +799,7 @@ export interface StockAdjustmentDetailType {
     selectedTrackedItemIds?: number[];
     selectedTrackedItems?: ProductTrackedItemType[];
     branchId?: number | null;
+    reason?: "REMOVED" | "DAMAGED" | "LOST";
 
     // Tracked item data for stock adjustment serial handling
     adjustmentTrackedMode?: "NEW" | "REACTIVATE";

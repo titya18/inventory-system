@@ -32,7 +32,8 @@ import {
     Activity,
     ChartCandlestick,
     Wallet,
-    MonitorSmartphone
+    MonitorSmartphone,
+    ScanBarcode
 } from 'lucide-react';
 
 // Define a type for the state
@@ -1003,6 +1004,24 @@ const Sidebar: React.FC = () => {
                                             <div className="flex items-center">
                                                 <ChartCandlestick />
                                                 <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Stock Valuation Report</span>
+                                            </div>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+
+                        {hasPermission('Stock-Summary-Report') &&
+                            <li className="nav-item">
+                                <ul>
+                                    <li className="nav-item" onClick={() => handleToggleMenu(null)}>
+                                        <NavLink
+                                            to="/asset-report"
+                                            className={['asset-report'].some(seg => location.pathname.includes(seg)) ? 'active' : ''}
+                                        >
+                                            <div className="flex items-center">
+                                                <ScanBarcode />
+                                                <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Serial / Asset Report</span>
                                             </div>
                                         </NavLink>
                                     </li>

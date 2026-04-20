@@ -283,6 +283,7 @@ const StockAdjustmentForm: React.FC = () => {
                         cost: detail.cost ?? "",
                         costPerBaseUnit: detail.costPerBaseUnit ?? 0,
                         trackingType: detail.productvariants?.trackingType ?? "NONE",
+                        reason: detail.reason ?? "REMOVED",
                         ...tracked,
                     };
                 })
@@ -406,6 +407,7 @@ const StockAdjustmentForm: React.FC = () => {
             selectedTrackedItemIds: [],
             selectedTrackedItems: [],
             branchId: Number(watch("branchId") || 0),
+            reason: "REMOVED",
         };
 
         setAdjustmentDetails((prev) => [...prev, newDetail]);
@@ -446,6 +448,7 @@ const StockAdjustmentForm: React.FC = () => {
             selectedTrackedItemIds: [],
             selectedTrackedItems: [],
             branchId: Number(watch("branchId") || 0),
+            reason: "REMOVED",
         };
 
         setAdjustmentDetails((prev) => [...prev, newDetail]);
@@ -666,6 +669,7 @@ const StockAdjustmentForm: React.FC = () => {
                 products: detail.products ?? null,
                 productvariants: detail.productvariants ?? null,
                 stocks: detail.stocks ?? 0,
+                reason: formData.AdjustMentType === "NEGATIVE" ? (detail.reason ?? "REMOVED") : undefined,
                 trackedItemData: (() => {
                     if (!detail.trackingType || detail.trackingType === "NONE") return undefined;
                     if (formData.AdjustMentType === "POSITIVE") {
@@ -930,6 +934,7 @@ const StockAdjustmentForm: React.FC = () => {
                                         {watch("AdjustMentType") === "POSITIVE" && user?.roleType !== "USER" && <th>Cost</th>}
                                         <th>Base Qty</th>
                                         {statusValue === "PENDING" && <th>Qty On Hand</th>}
+                                        {watch("AdjustMentType") === "NEGATIVE" && <th>Reason</th>}
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -1065,6 +1070,28 @@ const StockAdjustmentForm: React.FC = () => {
                                                                     {stockInSelectedUnit} {selectedUnit.unitName}
                                                                 </small>
                                                             )} */}
+                                                        </td>
+                                                    )}
+
+                                                    {watch("AdjustMentType") === "NEGATIVE" && (
+                                                        <td style={{ minWidth: "130px" }}>
+                                                            <select
+                                                                className="form-select"
+                                                                value={detail.reason ?? "REMOVED"}
+                                                                onChange={(e) =>
+                                                                    setAdjustmentDetails((prev) =>
+                                                                        prev.map((d, i) =>
+                                                                            i === index
+                                                                                ? { ...d, reason: e.target.value as "REMOVED" | "DAMAGED" | "LOST" }
+                                                                                : d
+                                                                        )
+                                                                    )
+                                                                }
+                                                            >
+                                                                <option value="REMOVED">Removed</option>
+                                                                <option value="DAMAGED">Damaged</option>
+                                                                <option value="LOST">Lost</option>
+                                                            </select>
                                                         </td>
                                                     )}
 
