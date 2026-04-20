@@ -3,58 +3,47 @@ name: Deploy Frontend to VPS
 on:
   push:
     branches:
-      - main  # Deploy when code is pushed to 'main'
+      - main
   pull_request:
     branches:
-      - main  # Deploy when a PR is merged into 'main'
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
-      # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Ensure the full repo is cloned
+          fetch-depth: 0
 
-      # Step 2: Debug - Check files in workspace
-      - name: Debug - List files in workspace
-        run: |
-          echo "Listing files in GitHub Actions workspace..."
-          ls -la $GITHUB_WORKSPACE
-
-      # Step 3: Set up SSH for deployment
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.5.3
+      - name: Pull latest code on VPS
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
-
-      # Step 4: Clone frontend files from GitHub (or pull latest changes)
-      - name: Clone frontend files from GitHub
-        run: |
-          echo "Cloning or pulling frontend repository..."
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${{ secrets.SERVER_IP }} << 'EOF'
+          host: ${{ secrets.SERVER_IP }}
+          username: root
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          command_timeout: 5m
+          script: |
             cd /var/www
             if [ -d "pos_react_front_office" ]; then
               cd pos_react_front_office
-              git fetch --all  # Fetch all branches
-              git reset --hard origin/main  # Discard local changes and force sync with remote
+              git fetch --all
+              git reset --hard origin/main
             else
-              git clone https://github.com/titya18/pos_react_front_office.git  # Clone if the directory doesn't exist
+              git clone https://github.com/titya18/pos_react_front_office.git
             fi
-          EOF
 
-      # Step 5: Rebuild and deploy frontend only
-      - name: Deploy frontend to VPS
-        timeout-minutes: 20
-        run: |
-          echo "Rebuilding and restarting frontend on VPS..."
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-              -o ServerAliveInterval=30 -o ServerAliveCountMax=20 \
-              root@${{ secrets.SERVER_IP }} << 'EOF'
+      - name: Build and deploy frontend
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: root
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          command_timeout: 25m
+          script: |
             cd /var/www/pos_react_front_office
             docker compose -f /var/www/docker-compose.frontend.yml build frontend
             docker compose -f /var/www/docker-compose.frontend.yml up -d --no-deps frontend
-          EOF
