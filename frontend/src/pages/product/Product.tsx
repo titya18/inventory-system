@@ -321,9 +321,11 @@ const Product: React.FC = () => {
         }
         const getProduct = await apiClient.getProductById(productData.id);
         // Use the New variant as primary; detect SecondHand variant
-        const variant = getProduct.productvariants?.find((v: any) => v.productType === "New") ?? getProduct.productvariants?.[0];
+        const newVariant = getProduct.productvariants?.find((v: any) => v.productType === "New");
         const shVariant = getProduct.productvariants?.find((v: any) => v.productType === "SecondHand") ?? null;
-        setSecondHandVariant(shVariant ? {
+        const variant = newVariant ?? getProduct.productvariants?.[0];
+        // Only show the SH tab when BOTH variants exist; SH-only products edit directly (no tab)
+        setSecondHandVariant(newVariant && shVariant ? {
             id: shVariant.id,
             name: shVariant.name ?? "",
             sku: shVariant.sku ?? "",
