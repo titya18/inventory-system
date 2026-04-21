@@ -33,6 +33,7 @@ export default defineConfig({
           'vendor-date': ['dayjs', 'date-fns'],
           'vendor-motion': ['framer-motion'],
           'vendor-misc': ['zustand', 'axios', 'xlsx', 'sweetalert2', 'antd', 'lucide-react'],
+          'vendor-canvas': ['html2canvas'],
         },
       },
     },

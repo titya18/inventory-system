@@ -81,7 +81,7 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
                 json_build_object('id', cr.id, 'firstName', cr."firstName", 'lastName', cr."lastName") AS creator,
                 json_build_object('id', up.id, 'firstName', up."firstName", 'lastName', up."lastName") AS updater,
                 (
-                    SELECT json_agg(json_build_object('productType', pv."productType", 'sku', pv."sku", 'barcode', pv."barcode") ORDER BY pv."productType" ASC)
+                    SELECT json_agg(json_build_object('productType', pv."productType", 'sku', pv."sku", 'barcode', pv."barcode", 'retailPrice', pv."retailPrice", 'wholeSalePrice', pv."wholeSalePrice", 'purchasePrice', pv."purchasePrice") ORDER BY pv."productType" ASC)
                     FROM "ProductVariants" pv
                     WHERE pv."productId" = p.id AND pv."deletedAt" IS NULL
                 ) AS productvariants

@@ -12,7 +12,8 @@ import { NavLink, useSearchParams } from "react-router-dom";
 import { ProductTrackedItemType, ProductType, TrackingType, VariantValueType } from "@/data_types/types";
 import VisibleColumnsSelector from "@/components/VisibleColumnsSelector";
 import ExportDropdown from "@/components/ExportDropdown";
-import { Pencil, Settings, Trash2 } from "lucide-react";
+import { Pencil, Settings, Trash2, Printer } from "lucide-react";
+import PrintLabelModal from "./PrintLabelModal";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -121,6 +122,7 @@ const Product: React.FC = () => {
     const [total, setTotal] = useState(0);
     const [selected, setSelected] = useState<number[]>([]);
     const [visibleCols, setVisibleCols] = useState(columns);
+    const [printOpen, setPrintOpen] = useState(false);
 
     const updateParams = (params: Record<string, unknown>) => {
         const newParams = new URLSearchParams(searchParams.toString());
@@ -493,6 +495,15 @@ const Product: React.FC = () => {
                                                 Add New
                                             </button>
                                         }
+                                        <button
+                                            className="btn btn-outline-secondary gap-2"
+                                            disabled={selected.length === 0}
+                                            onClick={() => setPrintOpen(true)}
+                                            title="Print labels for selected products"
+                                        >
+                                            <Printer size={16} />
+                                            Print Labels{selected.length > 0 ? ` (${selected.length})` : ""}
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -522,6 +533,14 @@ const Product: React.FC = () => {
                                         <table id="myTable1" className="whitespace-nowrap dataTable-table">
                                             <thead>
                                                 <tr>
+                                                    <th className="px-3 py-2 w-8">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={products.length > 0 && selected.length === products.length}
+                                                            onChange={(e) => setSelected(e.target.checked ? products.map((_, i) => i) : [])}
+                                                            title="Select all"
+                                                        />
+                                                    </th>
                                                     {columns.map(
                                                         (col) =>
                                                         visibleCols.includes(col) && (
@@ -551,7 +570,14 @@ const Product: React.FC = () => {
                                             {products && products.length > 0 ? (
                                                     products.map((rows, index) => {
                                                         return (
-                                                            <tr key={index}>
+                                                            <tr key={index} className={selected.includes(index) ? "bg-blue-50" : ""}>
+                                                                <td className="px-3 py-2">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={selected.includes(index)}
+                                                                        onChange={() => toggleSelectRow(index)}
+                                                                    />
+                                                                </td>
                                                                 {visibleCols.includes("Image") && (
                                                                     <td>
                                                                         <img
@@ -628,11 +654,16 @@ const Product: React.FC = () => {
                                                                 {visibleCols.includes("Actions") && (
                                                                     <td>
                                                                         <div className="flex gap-2">
-                                                                            {/* {hasPermission('Product-Variant-View') &&
-                                                                                <NavLink to={`/productvariant/${rows.id}`} title="Product Variants">
-                                                                                    <Settings color="blue" />
-                                                                                </NavLink>
-                                                                            } */}
+                                                                            <button
+                                                                                type="button"
+                                                                                title="Print label"
+                                                                                onClick={() => {
+                                                                                    setSelected([index]);
+                                                                                    setPrintOpen(true);
+                                                                                }}
+                                                                            >
+                                                                                <Printer size={16} color="#6366f1" />
+                                                                            </button>
                                                                             {hasPermission('Product-Edit') &&
                                                                                 <button type="button" className="hover:text-warning" onClick={() => handleEditClick(rows)} title="Edit">
                                                                                     <Pencil color="green" />
@@ -677,6 +708,12 @@ const Product: React.FC = () => {
                 onSubmit={handleAddorEditProduct}
                 product={selectProduct}
                 secondHandFullData={secondHandVariant}
+            />
+
+            <PrintLabelModal
+                isOpen={printOpen}
+                onClose={() => setPrintOpen(false)}
+                products={selected.map((i) => products[i]).filter(Boolean)}
             />
         </>
     );
