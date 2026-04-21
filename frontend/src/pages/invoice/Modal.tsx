@@ -377,7 +377,11 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, clickData }) =
                       type="text"
                       className="form-input w-full"
                       disabled
-                      value={`${Number(clickData?.stocks ?? 0).toFixed(4)} ${baseUnitName}`}
+                      value={
+                        isTrackedProduct
+                          ? `${availableTrackedItems.filter(i => i.status === "IN_STOCK").length} ${baseUnitName}`
+                          : `${Number(clickData?.stocks ?? 0).toFixed(4)} ${baseUnitName}`
+                      }
                     />
                   </div>
                 ) : (

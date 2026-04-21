@@ -607,22 +607,12 @@ const Modal: React.FC<ModalProps> = ({
 
               {isTrackedProduct && (
                 <div className="mb-5 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-3">
-                  <div className="flex items-center justify-between gap-3 mb-3">
-                    <label className="font-semibold block">
-                      Receive {trackedRows.length} Tracked Item{trackedRows.length === 1 ? "" : "s"}
-                    </label>
-                    <button
-                      type="button"
-                      className="btn btn-outline-primary"
-                      onClick={addTrackedRow}
-                    >
-                      <FontAwesomeIcon icon={faPlus} className="mr-1" />
-                      Add Item
-                    </button>
-                  </div>
+                  <label className="font-semibold block mb-3">
+                    Receive {trackedRows.length} Tracked Item{trackedRows.length === 1 ? "" : "s"}
+                  </label>
 
                   {trackedRows.length === 0 && (
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 mb-3">
                       Add one row per actual device/item being received.
                     </p>
                   )}
@@ -633,7 +623,7 @@ const Modal: React.FC<ModalProps> = ({
                     </div>
                   )}
 
-                  <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                  <div className="space-y-3 max-h-80 overflow-y-auto pr-1 mb-3">
                     {trackedRows.map((row, index) => (
                       <div
                         key={index}
@@ -703,6 +693,14 @@ const Modal: React.FC<ModalProps> = ({
                       </div>
                     ))}
                   </div>
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary"
+                    onClick={addTrackedRow}
+                  >
+                    <FontAwesomeIcon icon={faPlus} className="mr-1" />
+                    Add Item
+                  </button>
                 </div>
               )}
 

@@ -1054,6 +1054,7 @@ export const upsertProduct = async (req: Request, res: Response): Promise<void> 
                 await tx.productAssetItem.create({
                   data: {
                     productVariantId: savedVariantId,
+                    productId: productId || null,
                     branchId: item.branchId,
                     assetCode: item.assetCode || null,
                     macAddress: item.macAddress || null,

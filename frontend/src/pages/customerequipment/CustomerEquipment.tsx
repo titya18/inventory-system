@@ -33,9 +33,16 @@ const CustomerEquipment: React.FC = () => {
     const [data, setData]           = useState<CustomerEquipmentType[]>([]);
     const [total, setTotal]         = useState(0);
     const [isLoading, setIsLoading] = useState(false);
-    const [returnModal, setReturnModal] = useState<{ id: number; ref: string } | null>(null);
+    const [returnModal, setReturnModal] = useState<{
+        id: number;
+        ref: string;
+        newTrackedItems: Array<{ assetItemId: number; serialNumber: string; productName: string }>;
+        newNonTrackedItems: Array<{ variantId: number; productName: string; qty: number; unitName?: string }>;
+    } | null>(null);
     const [returnDate, setReturnDate]   = useState(dayjs().format("YYYY-MM-DD"));
     const [returnNote, setReturnNote]   = useState("");
+    const [convertToShIds, setConvertToShIds]             = useState<Set<number>>(new Set());
+    const [convertToShVariantIds, setConvertToShVariantIds] = useState<Set<number>>(new Set());
 
     const updateParams = (params: Record<string, unknown>) => {
         const newParams = new URLSearchParams(searchParams.toString());
@@ -93,10 +100,14 @@ const CustomerEquipment: React.FC = () => {
     const handleReturn = async () => {
         if (!returnModal) return;
         try {
-            await returnCustomerEquipment(returnModal.id, returnDate, returnNote || undefined);
+            const shIds        = convertToShIds.size        > 0 ? Array.from(convertToShIds)        : undefined;
+            const shVariantIds = convertToShVariantIds.size > 0 ? Array.from(convertToShVariantIds) : undefined;
+            await returnCustomerEquipment(returnModal.id, returnDate, returnNote || undefined, shIds, shVariantIds);
             toast.success(`${returnModal.ref} marked as returned`);
             setReturnModal(null);
             setReturnNote("");
+            setConvertToShIds(new Set());
+            setConvertToShVariantIds(new Set());
             fetchData();
         } catch (e: any) {
             toast.error(e.message || "Failed to mark as returned");
@@ -200,10 +211,10 @@ const CustomerEquipment: React.FC = () => {
                 {(search || statusFilter || assignTypeFilter) && (
                     <button
                         type="button"
-                        className="ml-1 flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-500 hover:bg-red-100 transition-colors"
+                        className="btn btn-outline-danger btn-md flex items-center gap-1"
                         onClick={() => updateParams({ search: "", status: "", assignType: "", page: 1 })}
                     >
-                        <X size={11} />
+                        <X size={12} />
                         Clear
                     </button>
                 )}
@@ -367,7 +378,24 @@ const CustomerEquipment: React.FC = () => {
                                                     onClick={() => {
                                                         setReturnDate(dayjs().format("YYYY-MM-DD"));
                                                         setReturnNote("");
-                                                        setReturnModal({ id: row.id!, ref: row.ref! });
+                                                        setConvertToShIds(new Set());
+                                                        setConvertToShVariantIds(new Set());
+                                                        const newTracked = (row.items || [])
+                                                            .filter(i => i.productAssetItem && i.productAssetItem.productVariant?.productType === "New")
+                                                            .map(i => ({
+                                                                assetItemId: i.productAssetItem!.id,
+                                                                serialNumber: i.productAssetItem!.serialNumber || "—",
+                                                                productName: i.productAssetItem!.productVariant?.products?.name || "Unknown",
+                                                            }));
+                                                        const newNonTracked = (row.items || [])
+                                                            .filter(i => !i.productAssetItem && i.productVariant?.productType === "New")
+                                                            .map(i => ({
+                                                                variantId: i.productVariant!.id,
+                                                                productName: i.productVariant!.products?.name || "Unknown",
+                                                                qty: i.quantity ?? 0,
+                                                                unitName: i.unit?.name,
+                                                            }));
+                                                        setReturnModal({ id: row.id!, ref: row.ref!, newTrackedItems: newTracked, newNonTrackedItems: newNonTracked });
                                                     }}
                                                 >
                                                     <RotateCcw color="orange" size={18} />
@@ -444,11 +472,68 @@ const CustomerEquipment: React.FC = () => {
                                     onChange={(e) => setReturnNote(e.target.value)}
                                 />
                             </div>
+
+                            {/* New → SecondHand conversion per serial (tracked) */}
+                            {(returnModal.newTrackedItems.length > 0 || returnModal.newNonTrackedItems.length > 0) && (
+                                <div>
+                                    <label className="block mb-1.5 text-sm font-medium">
+                                        Return as SecondHand <span className="text-gray-400 font-normal">(optional)</span>
+                                    </label>
+                                    <div className="rounded-lg border border-gray-200 dark:border-gray-600 divide-y divide-gray-100 dark:divide-gray-700">
+                                        {returnModal.newTrackedItems.map((item) => (
+                                            <label key={`t_${item.assetItemId}`} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                                                <input
+                                                    type="checkbox"
+                                                    className="form-checkbox"
+                                                    checked={convertToShIds.has(item.assetItemId)}
+                                                    onChange={(e) => {
+                                                        setConvertToShIds(prev => {
+                                                            const next = new Set(prev);
+                                                            e.target.checked ? next.add(item.assetItemId) : next.delete(item.assetItemId);
+                                                            return next;
+                                                        });
+                                                    }}
+                                                />
+                                                <span className="text-sm">
+                                                    <span className="font-mono text-blue-700">{item.serialNumber}</span>
+                                                    <span className="text-gray-400 ml-2">{item.productName}</span>
+                                                </span>
+                                                {convertToShIds.has(item.assetItemId) && (
+                                                    <span className="ml-auto text-xs text-orange-600 font-medium">→ SecondHand</span>
+                                                )}
+                                            </label>
+                                        ))}
+                                        {returnModal.newNonTrackedItems.map((item) => (
+                                            <label key={`v_${item.variantId}`} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                                                <input
+                                                    type="checkbox"
+                                                    className="form-checkbox"
+                                                    checked={convertToShVariantIds.has(item.variantId)}
+                                                    onChange={(e) => {
+                                                        setConvertToShVariantIds(prev => {
+                                                            const next = new Set(prev);
+                                                            e.target.checked ? next.add(item.variantId) : next.delete(item.variantId);
+                                                            return next;
+                                                        });
+                                                    }}
+                                                />
+                                                <span className="text-sm">
+                                                    <span className="font-medium text-gray-700">{item.productName}</span>
+                                                    <span className="text-gray-400 ml-2">Qty: {item.qty}{item.unitName ? ` ${item.unitName}` : ""}</span>
+                                                </span>
+                                                {convertToShVariantIds.has(item.variantId) && (
+                                                    <span className="ml-auto text-xs text-orange-600 font-medium">→ SecondHand</span>
+                                                )}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Modal footer */}
                         <div className="flex justify-end gap-3 border-t border-gray-100 dark:border-gray-700 px-6 py-4">
-                            <button className="btn btn-outline-danger" onClick={() => setReturnModal(null)}>
+                            <button className="btn btn-outline-danger" onClick={() => { setReturnModal(null); setConvertToShIds(new Set()); setConvertToShVariantIds(new Set()); }}>
                                 Cancel
                             </button>
                             <button className="btn btn-primary" onClick={handleReturn}>

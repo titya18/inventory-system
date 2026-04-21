@@ -7,6 +7,7 @@ import {
     getAvailableAssetItems,
     getVariantUnits,
     searchOrders,
+    getCeqReturnedQty,
     createCustomerEquipment,
     updateCustomerEquipment,
     returnCustomerEquipment,
@@ -22,6 +23,7 @@ router.route("/asset-items").get(authorize(["Customer-Equipment-View"]), getAvai
 router.route("/variant-units/:variantId").get(authorize(["Customer-Equipment-View"]), getVariantUnits);
 router.route("/search-orders").get(authorize(["Customer-Equipment-View"]), searchOrders);
 router.route("/serial-history/:assetItemId").get(authorize(["Customer-Equipment-View"]), getSerialHistory);
+router.route("/ceq-returned-qty").get(authorize(["Customer-Equipment-View"]), getCeqReturnedQty);
 
 // CRUD
 router.route("/").get(authorize(["Customer-Equipment-View"]), getAllCustomerEquipments).post(authorize(["Customer-Equipment-Create"]), createCustomerEquipment);

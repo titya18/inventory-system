@@ -738,23 +738,68 @@ export const getReturnTrackedItems = async (req: Request, res: Response): Promis
     }
 
     const rows = await prisma.orderItemAssetItem.findMany({
-      where: {
-        orderItemId,
-      },
-      include: {
-        productAssetItem: true,
-      },
+      where: { orderItemId },
+      include: { productAssetItem: true },
     });
 
-    const result = rows.map((x) => ({
-      id: x.productAssetItem.id,
-      branchId: x.productAssetItem.branchId,
-      serialNumber: x.productAssetItem.serialNumber,
-      assetCode: x.productAssetItem.assetCode,
-      macAddress: x.productAssetItem.macAddress,
-      status: x.productAssetItem.status,
-      soldOrderItemId: x.productAssetItem.soldOrderItemId,
-    }));
+    // Get the orderId (invoice) that this orderItem belongs to
+    const orderItem = await prisma.orderItem.findUnique({
+      where: { id: orderItemId },
+      select: { orderId: true },
+    });
+    const orderId = orderItem?.orderId;
+
+    const assetIds = rows.map((x) => x.productAssetItem.id);
+
+    // Active CEQ assignments (not yet returned)
+    const ceqAssigned = await prisma.customerEquipmentItem.findMany({
+      where: {
+        productAssetItemId: { in: assetIds },
+        customerEquipment: { returnedAt: null },
+      },
+      select: { productAssetItemId: true, customerEquipment: { select: { ref: true } } },
+    });
+    const ceqActiveMap = new Map(ceqAssigned.map((r) => [r.productAssetItemId, (r.customerEquipment as any).ref as string]));
+
+    // Past CEQ returns linked to THIS invoice — only these serials are already returned
+    const ceqReturned = await prisma.customerEquipmentItem.findMany({
+      where: {
+        productAssetItemId: { in: assetIds },
+        customerEquipment: {
+          returnedAt: { not: null },
+          ...(orderId ? { orderId } : {}),
+        },
+      },
+      select: { productAssetItemId: true, customerEquipment: { select: { ref: true, returnedAt: true } } },
+      orderBy: { customerEquipment: { returnedAt: "desc" } },
+    });
+    // Keep only the most-recent returned CEQ per serial
+    const ceqReturnedMap = new Map<number, string>();
+    for (const r of ceqReturned) {
+      if (!ceqReturnedMap.has(r.productAssetItemId!)) {
+        ceqReturnedMap.set(r.productAssetItemId!, (r.customerEquipment as any).ref as string);
+      }
+    }
+
+    const result = rows.map((x) => {
+      const ai = x.productAssetItem;
+      const activeCeqAssigned = ceqActiveMap.has(ai.id);
+      // Block only if the returned CEQ was linked to THIS same invoice
+      const alreadyReturnedViaCeq = !activeCeqAssigned && ceqReturnedMap.has(ai.id);
+      return {
+        id: ai.id,
+        branchId: ai.branchId,
+        serialNumber: ai.serialNumber,
+        assetCode: ai.assetCode,
+        macAddress: ai.macAddress,
+        status: ai.status,
+        soldOrderItemId: ai.soldOrderItemId,
+        activeCeqAssigned,
+        ceqRef: ceqActiveMap.get(ai.id) ?? null,
+        alreadyReturnedViaCeq,
+        returnedCeqRef: alreadyReturnedViaCeq ? (ceqReturnedMap.get(ai.id) ?? null) : null,
+      };
+    });
 
     res.json(result);
   } catch (error) {

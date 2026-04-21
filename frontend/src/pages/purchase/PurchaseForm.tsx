@@ -1552,12 +1552,17 @@ const PurchaseForm: React.FC = () => {
                                 Go Back
                             </NavLink>
                             {(
-                                statusValue === 'PENDING' ||
-                                statusValue === 'REQUESTED' ||
-                                // APPROVED: admin only
-                                (statusValue === 'APPROVED' && !isSimpleUser) ||
-                                // RECEIVED: admin directly, simple user under limit, or simple user after admin approved over-limit PO
-                                (statusValue === 'RECEIVED' && (!isSimpleUser || !isOverPurchaseAuthorizeAmount || initialDbStatusRef.current === 'APPROVED'))
+                                // Never show submit button if the PO is already saved as RECEIVED or COMPLETED
+                                initialDbStatusRef.current !== 'RECEIVED' &&
+                                initialDbStatusRef.current !== 'COMPLETED' &&
+                                (
+                                    statusValue === 'PENDING' ||
+                                    statusValue === 'REQUESTED' ||
+                                    // APPROVED: admin only
+                                    (statusValue === 'APPROVED' && !isSimpleUser) ||
+                                    // RECEIVED: admin directly, simple user under limit, or simple user after admin approved over-limit PO
+                                    (statusValue === 'RECEIVED' && (!isSimpleUser || !isOverPurchaseAuthorizeAmount || initialDbStatusRef.current === 'APPROVED'))
+                                )
                             ) &&
                                 (hasPermission('Purchase-Create') || hasPermission('Purchase-Edit')) && (
                                 <button type="submit" className="btn btn-primary ltr:ml-4 rtl:mr-4" disabled={isLoading}>

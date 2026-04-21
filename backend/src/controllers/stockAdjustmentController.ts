@@ -354,11 +354,17 @@ export const upsertAdjustment = async (req: Request, res: Response): Promise<voi
             const trackedData = trackedMap.get(Number(detail.productVariantId));
             if (trackedData) {
               if (trackedData.type === "NEW" && Array.isArray(trackedData.newSerials) && trackedData.newSerials.length > 0) {
+                const variant = await tx.productVariants.findUnique({
+                  where: { id: Number(detail.productVariantId) },
+                  select: { productId: true },
+                });
+                const productId = variant?.productId ?? null;
                 for (const s of trackedData.newSerials) {
                   if (!s.serialNumber?.trim()) continue;
                   await tx.productAssetItem.create({
                     data: {
                       productVariantId: Number(detail.productVariantId),
+                      productId,
                       branchId: Number(branchId),
                       serialNumber: s.serialNumber.trim(),
                       assetCode: s.assetCode?.trim() || null,

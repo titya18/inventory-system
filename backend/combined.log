@@ -33120,3 +33120,191 @@ Unique constraint failed on the fields: (`id`)
     at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
     at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
     at async upsertModule (D:\Citylink-Inventory-claude\backend\src\controllers\module_permissionController.ts:101:22)
+2026-04-20 13:29:07 error: Error upserting product: 
+Invalid `tx.productAssetItem.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:1054:43
+
+  1051 
+  1052 for (const item of newRows) {
+  1053   try {
+→ 1054     await tx.productAssetItem.create({
+             data: {
+               productVariantId: 14,
+               productId: null,
+               ~~~~~~~~~
+               branchId: 1,
+               assetCode: "2344ff23r",
+               macAddress: null,
+               serialNumber: "12434111",
+               status: "IN_STOCK",
+               sourceType: "OPENING",
+               createdBy: 1,
+               updatedBy: 1,
+               createdAt: new Date("2026-04-20T13:23:01.000Z"),
+               updatedAt: new Date("2026-04-20T13:23:01.000Z"),
+           ?   id?: Int,
+           ?   note?: String | Null,
+           ?   sourceId?: Int | Null,
+           ?   soldOrderItemId?: Int | Null,
+           ?   orderItemLinks?: OrderItemAssetItemUncheckedCreateNestedManyWithoutProductAssetItemInput,
+           ?   quotationDetailLinks?: QuotationDetailAssetItemUncheckedCreateNestedManyWithoutProductAssetItemInput,
+           ?   customerEquipmentItems?: CustomerEquipmentItemUncheckedCreateNestedManyWithoutProductAssetItemInput
+             }
+           })
+
+Unknown argument `productId`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `tx.productAssetItem.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:1054:43
+
+  1051 
+  1052 for (const item of newRows) {
+  1053   try {
+→ 1054     await tx.productAssetItem.create({
+             data: {
+               productVariantId: 14,
+               productId: null,
+               ~~~~~~~~~
+               branchId: 1,
+               assetCode: "2344ff23r",
+               macAddress: null,
+               serialNumber: "12434111",
+               status: "IN_STOCK",
+               sourceType: "OPENING",
+               createdBy: 1,
+               updatedBy: 1,
+               createdAt: new Date("2026-04-20T13:23:01.000Z"),
+               updatedAt: new Date("2026-04-20T13:23:01.000Z"),
+           ?   id?: Int,
+           ?   note?: String | Null,
+           ?   sourceId?: Int | Null,
+           ?   soldOrderItemId?: Int | Null,
+           ?   orderItemLinks?: OrderItemAssetItemUncheckedCreateNestedManyWithoutProductAssetItemInput,
+           ?   quotationDetailLinks?: QuotationDetailAssetItemUncheckedCreateNestedManyWithoutProductAssetItemInput,
+           ?   customerEquipmentItems?: CustomerEquipmentItemUncheckedCreateNestedManyWithoutProductAssetItemInput
+             }
+           })
+
+Unknown argument `productId`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:1054:17)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertProduct (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:792:20)
+2026-04-20 13:34:46 error: Error upserting product: 
+Invalid `tx.productAssetItem.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:1054:43
+
+  1051 
+  1052 for (const item of newRows) {
+  1053   try {
+→ 1054     await tx.productAssetItem.create({
+             data: {
+               productVariantId: 15,
+               productId: null,
+               ~~~~~~~~~
+               branchId: 1,
+               assetCode: "2344ff23r",
+               macAddress: null,
+               serialNumber: "12434111",
+               status: "IN_STOCK",
+               sourceType: "OPENING",
+               createdBy: 1,
+               updatedBy: 1,
+               createdAt: new Date("2026-04-20T13:30:13.000Z"),
+               updatedAt: new Date("2026-04-20T13:30:13.000Z"),
+           ?   id?: Int,
+           ?   note?: String | Null,
+           ?   sourceId?: Int | Null,
+           ?   soldOrderItemId?: Int | Null,
+           ?   orderItemLinks?: OrderItemAssetItemUncheckedCreateNestedManyWithoutProductAssetItemInput,
+           ?   quotationDetailLinks?: QuotationDetailAssetItemUncheckedCreateNestedManyWithoutProductAssetItemInput,
+           ?   customerEquipmentItems?: CustomerEquipmentItemUncheckedCreateNestedManyWithoutProductAssetItemInput
+             }
+           })
+
+Unknown argument `productId`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `tx.productAssetItem.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:1054:43
+
+  1051 
+  1052 for (const item of newRows) {
+  1053   try {
+→ 1054     await tx.productAssetItem.create({
+             data: {
+               productVariantId: 15,
+               productId: null,
+               ~~~~~~~~~
+               branchId: 1,
+               assetCode: "2344ff23r",
+               macAddress: null,
+               serialNumber: "12434111",
+               status: "IN_STOCK",
+               sourceType: "OPENING",
+               createdBy: 1,
+               updatedBy: 1,
+               createdAt: new Date("2026-04-20T13:30:13.000Z"),
+               updatedAt: new Date("2026-04-20T13:30:13.000Z"),
+           ?   id?: Int,
+           ?   note?: String | Null,
+           ?   sourceId?: Int | Null,
+           ?   soldOrderItemId?: Int | Null,
+           ?   orderItemLinks?: OrderItemAssetItemUncheckedCreateNestedManyWithoutProductAssetItemInput,
+           ?   quotationDetailLinks?: QuotationDetailAssetItemUncheckedCreateNestedManyWithoutProductAssetItemInput,
+           ?   customerEquipmentItems?: CustomerEquipmentItemUncheckedCreateNestedManyWithoutProductAssetItemInput
+             }
+           })
+
+Unknown argument `productId`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:1054:17)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertProduct (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:792:20)
+2026-04-20 13:52:16 info: Sale return: auto-created SecondHand variant 18 from New variant 16 
+2026-04-20 13:52:16 info: Sale return: converting variant 16 → SecondHand variant 18 
+2026-04-20 14:15:12 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=41 variantId=10 branchId=1 delta=-1 
+2026-04-20 14:33:55 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=56 variantId=18 branchId=1 delta=-1 
+2026-04-20 14:35:37 info: CEQ applyDbItemEffects TRACKED [REVERSE] assetId=56 variantId=18 branchId=1 delta=1 
+2026-04-20 16:49:35 info: Sale return: auto-created SecondHand variant 19 from New variant 2 
+2026-04-20 16:49:35 info: Sale return: converting variant 2 → SecondHand variant 19 
+2026-04-20 17:02:03 info: CEQ applyPayloadEffects NON_TRACKED [APPLY] variantId=1 branchId=1 delta=-610 
+2026-04-20 17:02:03 info: CEQ applyPayloadEffects NON_TRACKED [APPLY] variantId=2 branchId=1 delta=-2 
+2026-04-20 17:02:03 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=53 variantId=17 branchId=1 delta=-1 
+2026-04-20 17:02:03 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=52 variantId=17 branchId=1 delta=-1 
+2026-04-20 17:02:38 info: CEQ return: auto-created SecondHand variant 20 from New non-tracked variant 1 
+2026-04-20 17:02:38 info: CEQ return: non-tracked qty → SecondHand variant 20 
+2026-04-20 17:02:38 info: CEQ return: non-tracked qty → SecondHand variant 19 
+2026-04-20 17:02:38 info: CEQ return: auto-created SecondHand variant 21 from New variant 17 
+2026-04-20 17:02:38 info: CEQ return: converted assetItem 53 → SecondHand variant 21 
+2026-04-20 17:02:38 info: CEQ return: converted assetItem 52 → SecondHand variant 21 
+2026-04-20 22:05:21 info: CEQ return: non-tracked qty → SecondHand variant 19 
+2026-04-20 22:15:00 error: Error upserting product: A New product with this name already exists Error: A New product with this name already exists
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:805:15)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertProduct (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:792:20)
+2026-04-20 22:16:02 error: Error creating/updating invoice: Not enough FIFO stock for productVariantId=1. Missing 270 Error: Not enough FIFO stock for productVariantId=1. Missing 270
+    at consumeFifoForSale (D:\Citylink-Inventory-claude\backend\src\utils\consumeFifoForSale.ts:87:11)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:511:29)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:210:20)
+2026-04-20 22:23:07 error: Error creating/updating invoice: Not enough FIFO stock for productVariantId=1. Missing 270 Error: Not enough FIFO stock for productVariantId=1. Missing 270
+    at consumeFifoForSale (D:\Citylink-Inventory-claude\backend\src\utils\consumeFifoForSale.ts:87:11)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:511:29)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:210:20)
+2026-04-20 22:23:23 error: Error creating/updating invoice: Not enough FIFO stock for productVariantId=1. Missing 270 Error: Not enough FIFO stock for productVariantId=1. Missing 270
+    at consumeFifoForSale (D:\Citylink-Inventory-claude\backend\src\utils\consumeFifoForSale.ts:87:11)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:511:29)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:210:20)
+2026-04-21 08:14:17 error: Error creating/updating invoice: Not enough FIFO stock for productVariantId=1. Missing 270 Error: Not enough FIFO stock for productVariantId=1. Missing 270
+    at consumeFifoForSale (D:\Citylink-Inventory-claude\backend\src\utils\consumeFifoForSale.ts:87:11)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:511:29)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:210:20)

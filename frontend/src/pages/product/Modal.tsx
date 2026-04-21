@@ -1078,7 +1078,6 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, product, secon
                     {product ? (
                       // Edit mode: when tabs are shown, hide the redundant radio buttons
                       <>
-                        <input type="hidden" {...register("productType")} />
                         {!secondHandFullData && (
                           <>
                             <label className="flex items-center cursor-not-allowed opacity-60" style={{ marginRight: "20px" }}>

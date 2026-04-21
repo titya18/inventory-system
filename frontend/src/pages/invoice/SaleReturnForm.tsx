@@ -14,6 +14,7 @@ import { getAllBranches } from "@/api/branch";
 import { getAllCustomers } from "@/api/customer";
 import { getInvoiceByid } from "@/api/invoice";
 import { upsertSaleReturn, getSaleReturnById } from "@/api/saleReturn";
+import { getCeqReturnedQty } from "@/api/customerEquipment";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useAppContext } from "@/hooks/useAppContext";
@@ -48,6 +49,8 @@ const SaleReturn: React.FC = () => {
   const [clickData, setClickData] = useState<any>(null);
   const [returnItems, setReturnItems] = useState<any[]>([]);
   const [secondHandLines, setSecondHandLines] = useState<Record<number, boolean>>({});
+  // keyed by orderItemId → { ceqReturnedBaseQty, ceqRefs }
+  const [ceqReturnedMap, setCeqReturnedMap] = useState<Record<number, { baseQty: number; refs: string[] }>>({});
 
   const {
     control,
@@ -251,6 +254,16 @@ const SaleReturn: React.FC = () => {
         setReturnedSoFar(buildReturnedMapFromSaleReturns(saleReturns));
         setReturnedGrandTotal(calculateReturnedGrandTotal(saleReturns));
       }
+
+      // Load CEQ-returned quantities to block double-returns
+      try {
+        const ceqData = await getCeqReturnedQty(Number(id));
+        const ceqMap: Record<number, { baseQty: number; refs: string[] }> = {};
+        for (const row of ceqData) {
+          ceqMap[row.orderItemId] = { baseQty: row.ceqReturnedBaseQty, refs: row.ceqRefs };
+        }
+        setCeqReturnedMap(ceqMap);
+      } catch { /* non-critical — fail silently */ }
     } catch (error) {
       console.error(error);
     } finally {
@@ -276,15 +289,30 @@ const SaleReturn: React.FC = () => {
 
   const totalReturnedAllTime = n(returnedGrandTotal) + n(returnGrandTotal);
 
+  // Returns how many display-units were already returned via CEQ for an invoice item
+  const getCeqReturnedUnitQty = (item: InvoiceDetailType): number => {
+    const ceqEntry = ceqReturnedMap[item.id];
+    if (!ceqEntry || ceqEntry.baseQty <= 0) return 0;
+    const soldBaseQty = n(item.baseQty);
+    const soldUnitQty = n((item as any).unitQty ?? item.quantity);
+    if (soldBaseQty <= 0 || soldUnitQty <= 0) return ceqEntry.baseQty;
+    return Math.round((ceqEntry.baseQty * soldUnitQty) / soldBaseQty);
+  };
+
   const increaseQuantity = (index: number) => {
     const item = invoiceDetails[index];
     const alreadyReturned = returnedSoFar[item.id] || 0;
+    const ceqReturned = getCeqReturnedUnitQty(item);
     const currentLine = returnLines[item.id];
     const currentQty = currentLine ? getLineQty(currentLine) : 0;
 
     const soldQty = getLineQty(item);
-    const maxAllowed = soldQty - alreadyReturned;
+    const maxAllowed = soldQty - alreadyReturned - ceqReturned;
 
+    if (maxAllowed <= 0) {
+      toast.warn(`This product was already returned via Customer Equipment.`);
+      return;
+    }
     if (currentQty >= maxAllowed) {
       toast.warn(`You can only return ${maxAllowed} unit(s)`);
       return;
@@ -604,11 +632,13 @@ const SaleReturn: React.FC = () => {
                   <tbody>
                     {invoiceDetails.map((detail, index) => {
                       const alreadyReturned = returnedSoFar[detail.id] || 0;
+                      const ceqReturned = getCeqReturnedUnitQty(detail);
                       const currentLine = returnLines[detail.id];
                       const currentReturn = currentLine ? getLineQty(currentLine) : 0;
                       const soldQty = getLineQty(detail);
-                      const maxReturnable = soldQty - alreadyReturned;
+                      const maxReturnable = Math.max(0, soldQty - alreadyReturned - ceqReturned);
                       const remaining = maxReturnable - currentReturn;
+                      const ceqEntry = ceqReturnedMap[detail.id];
 
                       const rowSubtotal = currentLine ? n(currentLine.total) : 0;
 
@@ -641,6 +671,11 @@ const SaleReturn: React.FC = () => {
                             {detail.ItemType === "PRODUCT" && (
                               <p className="text-xs text-gray-500 text-center mt-1">
                                 Sold Unit: {soldUnitName}
+                              </p>
+                            )}
+                            {ceqEntry && ceqReturned > 0 && (
+                              <p className="text-xs text-center mt-1" style={{ color: "#92400e" }}>
+                                {ceqReturned} unit(s) returned via CEQ ({ceqEntry.refs.join(", ")})
                               </p>
                             )}
                             {detail.ItemType === "PRODUCT" &&

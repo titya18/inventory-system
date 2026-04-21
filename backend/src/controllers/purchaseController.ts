@@ -105,11 +105,11 @@ const normalizePurchaseTrackedItems = ({
 
 const ensurePurchaseTrackedItemsDoNotExist = async ({
   tx,
-  productVariantId,
+  productId,
   trackedItems,
 }: {
   tx: any;
-  productVariantId: number;
+  productId: number;
   trackedItems: PurchaseTrackedItemInput[];
 }) => {
   if (!Array.isArray(trackedItems) || trackedItems.length === 0) {
@@ -143,7 +143,7 @@ const ensurePurchaseTrackedItemsDoNotExist = async ({
 
   const existingTrackedItems = await tx.productAssetItem.findMany({
     where: {
-      productVariantId,
+      productId,
       OR: orFilters,
     },
     select: {
@@ -752,7 +752,7 @@ export const upsertPurchase = async (req: Request, res: Response): Promise<void>
           if (detail.trackingType !== "NONE") {
             await ensurePurchaseTrackedItemsDoNotExist({
               tx,
-              productVariantId: variantId,
+              productId: Number(detail.productId),
               trackedItems: detail.trackedItems,
             });
 
@@ -760,6 +760,7 @@ export const upsertPurchase = async (req: Request, res: Response): Promise<void>
               await tx.productAssetItem.createMany({
                 data: detail.trackedItems.map((item: PurchaseTrackedItemInput) => ({
                   productVariantId: variantId,
+                  productId: Number(detail.productId),
                   branchId: Number(branchId),
                   assetCode: item.assetCode || null,
                   macAddress: item.macAddress || null,

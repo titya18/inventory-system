@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
+import { Decimal } from "@prisma/client/runtime/library";
 import logger from "../utils/logger";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -173,16 +174,33 @@ export const getSerialHistory = async (req: Request, res: Response): Promise<voi
 // ── GET AVAILABLE ASSET ITEMS ────────────────────────────────────────────────
 export const getAvailableAssetItems = async (req: Request, res: Response): Promise<void> => {
     try {
-        const variantId = getQueryNumber(req.query.variantId, 0)!;
-        const branchId  = getQueryNumber(req.query.branchId,  0)!;
+        const variantId   = getQueryNumber(req.query.variantId,   0)!;
+        const branchId    = getQueryNumber(req.query.branchId,     0)!;
+        const excludeCeqId = getQueryNumber(req.query.excludeCeqId, 0) ?? 0;
 
         if (!variantId || !branchId) {
             res.status(400).json({ message: "variantId and branchId are required." });
             return;
         }
 
+        // Find IDs of serials already actively assigned to another CEQ (not returned).
+        // When editing, exclude the current CEQ's own items so they remain selectable.
+        const activelyAssigned = await prisma.customerEquipmentItem.findMany({
+            where: {
+                productAssetItemId: { not: null },
+                customerEquipment: {
+                    returnedAt: null,
+                    ...(excludeCeqId ? { id: { not: excludeCeqId } } : {}),
+                },
+            },
+            select: { productAssetItemId: true },
+        });
+        const assignedIds = activelyAssigned
+            .map((r) => r.productAssetItemId)
+            .filter((id): id is number => id !== null);
+
         // Return all serials so the frontend can warn about SOLD/RESERVED ones.
-        // Frontend controls selectability: only IN_STOCK serials are selectable.
+        // Frontend controls selectability; actively-CEQ-assigned serials are flagged.
         const items = await prisma.productAssetItem.findMany({
             where: { productVariantId: variantId, branchId },
             orderBy: { id: "asc" },
@@ -199,12 +217,19 @@ export const getAvailableAssetItems = async (req: Request, res: Response): Promi
                             },
                         },
                     },
+                    orderBy: { id: "desc" },
                     take: 1,
                 },
             },
         });
 
-        res.status(200).json(items);
+        // Attach an `activeCeqAssigned` flag so the frontend can block selection
+        const result = items.map((item) => ({
+            ...item,
+            activeCeqAssigned: assignedIds.includes(item.id),
+        }));
+
+        res.status(200).json(result);
     } catch (error) {
         logger.error("Error fetching asset items:", error);
         res.status(500).json({ message: "Internal server error" });
@@ -314,6 +339,70 @@ async function adjustStocks(
             data: { productVariantId, branchId, quantity: delta, createdAt: currentDate, createdBy: userId, updatedAt: currentDate, updatedBy: userId },
         });
     }
+
+    // When restoring stock (+): create a FIFO layer so future invoices can consume it.
+    // Without this, Stocks and FIFO remainingQty get out of sync → invoice approval fails.
+    if (delta > 0) {
+        const lastLayer = await tx.stockMovements.findFirst({
+            where: { productVariantId, branchId, status: "APPROVED", quantity: { gt: 0 } },
+            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+            select: { unitCost: true },
+        });
+        const unitCost = lastLayer?.unitCost ?? 0;
+
+        await tx.stockMovements.create({
+            data: {
+                productVariantId,
+                branchId,
+                type:           "ADJUSTMENT",
+                AdjustMentType: "POSITIVE",
+                status:         "APPROVED",
+                quantity:       delta,
+                unitCost,
+                remainingQty:   delta,
+                createdAt:      currentDate,
+                createdBy:      userId,
+                updatedAt:      currentDate,
+                updatedBy:      userId,
+            },
+        });
+    }
+
+    // When consuming stock (-): decrement FIFO layers so future invoices see the correct
+    // available qty. Without this, the same stock can be consumed twice (once by CEQ,
+    // once by an invoice).
+    if (delta < 0) {
+        let remaining = new Decimal(-delta); // positive amount to consume
+
+        const fifoBatches = await tx.stockMovements.findMany({
+            where: {
+                productVariantId,
+                branchId,
+                status:      "APPROVED",
+                remainingQty: { gt: 0 },
+                OR: [
+                    { type: "PURCHASE" },
+                    { type: "SALE_RETURN" },
+                    { type: "ADJUSTMENT", AdjustMentType: "POSITIVE" },
+                    { type: "TRANSFER",   quantity: { gt: 0 } },
+                ],
+            },
+            orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+            select: { id: true, remainingQty: true },
+        });
+
+        for (const batch of fifoBatches) {
+            if (remaining.lte(0)) break;
+            const available = new Decimal(batch.remainingQty ?? 0);
+            if (available.lte(0)) continue;
+            const consume = Decimal.min(available, remaining);
+            await tx.stockMovements.update({
+                where: { id: batch.id },
+                data:  { remainingQty: available.minus(consume), updatedAt: currentDate, updatedBy: userId },
+            });
+            remaining = remaining.minus(consume);
+        }
+    }
 }
 
 // Apply or reverse stock effects for a set of DB items (CustomerEquipmentItem rows)
@@ -335,7 +424,9 @@ async function applyDbItemEffects(
             });
             await tx.productAssetItem.update({
                 where: { id: item.productAssetItemId },
-                data:  { status: direction === "APPLY" ? serialStatusForAssign(assignType) : "IN_STOCK" },
+                data:  direction === "APPLY"
+                    ? { status: serialStatusForAssign(assignType) }
+                    : { status: "IN_STOCK", soldOrderItemId: null },
             });
             if (assetItem) {
                 const delta = direction === "APPLY" ? -1 : 1;
@@ -375,7 +466,9 @@ async function applyPayloadEffects(
             });
             await tx.productAssetItem.update({
                 where: { id: Number(item.productAssetItemId) },
-                data:  { status: direction === "APPLY" ? serialStatusForAssign(assignType) : "IN_STOCK" },
+                data:  direction === "APPLY"
+                    ? { status: serialStatusForAssign(assignType) }
+                    : { status: "IN_STOCK", soldOrderItemId: null },
             });
             if (assetItem) {
                 const delta = direction === "APPLY" ? -1 : 1;
@@ -460,6 +553,57 @@ export const createCustomerEquipment = async (req: Request, res: Response): Prom
         });
 
         const record = await prisma.$transaction(async (tx) => {
+            // Validate non-tracked quantities against invoice when orderId is linked
+            if (orderId) {
+                for (const item of items) {
+                    if (item.type === "NON_TRACKED") {
+                        const variant = await tx.productVariants.findUnique({
+                            where: { id: Number(item.productVariantId) },
+                            select: { products: { select: { name: true } } },
+                        });
+                        const productName = variant?.products?.name || `Product #${item.productVariantId}`;
+                        const orderItem = await tx.orderItem.findFirst({
+                            where: {
+                                orderId: Number(orderId),
+                                productVariantId: Number(item.productVariantId),
+                                ItemType: "PRODUCT",
+                            },
+                            select: { id: true, baseQty: true, unitId: true },
+                        });
+                        if (!orderItem) {
+                            throw new Error(`VALIDATION: "${productName}" was not sold in the linked invoice. Please remove this product or unlink the invoice.`);
+                        }
+                        const { baseQty: ceqBaseQty, unitId: ceqUnitId } = await computeBaseQty(tx, {
+                            productVariantId: Number(item.productVariantId),
+                            quantity: Number(item.quantity),
+                            unitId: item.unitId ? Number(item.unitId) : undefined,
+                        });
+                        // Unit must match the invoice's sold unit
+                        if (orderItem.unitId && ceqUnitId !== orderItem.unitId) {
+                            const [ceqUnit, invoiceUnit] = await Promise.all([
+                                tx.units.findUnique({ where: { id: ceqUnitId }, select: { name: true } }),
+                                tx.units.findUnique({ where: { id: orderItem.unitId }, select: { name: true } }),
+                            ]);
+                            throw new Error(`VALIDATION: Wrong unit for "${productName}". The invoice sold in "${invoiceUnit?.name ?? "unknown"}" — you selected "${ceqUnit?.name ?? "unknown"}".`);
+                        }
+                        const invoiceBaseQty = Number(orderItem.baseQty ?? 0);
+                        // Subtract qty already returned via Sale Return for this order item
+                        const saleReturnAgg = await tx.saleReturnItems.aggregate({
+                            where: { saleItemId: orderItem.id, saleReturn: { status: "APPROVED" } },
+                            _sum: { baseQty: true },
+                        });
+                        const saleReturnedBaseQty = Number(saleReturnAgg._sum.baseQty ?? 0);
+                        const availableBaseQty = invoiceBaseQty - saleReturnedBaseQty;
+                        if (ceqBaseQty.toNumber() > availableBaseQty) {
+                            const msg = saleReturnedBaseQty > 0
+                                ? `VALIDATION: Quantity for "${productName}" is too high. Invoice qty: ${invoiceBaseQty}, already returned: ${saleReturnedBaseQty}, available: ${availableBaseQty} — you entered ${ceqBaseQty.toNumber()}.`
+                                : `VALIDATION: Quantity for "${productName}" is too high. The invoice only has ${invoiceBaseQty} unit(s) — you entered ${ceqBaseQty.toNumber()}.`;
+                            throw new Error(msg);
+                        }
+                    }
+                }
+            }
+
             const created = await tx.customerEquipment.create({
                 data: {
                     ref,
@@ -492,8 +636,12 @@ export const createCustomerEquipment = async (req: Request, res: Response): Prom
 
         res.status(201).json(record);
     } catch (error) {
-        logger.error("Error creating customer equipment:", error);
         const typedError = error as Error;
+        if (typedError.message.startsWith("VALIDATION:")) {
+            res.status(400).json({ message: typedError.message.replace("VALIDATION:", "").trim() });
+            return;
+        }
+        logger.error("Error creating customer equipment:", error);
         res.status(500).json({ message: typedError.message });
     }
 };
@@ -505,7 +653,9 @@ export const returnCustomerEquipment = async (req: Request, res: Response): Prom
         if (!loggedInUser) { res.status(401).json({ message: "Unauthenticated." }); return; }
 
         const id = Number(req.params.id);
-        const { returnedAt, note } = req.body;
+        const { returnedAt, note, convertToSecondHandItems, convertToSecondHandVariants } = req.body;
+        const secondHandSet        = new Set<number>((convertToSecondHandItems    || []).map(Number));
+        const secondHandVariantSet = new Set<number>((convertToSecondHandVariants || []).map(Number));
 
         const record = await prisma.customerEquipment.findUnique({ where: { id } });
         if (!record)           { res.status(404).json({ message: "Record not found." }); return; }
@@ -518,11 +668,97 @@ export const returnCustomerEquipment = async (req: Request, res: Response): Prom
         });
 
         const currentDate = nowDate();
+        const userId = loggedInUser.id;
 
         const updated = await prisma.$transaction(async (tx) => {
-            // Reverse stock effects only when there is no linked invoice/order
-            if (!record.orderId) {
-                await applyDbItemEffects(tx, existingItems, record.branchId, record.assignType, "REVERSE", loggedInUser.id, currentDate);
+            // Always restore stock on return — even when invoice is linked
+            // Handle per-item in case of New→SecondHand conversion
+            for (const item of existingItems) {
+                if (item.productAssetItemId) {
+                    const assetItem = await tx.productAssetItem.findUnique({
+                        where: { id: item.productAssetItemId },
+                        select: {
+                            productVariantId: true,
+                            productVariant: { select: { productId: true, productType: true, sku: true, barcode: true, name: true, trackingType: true, stockAlert: true, purchasePrice: true, purchasePriceUnitId: true, retailPrice: true, retailPriceUnitId: true, wholeSalePrice: true, wholeSalePriceUnitId: true, baseUnitId: true, isActive: true } },
+                        },
+                    });
+                    if (!assetItem) continue;
+
+                    let restoreVariantId = assetItem.productVariantId;
+
+                    if (secondHandSet.has(item.productAssetItemId) && assetItem.productVariant?.productType === "New") {
+                        const pid = assetItem.productVariant.productId;
+                        let shVariant = await tx.productVariants.findFirst({
+                            where: { productId: pid, productType: "SecondHand" },
+                            select: { id: true },
+                        });
+                        if (!shVariant) {
+                            const ov = assetItem.productVariant;
+                            shVariant = await tx.productVariants.create({
+                                data: {
+                                    productId: pid, productType: "SecondHand",
+                                    sku: ov.sku, barcode: ov.barcode, name: ov.name,
+                                    trackingType: ov.trackingType, stockAlert: ov.stockAlert,
+                                    purchasePrice: ov.purchasePrice, purchasePriceUnitId: ov.purchasePriceUnitId,
+                                    retailPrice: ov.retailPrice, retailPriceUnitId: ov.retailPriceUnitId,
+                                    wholeSalePrice: ov.wholeSalePrice, wholeSalePriceUnitId: ov.wholeSalePriceUnitId,
+                                    baseUnitId: ov.baseUnitId, isActive: ov.isActive,
+                                    createdBy: userId, updatedBy: userId, createdAt: currentDate, updatedAt: currentDate,
+                                },
+                                select: { id: true },
+                            });
+                            logger.info(`CEQ return: auto-created SecondHand variant ${shVariant.id} from New variant ${assetItem.productVariantId}`);
+                        }
+                        restoreVariantId = shVariant.id;
+                        await tx.productAssetItem.update({
+                            where: { id: item.productAssetItemId },
+                            data: { productVariantId: restoreVariantId, status: "IN_STOCK", soldOrderItemId: null },
+                        });
+                        logger.info(`CEQ return: converted assetItem ${item.productAssetItemId} → SecondHand variant ${restoreVariantId}`);
+                    } else {
+                        await tx.productAssetItem.update({
+                            where: { id: item.productAssetItemId },
+                            data: { status: "IN_STOCK", soldOrderItemId: null },
+                        });
+                    }
+                    await adjustStocks(tx, restoreVariantId, record.branchId, 1, userId, currentDate);
+
+                } else if (item.productVariantId && item.quantity) {
+                    const { baseQty } = await computeBaseQty(tx, {
+                        productVariantId: item.productVariantId,
+                        quantity: item.quantity,
+                        unitId: item.unitId,
+                    });
+                    let restoreVariantId = item.productVariantId;
+                    if (secondHandVariantSet.has(item.productVariantId)) {
+                        const origVariant = await tx.productVariants.findUnique({ where: { id: item.productVariantId } });
+                        if (origVariant?.productType === "New") {
+                            let shVariant = await tx.productVariants.findFirst({
+                                where: { productId: origVariant.productId, productType: "SecondHand" },
+                                select: { id: true },
+                            });
+                            if (!shVariant) {
+                                shVariant = await tx.productVariants.create({
+                                    data: {
+                                        productId: origVariant.productId, productType: "SecondHand",
+                                        sku: origVariant.sku, barcode: origVariant.barcode, name: origVariant.name,
+                                        trackingType: origVariant.trackingType, stockAlert: origVariant.stockAlert,
+                                        purchasePrice: origVariant.purchasePrice, purchasePriceUnitId: origVariant.purchasePriceUnitId,
+                                        retailPrice: origVariant.retailPrice, retailPriceUnitId: origVariant.retailPriceUnitId,
+                                        wholeSalePrice: origVariant.wholeSalePrice, wholeSalePriceUnitId: origVariant.wholeSalePriceUnitId,
+                                        baseUnitId: origVariant.baseUnitId, isActive: origVariant.isActive,
+                                        createdBy: userId, updatedBy: userId, createdAt: currentDate, updatedAt: currentDate,
+                                    },
+                                    select: { id: true },
+                                });
+                                logger.info(`CEQ return: auto-created SecondHand variant ${shVariant.id} from New non-tracked variant ${item.productVariantId}`);
+                            }
+                            restoreVariantId = shVariant.id;
+                            logger.info(`CEQ return: non-tracked qty → SecondHand variant ${restoreVariantId}`);
+                        }
+                    }
+                    await adjustStocks(tx, restoreVariantId, record.branchId, baseQty.toNumber(), userId, currentDate);
+                }
             }
 
             return tx.customerEquipment.update({
@@ -531,7 +767,7 @@ export const returnCustomerEquipment = async (req: Request, res: Response): Prom
                     returnedAt: returnedAt ? dayjs(returnedAt).startOf("day").toDate() : currentDate,
                     note:       note !== undefined ? note : record.note,
                     updatedAt:  currentDate,
-                    updatedBy:  loggedInUser.id,
+                    updatedBy:  userId,
                 },
             });
         });
@@ -603,6 +839,57 @@ export const updateCustomerEquipment = async (req: Request, res: Response): Prom
             : {};
 
         const updated = await prisma.$transaction(async (tx) => {
+            // Validate non-tracked quantities against invoice when orderId is linked and items are being replaced
+            if (newOrderId && Array.isArray(items)) {
+                for (const item of items) {
+                    if (item.type === "NON_TRACKED") {
+                        const variant = await tx.productVariants.findUnique({
+                            where: { id: Number(item.productVariantId) },
+                            select: { products: { select: { name: true } } },
+                        });
+                        const productName = variant?.products?.name || `Product #${item.productVariantId}`;
+                        const orderItem = await tx.orderItem.findFirst({
+                            where: {
+                                orderId: newOrderId,
+                                productVariantId: Number(item.productVariantId),
+                                ItemType: "PRODUCT",
+                            },
+                            select: { id: true, baseQty: true, unitId: true },
+                        });
+                        if (!orderItem) {
+                            throw new Error(`VALIDATION: "${productName}" was not sold in the linked invoice. Please remove this product or unlink the invoice.`);
+                        }
+                        const { baseQty: ceqBaseQty, unitId: ceqUnitId } = await computeBaseQty(tx, {
+                            productVariantId: Number(item.productVariantId),
+                            quantity: Number(item.quantity),
+                            unitId: item.unitId ? Number(item.unitId) : undefined,
+                        });
+                        // Unit must match the invoice's sold unit
+                        if (orderItem.unitId && ceqUnitId !== orderItem.unitId) {
+                            const [ceqUnit, invoiceUnit] = await Promise.all([
+                                tx.units.findUnique({ where: { id: ceqUnitId }, select: { name: true } }),
+                                tx.units.findUnique({ where: { id: orderItem.unitId }, select: { name: true } }),
+                            ]);
+                            throw new Error(`VALIDATION: Wrong unit for "${productName}". The invoice sold in "${invoiceUnit?.name ?? "unknown"}" — you selected "${ceqUnit?.name ?? "unknown"}".`);
+                        }
+                        const invoiceBaseQty = Number(orderItem.baseQty ?? 0);
+                        // Subtract qty already returned via Sale Return for this order item
+                        const saleReturnAgg = await tx.saleReturnItems.aggregate({
+                            where: { saleItemId: orderItem.id, saleReturn: { status: "APPROVED" } },
+                            _sum: { baseQty: true },
+                        });
+                        const saleReturnedBaseQty = Number(saleReturnAgg._sum.baseQty ?? 0);
+                        const availableBaseQty = invoiceBaseQty - saleReturnedBaseQty;
+                        if (ceqBaseQty.toNumber() > availableBaseQty) {
+                            const msg = saleReturnedBaseQty > 0
+                                ? `VALIDATION: Quantity for "${productName}" is too high. Invoice qty: ${invoiceBaseQty}, already returned: ${saleReturnedBaseQty}, available: ${availableBaseQty} — you entered ${ceqBaseQty.toNumber()}.`
+                                : `VALIDATION: Quantity for "${productName}" is too high. The invoice only has ${invoiceBaseQty} unit(s) — you entered ${ceqBaseQty.toNumber()}.`;
+                            throw new Error(msg);
+                        }
+                    }
+                }
+            }
+
             // Reverse old stock effects only when items are being replaced AND old record had no linked invoice
             if (!oldOrderId && Array.isArray(items)) {
                 await applyDbItemEffects(tx, oldItems, record.branchId, record.assignType, "REVERSE", loggedInUser.id, currentDate);
@@ -638,9 +925,85 @@ export const updateCustomerEquipment = async (req: Request, res: Response): Prom
 
         res.status(200).json(updated);
     } catch (error) {
-        logger.error("Error updating customer equipment:", error);
         const typedError = error as Error;
+        if (typedError.message.startsWith("VALIDATION:")) {
+            res.status(400).json({ message: typedError.message.replace("VALIDATION:", "").trim() });
+            return;
+        }
+        logger.error("Error updating customer equipment:", error);
         res.status(500).json({ message: typedError.message });
+    }
+};
+
+// ── CEQ RETURNED QTY (for Sale Return blocking) ──────────────────────────────
+export const getCeqReturnedQty = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const orderId = Number(req.query.orderId);
+        if (!orderId) { res.status(400).json({ message: "orderId required" }); return; }
+
+        // Find returned CEQs linked to this invoice/order
+        const returnedCeqs = await prisma.customerEquipment.findMany({
+            where: { orderId, returnedAt: { not: null } },
+            select: { id: true, ref: true },
+        });
+
+        if (returnedCeqs.length === 0) { res.json([]); return; }
+
+        const ceqIds = returnedCeqs.map((c) => c.id);
+        const ceqRefMap = new Map(returnedCeqs.map((c) => [c.id, c.ref]));
+
+        // Get non-tracked items from those returned CEQs
+        const items = await prisma.customerEquipmentItem.findMany({
+            where: {
+                customerEquipmentId: { in: ceqIds },
+                productVariantId: { not: null },
+                productAssetItemId: null,
+            },
+            select: { customerEquipmentId: true, productVariantId: true, quantity: true, unitId: true },
+        });
+
+        // Accumulate base qty per productVariantId
+        const variantMap = new Map<number, { baseQty: number; refs: Set<string> }>();
+        for (const item of items) {
+            if (!item.productVariantId || !item.quantity) continue;
+            const computed = await computeBaseQty(prisma as any, {
+                productVariantId: item.productVariantId,
+                quantity: item.quantity,
+                unitId: item.unitId,
+            });
+            const vid = item.productVariantId;
+            const ref = ceqRefMap.get(item.customerEquipmentId) ?? "";
+            if (!variantMap.has(vid)) variantMap.set(vid, { baseQty: 0, refs: new Set() });
+            const entry = variantMap.get(vid)!;
+            entry.baseQty += computed.baseQty.toNumber();
+            entry.refs.add(ref);
+        }
+
+        if (variantMap.size === 0) { res.json([]); return; }
+
+        // Match productVariantId → orderItemId within this order
+        const orderItems = await prisma.orderItem.findMany({
+            where: { orderId, productVariantId: { in: [...variantMap.keys()] }, ItemType: "PRODUCT" },
+            select: { id: true, productVariantId: true },
+        });
+
+        const result = orderItems
+            .map((oi) => {
+                const entry = variantMap.get(oi.productVariantId!);
+                if (!entry) return null;
+                return {
+                    orderItemId: oi.id,
+                    productVariantId: oi.productVariantId,
+                    ceqReturnedBaseQty: entry.baseQty,
+                    ceqRefs: [...entry.refs],
+                };
+            })
+            .filter(Boolean);
+
+        res.json(result);
+    } catch (error) {
+        logger.error("Error fetching CEQ returned quantities:", error);
+        res.status(500).json({ message: "Error fetching CEQ returned quantities" });
     }
 };
 

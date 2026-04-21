@@ -146,19 +146,27 @@ const ReturnTrackedModal: React.FC<Props> = ({ isOpen, onClose, clickData, onSav
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   {filtered.map((item) => {
                     const sel = selectedIds.includes(item.id);
-                    const canPick = sel || selectedIds.length < required;
+                    const isCeqAssigned = (item as any).activeCeqAssigned === true;
+                    const ceqRef = (item as any).ceqRef as string | null;
+                    const alreadyReturnedViaCeq = (item as any).alreadyReturnedViaCeq === true;
+                    const returnedCeqRef = (item as any).returnedCeqRef as string | null;
+                    const isBlocked = isCeqAssigned || alreadyReturnedViaCeq;
+                    const canPick = !isBlocked && (sel || selectedIds.length < required);
+                    const borderColor = isCeqAssigned ? "#e9d5ff" : alreadyReturnedViaCeq ? "#fde68a" : sel ? "#3b82f6" : "#e2e8f0";
+                    const bgColor = isCeqAssigned ? "#faf5ff" : alreadyReturnedViaCeq ? "#fffbeb" : sel ? "#eff6ff" : "#fff";
+                    const textColor = isCeqAssigned ? "#7c3aed" : alreadyReturnedViaCeq ? "#92400e" : "#1e293b";
                     return (
                       <div
                         key={item.id}
                         onClick={() => canPick && toggle(item.id)}
                         style={{
                           position: "relative",
-                          border: sel ? "1.5px solid #3b82f6" : "1.5px solid #e2e8f0",
+                          border: `1.5px solid ${borderColor}`,
                           borderRadius: 10,
                           padding: "10px 12px",
-                          background: sel ? "#eff6ff" : "#fff",
+                          background: bgColor,
                           cursor: canPick ? "pointer" : "not-allowed",
-                          opacity: !canPick ? 0.45 : 1,
+                          opacity: (!canPick && !isBlocked) ? 0.45 : 1,
                           transition: "border-color 0.15s, background 0.15s",
                           userSelect: "none",
                         }}
@@ -170,13 +178,23 @@ const ReturnTrackedModal: React.FC<Props> = ({ isOpen, onClose, clickData, onSav
                             </svg>
                           </div>
                         )}
-                        <p style={{ margin: 0, fontWeight: 600, fontSize: 13, color: "#1e293b", paddingRight: sel ? 20 : 0 }}>
+                        <p style={{ margin: 0, fontWeight: 600, fontSize: 13, color: textColor, paddingRight: sel ? 20 : 0 }}>
                           {item.serialNumber || <em style={{ color: "#94a3b8", fontStyle: "normal" }}>No Serial</em>}
                         </p>
-                        <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                        <div style={{ display: "flex", gap: 10, marginTop: 4, flexWrap: "wrap" }}>
                           {item.assetCode && <span style={{ fontSize: 11, color: "#64748b" }}><span style={{ color: "#94a3b8" }}>Asset:</span> {item.assetCode}</span>}
                           {item.macAddress && <span style={{ fontSize: 11, color: "#64748b" }}><span style={{ color: "#94a3b8" }}>MAC:</span> {item.macAddress}</span>}
-                          {!item.assetCode && !item.macAddress && <span style={{ fontSize: 11, color: "#cbd5e1" }}>—</span>}
+                          {!item.assetCode && !item.macAddress && !isBlocked && <span style={{ fontSize: 11, color: "#cbd5e1" }}>—</span>}
+                          {isCeqAssigned && (
+                            <span style={{ fontSize: 11, color: "#7c3aed", fontWeight: 500 }}>
+                              Assigned to CEQ {ceqRef ? `(${ceqRef})` : ""}
+                            </span>
+                          )}
+                          {alreadyReturnedViaCeq && (
+                            <span style={{ fontSize: 11, color: "#92400e", fontWeight: 500 }}>
+                              Already returned via CEQ {returnedCeqRef ? `(${returnedCeqRef})` : ""}
+                            </span>
+                          )}
                         </div>
                       </div>
                     );

@@ -39,8 +39,9 @@ export const getSerialHistory = async (assetItemId: number) => {
     return res.json();
 };
 
-export const getAvailableAssetItems = async (variantId: number, branchId: number) => {
+export const getAvailableAssetItems = async (variantId: number, branchId: number, excludeCeqId?: number) => {
     const params = new URLSearchParams({ variantId: String(variantId), branchId: String(branchId) });
+    if (excludeCeqId) params.set("excludeCeqId", String(excludeCeqId));
     const res = await fetch(`${API_BASE_URL}/api/customerequipment/asset-items?${params}`, {
         credentials: "include",
     });
@@ -106,14 +107,22 @@ export const updateCustomerEquipment = async (id: number, data: {
     return res.json();
 };
 
-export const returnCustomerEquipment = async (id: number, returnedAt: string, note?: string) => {
+export const returnCustomerEquipment = async (id: number, returnedAt: string, note?: string, convertToSecondHandItems?: number[], convertToSecondHandVariants?: number[]) => {
     const res = await fetch(`${API_BASE_URL}/api/customerequipment/${id}/return`, {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ returnedAt, note }),
+        body: JSON.stringify({ returnedAt, note, convertToSecondHandItems, convertToSecondHandVariants }),
     });
     if (!res.ok) throw new Error((await res.json()).message || "Failed to return");
+    return res.json();
+};
+
+export const getCeqReturnedQty = async (orderId: number): Promise<{ orderItemId: number; productVariantId: number; ceqReturnedBaseQty: number; ceqRefs: string[] }[]> => {
+    const res = await fetch(`${API_BASE_URL}/api/customerequipment/ceq-returned-qty?orderId=${orderId}`, {
+        credentials: "include",
+    });
+    if (!res.ok) throw new Error((await res.json()).message || "Failed to fetch");
     return res.json();
 };
 

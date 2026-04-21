@@ -65,6 +65,7 @@ type EquipmentLine = {
     quantity: number;
     availableUnits: UnitOption[];
     selectedUnitId: number | null;
+    lineError?: string;
 };
 
 const ASSIGN_TYPES: { value: AssignType; label: string; color: string }[] = [
@@ -215,7 +216,7 @@ const CustomerEquipmentForm: React.FC = () => {
                     Object.values(trackedMap).map(async ({ variant, items: existingItems }) => {
                         const label = `${variant.products?.name} (${variant.productType}) — ${variant.barcode}`;
                         let available: AssetItem[] = [];
-                        try { available = await getAvailableAssetItems(variant.id, record.branchId); } catch { /* ok */ }
+                        try { available = await getAvailableAssetItems(variant.id, record.branchId, record.id); } catch { /* ok */ }
                         // Include any existing items not in available list (edge case)
                         const availIds = new Set(available.map((a: AssetItem) => a.id));
                         for (const ei of existingItems) {
@@ -289,7 +290,7 @@ const CustomerEquipmentForm: React.FC = () => {
 
         if (tracked && branchId) {
             try {
-                const items = await getAvailableAssetItems(variant.id, Number(branchId));
+                const items = await getAvailableAssetItems(variant.id, Number(branchId), id ? Number(id) : undefined);
                 updateLine(key, { availableItems: items, showSerialPanel: true });
             } catch {
                 updateLine(key, { availableItems: [] });
@@ -445,7 +446,20 @@ const CustomerEquipmentForm: React.FC = () => {
                 navigate("/customerequipment");
             }
         } catch (err: any) {
-            toast.error(err.message || "Failed to save", { position: "top-right", autoClose: 3000 });
+            const msg: string = err.message || "Failed to save";
+            // Try to extract product name from backend validation message and highlight the line
+            const quoted = msg.match(/"([^"]+)"/);
+            if (quoted) {
+                const productName = quoted[1];
+                const matchedLine = lines.find((l) => l.productLabel.includes(productName));
+                if (matchedLine) {
+                    setLines((prev) => prev.map((l) => l.key === matchedLine.key ? { ...l, lineError: msg } : l));
+                } else {
+                    toast.error(msg, { position: "top-right", autoClose: 4000 });
+                }
+            } else {
+                toast.error(msg, { position: "top-right", autoClose: 4000 });
+            }
         } finally {
             setIsLoading(false);
         }
@@ -731,12 +745,15 @@ const CustomerEquipmentForm: React.FC = () => {
                                                     {line.availableItems.length === 0
                                                         ? <p className="text-sm text-orange-500 p-3">No serial numbers available in this branch.</p>
                                                         : line.availableItems.map((item) => {
-                                                            const checked    = line.selectedIds.includes(item.id);
-                                                            const usedElse   = isSerialUsedElsewhere(line.key, item.id);
-                                                            const isSold     = item.status === "SOLD";
-                                                            const isReserved = item.status === "RESERVED";
-                                                            const isBlocked  = usedElse || isSold || isReserved || (item.status !== "IN_STOCK" && !checked);
-                                                            const soldOrder  = isSold ? item.orderItemLinks?.[0]?.orderItem?.order : null;
+                                                            const checked         = line.selectedIds.includes(item.id);
+                                                            const usedElse        = isSerialUsedElsewhere(line.key, item.id);
+                                                            const isSold          = item.status === "SOLD";
+                                                            const isReserved      = item.status === "RESERVED";
+                                                            const isCeqAssigned   = (item as any).activeCeqAssigned === true;
+                                                            const soldOrderId     = item.orderItemLinks?.[0]?.orderItem?.order?.id;
+                                                            const isUnlockedBySoldInvoice = isSold && !!orderId && soldOrderId === Number(orderId);
+                                                            const isBlocked       = usedElse || isCeqAssigned || (isSold && !isUnlockedBySoldInvoice) || (isReserved && !isUnlockedBySoldInvoice) || (item.status !== "IN_STOCK" && !checked && !isUnlockedBySoldInvoice);
+                                                            const soldOrder       = isSold ? item.orderItemLinks?.[0]?.orderItem?.order : null;
                                                             return (
                                                                 <div key={item.id} className={`flex items-center gap-3 px-4 py-2 border-b text-sm ${isBlocked ? "opacity-50" : "hover:bg-blue-50"} ${checked ? "bg-blue-50" : ""}`}>
                                                                     <label className={`flex items-center gap-3 flex-1 min-w-0 ${isBlocked ? "cursor-not-allowed" : "cursor-pointer"}`}>
@@ -746,15 +763,19 @@ const CustomerEquipmentForm: React.FC = () => {
                                                                         <span className="ml-auto text-xs text-right">
                                                                             {usedElse
                                                                                 ? <span className="text-gray-400">[used on line above]</span>
-                                                                                : isSold
-                                                                                    ? <span className="text-red-500 font-medium">
-                                                                                        Sold via {soldOrder ? <strong>{soldOrder.ref}</strong> : "invoice"}
-                                                                                        {soldOrder?.customer && <span className="text-red-400"> ({soldOrder.customer.name})</span>}
-                                                                                        {" — link the Order above"}
-                                                                                      </span>
-                                                                                    : isReserved
-                                                                                        ? <span className="text-orange-500 font-medium">Already assigned to another customer</span>
-                                                                                        : <span className="text-gray-400">[{item.status}]</span>
+                                                                                : isCeqAssigned
+                                                                                    ? <span className="text-purple-500 font-medium">Already assigned to another CEQ record</span>
+                                                                                    : isUnlockedBySoldInvoice
+                                                                                        ? <span className="text-green-600 font-medium">✓ Linked via invoice</span>
+                                                                                        : isSold
+                                                                                            ? <span className="text-red-500 font-medium">
+                                                                                                Sold via {soldOrder ? <strong>{soldOrder.ref}</strong> : "invoice"}
+                                                                                                {soldOrder?.customer && <span className="text-red-400"> ({soldOrder.customer.name})</span>}
+                                                                                                {" — link the Order above"}
+                                                                                              </span>
+                                                                                            : isReserved
+                                                                                                ? <span className="text-orange-500 font-medium">Already assigned to another customer</span>
+                                                                                                : <span className="text-gray-400">[{item.status}]</span>
                                                                             }
                                                                         </span>
                                                                     </label>
@@ -772,16 +793,19 @@ const CustomerEquipmentForm: React.FC = () => {
 
                                     {/* Quantity + Unit (non-tracked) */}
                                     {line.variantId && !isTracked(line.trackingType) && (
-                                        <div className="ml-8 flex items-center gap-3 flex-wrap">
-                                            <label className="text-sm font-medium text-gray-600">Quantity:</label>
-                                            <input type="number" min={1} className="form-input w-28 text-center" value={line.quantity} onChange={(e) => updateLine(line.key, { quantity: Math.max(1, Number(e.target.value)) })} />
-                                            {line.availableUnits.length > 0 ? (
-                                                <div style={{ width: 110 }}>
-                                                    <select className="form-select" value={line.selectedUnitId ?? ""} onChange={(e) => updateLine(line.key, { selectedUnitId: Number(e.target.value) || null })}>
+                                        <div className="ml-8">
+                                            <div className="flex items-center gap-3">
+                                                <label className="text-sm font-medium text-gray-600" style={{ whiteSpace: "nowrap" }}>Quantity:</label>
+                                                <input type="number" min={1} className="form-input text-center" style={{ width: "7rem", flexShrink: 0, ...(line.lineError ? { borderColor: "#ef4444" } : {}) }} value={line.quantity} onChange={(e) => updateLine(line.key, { quantity: Math.max(1, Number(e.target.value)), lineError: undefined })} />
+                                                {line.availableUnits.length > 0 ? (
+                                                    <select className="form-select" style={{ width: "8rem", flexShrink: 0, ...(line.lineError ? { borderColor: "#ef4444" } : {}) }} value={line.selectedUnitId ?? ""} onChange={(e) => updateLine(line.key, { selectedUnitId: Number(e.target.value) || null, lineError: undefined })}>
                                                         {line.availableUnits.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
                                                     </select>
-                                                </div>
-                                            ) : <span className="text-xs text-gray-400">unit</span>}
+                                                ) : <span className="text-xs text-gray-400">unit</span>}
+                                            </div>
+                                            {line.lineError && (
+                                                <p className="mt-1 text-xs font-medium" style={{ color: "#ef4444" }}>{line.lineError}</p>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -1062,12 +1086,15 @@ const CustomerEquipmentForm: React.FC = () => {
                                                     <p className="text-sm text-orange-500 p-3">No serial numbers available in this branch.</p>
                                                 ) : (
                                                     line.availableItems.map((item) => {
-                                                        const checked    = line.selectedIds.includes(item.id);
-                                                        const usedElse   = isSerialUsedElsewhere(line.key, item.id);
-                                                        const isSold     = item.status === "SOLD";
-                                                        const isReserved = item.status === "RESERVED";
-                                                        const isBlocked  = usedElse || isSold || isReserved || (item.status !== "IN_STOCK" && !checked);
-                                                        const soldOrder  = isSold ? item.orderItemLinks?.[0]?.orderItem?.order : null;
+                                                        const checked       = line.selectedIds.includes(item.id);
+                                                        const usedElse      = isSerialUsedElsewhere(line.key, item.id);
+                                                        const isSold        = item.status === "SOLD";
+                                                        const isReserved    = item.status === "RESERVED";
+                                                        const isCeqAssigned = (item as any).activeCeqAssigned === true;
+                                                        const soldOrderId   = item.orderItemLinks?.[0]?.orderItem?.order?.id;
+                                                        const isUnlockedBySoldInvoice = isSold && !!orderId && soldOrderId === Number(orderId);
+                                                        const isBlocked     = usedElse || isCeqAssigned || (isSold && !isUnlockedBySoldInvoice) || (isReserved && !isUnlockedBySoldInvoice) || (item.status !== "IN_STOCK" && !checked && !isUnlockedBySoldInvoice);
+                                                        const soldOrder     = isSold ? item.orderItemLinks?.[0]?.orderItem?.order : null;
                                                         return (
                                                             <div key={item.id} className={`flex items-center gap-3 px-4 py-2 border-b text-sm ${isBlocked ? "opacity-50" : "hover:bg-blue-50"} ${checked ? "bg-blue-50" : ""}`}>
                                                                 <label className={`flex items-center gap-3 flex-1 min-w-0 ${isBlocked ? "cursor-not-allowed" : "cursor-pointer"}`}>
@@ -1077,15 +1104,19 @@ const CustomerEquipmentForm: React.FC = () => {
                                                                     <span className="ml-auto text-xs text-right">
                                                                         {usedElse
                                                                             ? <span className="text-gray-400">[used on line above]</span>
-                                                                            : isSold
-                                                                                ? <span className="text-red-500 font-medium">
-                                                                                    Sold via {soldOrder ? <strong>{soldOrder.ref}</strong> : "invoice"}
-                                                                                    {soldOrder?.customer && <span className="text-red-400"> ({soldOrder.customer.name})</span>}
-                                                                                    {" — link the Order above"}
-                                                                                  </span>
-                                                                                : isReserved
-                                                                                    ? <span className="text-orange-500 font-medium">Already assigned to another customer</span>
-                                                                                    : <span className="text-gray-400">[{item.status}]</span>
+                                                                            : isCeqAssigned
+                                                                                ? <span className="text-purple-500 font-medium">Already assigned to another CEQ record</span>
+                                                                                : isUnlockedBySoldInvoice
+                                                                                    ? <span className="text-green-600 font-medium">✓ Linked via invoice</span>
+                                                                                    : isSold
+                                                                                        ? <span className="text-red-500 font-medium">
+                                                                                            Sold via {soldOrder ? <strong>{soldOrder.ref}</strong> : "invoice"}
+                                                                                            {soldOrder?.customer && <span className="text-red-400"> ({soldOrder.customer.name})</span>}
+                                                                                            {" — link the Order above"}
+                                                                                          </span>
+                                                                                        : isReserved
+                                                                                            ? <span className="text-orange-500 font-medium">Already assigned to another customer</span>
+                                                                                            : <span className="text-gray-400">[{item.status}]</span>
                                                                         }
                                                                     </span>
                                                                 </label>
@@ -1103,27 +1134,34 @@ const CustomerEquipmentForm: React.FC = () => {
 
                                 {/* Quantity + Unit input (non-tracked) */}
                                 {line.variantId && !isTracked(line.trackingType) && (
-                                    <div className="ml-8 flex items-center gap-3 flex-wrap">
-                                        <label className="text-sm font-medium text-gray-600">Quantity:</label>
-                                        <input
-                                            type="number"
-                                            min={1}
-                                            className="form-input w-28 text-center"
-                                            value={line.quantity}
-                                            onChange={(e) => updateLine(line.key, { quantity: Math.max(1, Number(e.target.value)) })}
-                                        />
-                                        {line.availableUnits.length > 0 ? (
-                                            <select
-                                                className="form-input w-32"
-                                                value={line.selectedUnitId ?? ""}
-                                                onChange={(e) => updateLine(line.key, { selectedUnitId: Number(e.target.value) || null })}
-                                            >
-                                                {line.availableUnits.map((u) => (
-                                                    <option key={u.id} value={u.id}>{u.name}</option>
-                                                ))}
-                                            </select>
-                                        ) : (
-                                            <span className="text-xs text-gray-400">unit</span>
+                                    <div className="ml-8">
+                                        <div className="flex items-center gap-3">
+                                            <label className="text-sm font-medium text-gray-600" style={{ whiteSpace: "nowrap" }}>Quantity:</label>
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                className="form-input text-center"
+                                                style={{ width: "7rem", flexShrink: 0, ...(line.lineError ? { borderColor: "#ef4444" } : {}) }}
+                                                value={line.quantity}
+                                                onChange={(e) => updateLine(line.key, { quantity: Math.max(1, Number(e.target.value)), lineError: undefined })}
+                                            />
+                                            {line.availableUnits.length > 0 ? (
+                                                <select
+                                                    className="form-select"
+                                                    style={{ width: "8rem", flexShrink: 0, ...(line.lineError ? { borderColor: "#ef4444" } : {}) }}
+                                                    value={line.selectedUnitId ?? ""}
+                                                    onChange={(e) => updateLine(line.key, { selectedUnitId: Number(e.target.value) || null, lineError: undefined })}
+                                                >
+                                                    {line.availableUnits.map((u) => (
+                                                        <option key={u.id} value={u.id}>{u.name}</option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                <span className="text-xs text-gray-400">unit</span>
+                                            )}
+                                        </div>
+                                        {line.lineError && (
+                                            <p className="mt-1 text-xs font-medium" style={{ color: "#ef4444" }}>{line.lineError}</p>
                                         )}
                                     </div>
                                 )}

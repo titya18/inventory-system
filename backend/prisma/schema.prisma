@@ -389,6 +389,7 @@ model Products {
   returnDetails     ReturnDetails[]
   transferDetails   TransferDetails[]
   saleReturnItems   SaleReturnItems[]
+  assetItems        ProductAssetItem[] @relation("AssetItemProduct")
 
   // ✅ NEW
   unitConversions ProductUnitConversion[]
@@ -519,6 +520,7 @@ model ProductVariantValues {
 model ProductAssetItem {
   id               Int             @id @default(autoincrement())
   productVariantId Int
+  productId        Int?
   branchId         Int
   assetCode        String?
   macAddress       String?
@@ -534,6 +536,7 @@ model ProductAssetItem {
   updatedBy        Int?
 
   productVariant   ProductVariants @relation(fields: [productVariantId], references: [id])
+  product          Products?       @relation("AssetItemProduct", fields: [productId], references: [id])
   branch           Branch          @relation(fields: [branchId], references: [id])
   orderItemLinks   OrderItemAssetItem[]
   quotationDetailLinks    QuotationDetailAssetItem[]
@@ -542,7 +545,7 @@ model ProductAssetItem {
   @@index([productVariantId, branchId, status])
   @@unique([productVariantId, assetCode])
   @@unique([productVariantId, macAddress])
-  @@unique([productVariantId, serialNumber])
+  @@unique([productId, serialNumber])
 }
 
 model Stocks {

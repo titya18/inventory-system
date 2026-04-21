@@ -84,8 +84,13 @@ export const consumeFifoForSale = async ({
   }
 
   if (qtyToSell.gt(0)) {
+    const variant = await tx.productVariants.findUnique({
+      where: { id: productVariantId },
+      select: { products: { select: { name: true } } },
+    });
+    const productName = variant?.products?.name ?? `Product #${productVariantId}`;
     throw new Error(
-      `Not enough FIFO stock for productVariantId=${productVariantId}. Missing ${qtyToSell.toString()}`
+      `Not enough stock for "${productName}". Please check stock levels before approving.`
     );
   }
 

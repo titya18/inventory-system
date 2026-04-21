@@ -1190,6 +1190,21 @@ export const getAvailableTrackedItems = async (req: Request, res: Response): Pro
       selectedIds = selectedRows.map((row) => row.productAssetItemId);
     }
 
+    // Exclude serials actively assigned to a non-returned CEQ (status stays IN_STOCK when invoice is linked to CEQ)
+    const ceqAssigned = await prisma.customerEquipmentItem.findMany({
+      where: {
+        productAssetItemId: { not: null },
+        customerEquipment: { returnedAt: null },
+      },
+      select: { productAssetItemId: true },
+    });
+    const ceqAssignedIds = ceqAssigned
+      .map((r) => r.productAssetItemId)
+      .filter((id): id is number => id !== null);
+
+    // Serials that are CEQ-assigned but also already on this invoice line stay visible
+    const blockedIds = ceqAssignedIds.filter((id) => !selectedIds.includes(id));
+
     const rows = await prisma.productAssetItem.findMany({
       where: {
         productVariantId: variantId,
@@ -1198,6 +1213,7 @@ export const getAvailableTrackedItems = async (req: Request, res: Response): Pro
           { status: "IN_STOCK" },
           ...(selectedIds.length > 0 ? [{ id: { in: selectedIds } }] : []),
         ],
+        ...(blockedIds.length > 0 ? { NOT: { id: { in: blockedIds } } } : {}),
       },
       orderBy: [
         { serialNumber: "asc" },
