@@ -3038,7 +3038,13 @@ export const getAllReportSalesReturns = async (
         SELECT
           sri."saleReturnId",
           COALESCE(SUM(
-            COALESCE(oi."cogs", 0)
+            CASE
+              WHEN COALESCE(oi."baseQty", 0) > 0 AND COALESCE(sri."baseQty", 0) > 0
+                THEN (COALESCE(oi."cogs", 0) / NULLIF(oi."baseQty", 0)) * COALESCE(sri."baseQty", 0)
+              WHEN COALESCE(oi."quantity", 0) > 0 AND COALESCE(sri."quantity", 0) > 0
+                THEN (COALESCE(oi."cogs", 0) / NULLIF(oi."quantity", 0)) * COALESCE(sri."quantity", 0)
+              ELSE 0
+            END
           ), 0) AS "returnCost"
         FROM "SaleReturnItems" sri
         LEFT JOIN "OrderItem" oi ON sri."saleItemId" = oi."id"
@@ -3098,7 +3104,13 @@ export const getAllReportSalesReturns = async (
         SELECT
           sri."saleReturnId",
           COALESCE(SUM(
-            COALESCE(oi."cogs", 0)
+            CASE
+              WHEN COALESCE(oi."baseQty", 0) > 0 AND COALESCE(sri."baseQty", 0) > 0
+                THEN (COALESCE(oi."cogs", 0) / NULLIF(oi."baseQty", 0)) * COALESCE(sri."baseQty", 0)
+              WHEN COALESCE(oi."quantity", 0) > 0 AND COALESCE(sri."quantity", 0) > 0
+                THEN (COALESCE(oi."cogs", 0) / NULLIF(oi."quantity", 0)) * COALESCE(sri."quantity", 0)
+              ELSE 0
+            END
           ), 0) AS "returnCost"
         FROM "SaleReturnItems" sri
         LEFT JOIN "OrderItem" oi ON sri."saleItemId" = oi."id"
@@ -3484,8 +3496,66 @@ export const profitReport = async (req: Request, res: Response) => {
 
         const total = Number(totalResult[0]?.total || 0);
 
+        // Prorated return CTE — reused in both summary and rows queries
+        const returnSummaryCte = `
+            WITH return_summary AS (
+                SELECT
+                    sr."orderId",
+                    COALESCE(SUM(COALESCE(sri."total", 0)), 0) AS "returnedAmount",
+                    COALESCE(SUM(
+                        CASE
+                            WHEN COALESCE(oi."baseQty", 0) > 0 AND COALESCE(sri."baseQty", 0) > 0
+                                THEN (COALESCE(oi."cogs", 0) / NULLIF(oi."baseQty", 0)) * COALESCE(sri."baseQty", 0)
+                            WHEN COALESCE(oi."quantity", 0) > 0 AND COALESCE(sri."quantity", 0) > 0
+                                THEN (COALESCE(oi."cogs", 0) / NULLIF(oi."quantity", 0)) * COALESCE(sri."quantity", 0)
+                            ELSE 0
+                        END
+                    ), 0) AS "returnedCogs"
+                FROM "SaleReturns" sr
+                JOIN "SaleReturnItems" sri ON sri."saleReturnId" = sr."id"
+                LEFT JOIN "OrderItem" oi ON oi."id" = sri."saleItemId"
+                WHERE sr."deletedAt" IS NULL
+                    AND sr."status" = 'APPROVED'
+                GROUP BY sr."orderId"
+            )
+        `;
+
+        // Summary over ALL matching records (not just current page)
+        const summaryResult: any[] = await prisma.$queryRawUnsafe(
+            `
+                ${returnSummaryCte},
+                order_agg AS (
+                    SELECT
+                        GREATEST(0, COALESCE(o."totalAmount", 0) - COALESCE(rs."returnedAmount", 0)) AS "netSales",
+                        GREATEST(0, COALESCE(SUM(COALESCE(oi.cogs, 0)), 0) - COALESCE(rs."returnedCogs", 0)) AS "netCogs"
+                    FROM "Order" o
+                    LEFT JOIN "Customer" c ON o."customerId" = c.id
+                    JOIN "Branch" b ON o."branchId" = b.id
+                    LEFT JOIN "OrderItem" oi ON oi."orderId" = o.id
+                    LEFT JOIN return_summary rs ON rs."orderId" = o.id
+                    WHERE o."deletedAt" IS NULL
+                        AND o.status IN ('APPROVED', 'COMPLETED')
+                        AND (
+                            o.ref ILIKE $1
+                            OR COALESCE(c.name, '') ILIKE $1
+                            OR b.name ILIKE $1
+                        )
+                        ${branchRestriction}
+                        ${dateCondition}
+                    GROUP BY o.id, o."totalAmount", rs."returnedAmount", rs."returnedCogs"
+                )
+                SELECT
+                    COALESCE(SUM("netSales"), 0)::FLOAT AS "totalSales",
+                    COALESCE(SUM("netCogs"), 0)::FLOAT AS "totalCogs",
+                    COALESCE(SUM("netSales" - "netCogs"), 0)::FLOAT AS "totalProfit"
+                FROM order_agg
+            `,
+            likeTerm
+        );
+
         const rows: any[] = await prisma.$queryRawUnsafe(
             `
+                ${returnSummaryCte}
                 SELECT
                     o.id AS "orderId",
                     o.ref,
@@ -3497,14 +3567,20 @@ export const profitReport = async (req: Request, res: Response) => {
                     b.id AS "branchId",
                     b.name AS "branchName",
 
-                    COALESCE(o."totalAmount", 0)::FLOAT AS "totalSales",
-                    COALESCE(SUM(COALESCE(oi.cogs, 0)), 0)::FLOAT AS "totalCogs",
-
-                    (COALESCE(o."totalAmount", 0) - COALESCE(SUM(COALESCE(oi.cogs, 0)), 0))::FLOAT AS "grossProfit",
-
+                    GREATEST(0, COALESCE(o."totalAmount", 0) - COALESCE(rs."returnedAmount", 0))::FLOAT AS "totalSales",
+                    GREATEST(0, COALESCE(SUM(COALESCE(oi.cogs, 0)), 0) - COALESCE(rs."returnedCogs", 0))::FLOAT AS "totalCogs",
+                    (
+                        GREATEST(0, COALESCE(o."totalAmount", 0) - COALESCE(rs."returnedAmount", 0)) -
+                        GREATEST(0, COALESCE(SUM(COALESCE(oi.cogs, 0)), 0) - COALESCE(rs."returnedCogs", 0))
+                    )::FLOAT AS "grossProfit",
                     CASE
-                    WHEN COALESCE(o."totalAmount", 0) = 0 THEN 0
-                    ELSE (((COALESCE(o."totalAmount", 0) - COALESCE(SUM(COALESCE(oi.cogs, 0)), 0)) / COALESCE(o."totalAmount", 0)) * 100)
+                        WHEN GREATEST(0, COALESCE(o."totalAmount", 0) - COALESCE(rs."returnedAmount", 0)) <= 0 THEN 0
+                        ELSE (
+                            (
+                                GREATEST(0, COALESCE(o."totalAmount", 0) - COALESCE(rs."returnedAmount", 0)) -
+                                GREATEST(0, COALESCE(SUM(COALESCE(oi.cogs, 0)), 0) - COALESCE(rs."returnedCogs", 0))
+                            ) / NULLIF(GREATEST(0, COALESCE(o."totalAmount", 0) - COALESCE(rs."returnedAmount", 0)), 0) * 100
+                        )
                     END::FLOAT AS "marginPercent",
 
                     u.id AS "createdById",
@@ -3515,13 +3591,14 @@ export const profitReport = async (req: Request, res: Response) => {
                 JOIN "Branch" b ON o."branchId" = b.id
                 LEFT JOIN "OrderItem" oi ON oi."orderId" = o.id
                 LEFT JOIN "User" u ON o."createdBy" = u.id
+                LEFT JOIN return_summary rs ON rs."orderId" = o.id
 
                 WHERE o."deletedAt" IS NULL
                     AND o.status IN ('APPROVED', 'COMPLETED')
                     AND (
-                    o.ref ILIKE $1
-                    OR COALESCE(c.name, '') ILIKE $1
-                    OR b.name ILIKE $1
+                        o.ref ILIKE $1
+                        OR COALESCE(c.name, '') ILIKE $1
+                        OR b.name ILIKE $1
                     )
                     ${branchRestriction}
                     ${dateCondition}
@@ -3536,7 +3613,9 @@ export const profitReport = async (req: Request, res: Response) => {
                     b.name,
                     u.id,
                     u."firstName",
-                    u."lastName"
+                    u."lastName",
+                    rs."returnedAmount",
+                    rs."returnedCogs"
 
                 ORDER BY ${sortColumn} ${sortOrder}
                 LIMIT $2 OFFSET $3
@@ -3563,31 +3642,17 @@ export const profitReport = async (req: Request, res: Response) => {
                 : null,
         }));
 
-        const summary = data.reduce(
-            (acc, item) => {
-                acc.totalSales += item.totalSales;
-                acc.totalCogs += item.totalCogs;
-                acc.totalProfit += item.grossProfit;
-                return acc;
-            },
-            {
-                totalSales: 0,
-                totalCogs: 0,
-                totalProfit: 0,
-            }
-        );
-
-        const avgMarginPercent =
-            summary.totalSales > 0
-                ? (summary.totalProfit / summary.totalSales) * 100
-                : 0;
+        const totalSales = Number(summaryResult[0]?.totalSales || 0);
+        const totalCogs = Number(summaryResult[0]?.totalCogs || 0);
+        const totalProfit = Number(summaryResult[0]?.totalProfit || 0);
+        const avgMarginPercent = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
 
         res.json({
             data,
             summary: {
-                totalSales: Number(summary.totalSales.toFixed(2)),
-                totalCogs: Number(summary.totalCogs.toFixed(2)),
-                totalProfit: Number(summary.totalProfit.toFixed(2)),
+                totalSales: Number(totalSales.toFixed(2)),
+                totalCogs: Number(totalCogs.toFixed(2)),
+                totalProfit: Number(totalProfit.toFixed(2)),
                 avgMarginPercent: Number(avgMarginPercent.toFixed(2)),
             },
             pagination: {
@@ -3598,7 +3663,7 @@ export const profitReport = async (req: Request, res: Response) => {
             },
         });
     } catch (error) {
-        console.error("profitReport error:", error);
+        logger.error("profitReport error:", error);
         res.status(500).json({ message: "Failed to load profit report" });
     }
 };
