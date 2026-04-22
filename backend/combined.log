@@ -33308,3 +33308,7 @@ Unknown argument `productId`. Available options are marked with ?.
     at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:511:29)
     at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
     at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:210:20)
+2026-04-21 21:19:59 info: Sale return: converting variant 2 → SecondHand variant 19 
+2026-04-21 21:46:20 info: Sale return: auto-created SecondHand variant 27 from New variant 26 
+2026-04-21 21:46:20 info: Sale return: converting variant 26 → SecondHand variant 27 
+2026-04-21 21:59:17 info: CEQ return: non-tracked qty → SecondHand variant 27 

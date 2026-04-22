@@ -19,12 +19,12 @@ declare global {
                     name: string;
                     permissions: string[];
                 }>;
+                directPermissions: string[];
             };
         }
     }
 }
 
-// Define interfaces for RoleOnUser and PermissionOnRole
 interface RoleOnUser {
     role: {
         id: number;
@@ -52,8 +52,6 @@ const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as JwtPayload;
 
-        // console.log("Decoded token:", decoded); // Add logging here
-
         const user = await prisma.user.findUnique({
             where: { id: decoded.userId },
             include: {
@@ -62,31 +60,31 @@ const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
                         role: {
                             include: {
                                 permissions: {
-                                    include: {
-                                        permission: true,
-                                    },
+                                    include: { permission: true },
                                 },
                             },
                         },
                     },
                 },
+                directPermissions: {
+                    include: { permission: true },
+                },
             },
         });
 
         if (user) {
-            // Map the roles and permissions to the format expected by the interface
             const rolesWithPermissions = user.roles.map((roleOnUser: RoleOnUser) => ({
                 id: roleOnUser.role.id,
                 name: roleOnUser.role.name,
-                permissions: roleOnUser.role.permissions.map((permissionOnRole: { permission: PermissionOnRole }) =>
-                    permissionOnRole.permission.name // Correct mapping: extract name directly
-                )
-                // permissions: roleOnUser.role.permissions.map(
-                //     permissionOnRole => permissionOnRole.permission.name
-                // ),
+                permissions: roleOnUser.role.permissions.map(
+                    (p: { permission: PermissionOnRole }) => p.permission.name
+                ),
             }));
 
-            // Assign to req.user with correct 'roles' field
+            const directPermissions = (user.directPermissions as any[]).map(
+                (up) => up.permission.name
+            );
+
             req.user = {
                 id: user.id,
                 branchId: user.branchId,
@@ -94,9 +92,9 @@ const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
                 firstName: user.firstName,
                 lastName: user.lastName,
                 roleType: user.roleType,
-                roles: rolesWithPermissions
+                roles: rolesWithPermissions,
+                directPermissions,
             };
-            // console.log("User object attached to request:", req.user); // Log the user
             next();
         } else {
             res.status(404).json({ message: "User not found" });
@@ -112,29 +110,29 @@ const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
 const authorize = (requiredPermissions: string[]): RequestHandler => {
     return (req: Request, res: Response, next: NextFunction): void => {
         const user = req.user;
-    
-        if (!user || !user.roles) {
-            res.status(403).json({ message: "Forbidden: No user or roles found" });
+
+        if (!user) {
+            res.status(403).json({ message: "Forbidden: No user found" });
             return;
         }
 
-        // Allow if Admin
         if (user.roleType === 'ADMIN') {
             return next();
         }
-    
-        // Normal permission check
-        const userPermissions = user.roles.flatMap((role) => role.permissions);
-    
+
+        // Union of role permissions + direct user permissions
+        const rolePermissions = user.roles.flatMap((role) => role.permissions);
+        const allPermissions = Array.from(new Set([...rolePermissions, ...user.directPermissions]));
+
         const hasPermission = requiredPermissions.every((perm) =>
-            userPermissions.includes(perm)
+            allPermissions.includes(perm)
         );
-    
+
         if (!hasPermission) {
             res.status(403).json({ message: "Forbidden: Insufficient permissions" });
             return;
         }
-    
+
         next();
     };
 };

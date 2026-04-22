@@ -12,16 +12,17 @@ interface Roles {
 }
 
 interface UserData {
-    id: string,
-    branchId: number,
-    email: string,
-    name: string,
-    roleType: string,
-    roles: Roles[]
+    id: string;
+    branchId: number;
+    email: string;
+    name: string;
+    roleType: string;
+    roles: Roles[];
+    directPermissions: string[];
 }
 
 interface PermissionData {
-    [key: string]: string; // Maps permission ID to permission name
+    [key: string]: string;
 }
 
 interface AppContextType {
@@ -36,12 +37,10 @@ interface AppContextType {
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// socket io connect to backend index.ts
 const socket = io(import.meta.env.VITE_API_URL || "http://localhost:4000", {
   path: "/socket.io",
   transports: ["websocket"],
 });
-// end socket io connect to backend index.ts
 
 export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -52,7 +51,6 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
         setIsSidebarOpen(prevState => !prevState);
     };
 
-    // Fetch permissions and set permissionMap
     const fetchPermissions = async () => {
         try {
             const permissionsResponse = await getAllPermissions();
@@ -64,7 +62,6 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
                     }
                 });
                 setPermissionMap(formattedPermissions);
-                // console.log("Permission map updated:", formattedPermissions); // Check the map
             } else {
                 console.error("Permissions response is not an array:", permissionsResponse);
             }
@@ -75,24 +72,24 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
 
     const { data, isError, isLoading } = useQuery({
         queryKey: ["validateToken"],
-        queryFn: apiClient.validateToken, // Function to fetch token data
-        retry: false, // Disable retries
+        queryFn: apiClient.validateToken,
+        retry: false,
     });
-      
+
     useEffect(() => {
         if (data) {
-          setUser({
-            id: data.userId,
-            branchId: data.branchId,
-            email: data.email,
-            name: data.lastName + " " + data.firstName,
-            roleType: data.roleType,
-            roles: data.roles,
-          });
-      
-          fetchPermissions(); // Fetch permissions after setting user
+            setUser({
+                id: data.userId,
+                branchId: data.branchId,
+                email: data.email,
+                name: data.lastName + " " + data.firstName,
+                roleType: data.roleType,
+                roles: data.roles,
+                directPermissions: data.directPermissions ?? [],
+            });
+            fetchPermissions();
         } else {
-          setUser(null);
+            setUser(null);
         }
 
         if (isError) {
@@ -101,9 +98,6 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
         }
     }, [data, isError]);
 
-    // I used socket io for real time update user role permission that effect sidebar componen or other components
-    // For Socket IO
-    // I used socket io for real-time updates
     useEffect(() => {
         socket.on('permissionsUpdated', (updatedRole: { id: string; permissions: string[] }) => {
             setUser(prevUser => {
@@ -124,36 +118,26 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
             socket.off('permissionsUpdated');
         };
     }, []);
-    
-    // End for Socket IO
 
-    // Check if the user has a specific permission
     const hasPermission = (permission: string): boolean => {
-        if (!user || !permissionMap) {
-            // console.log("User or permissionMap is not defined.");
-            return false;
-        }
-    
-        if (user.roleType === 'ADMIN') {
-            return true;
-        }
-    
+        if (!user || !permissionMap) return false;
+
+        if (user.roleType === 'ADMIN') return true;
+
         const permissionId = Object.keys(permissionMap).find(key => permissionMap[key] === permission);
-    
         if (!permissionId) {
             console.warn(`Permission "${permission}" not found in permissionMap.`);
             return false;
         }
-    
-        // // Log user roles and permissions for detailed inspection
-        // console.log("User roles and permissions:", user.roles);
-    
-        // Check if user roles contain the permission string directly
-        const hasPerm = user?.roles?.some(role =>
-            role.permissions.includes(permission) || role.permissions.includes(permissionId) // Check against the permission string directly
+
+        // Check role permissions
+        const inRole = user?.roles?.some(role =>
+            role.permissions.includes(permission) || role.permissions.includes(permissionId)
         );
-        // console.log(`User has permission "${permission}": ${hasPerm}`);
-        return hasPerm;
+        if (inRole) return true;
+
+        // Check direct user permissions
+        return user.directPermissions?.includes(permission) ?? false;
     };
 
     const updateUser = (updatedUser: UserData | null) => {

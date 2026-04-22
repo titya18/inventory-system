@@ -195,6 +195,8 @@ model User {
 
   createCustomerEquipment CustomerEquipment[] @relation("CEQCreatedBy")
   updateCustomerEquipment CustomerEquipment[] @relation("CEQUpdatedBy")
+
+  directPermissions UserPermission[] @relation("UserDirectPermissions")
 }
 
 model Role {
@@ -233,6 +235,7 @@ model Permission {
   module   Module @relation("ModulePermissions", fields: [moduleId], references: [id])
 
   roles PermissionOnRole[] @relation("RolePermissions")
+  users UserPermission[]   @relation("UserDirectPermissions")
 }
 
 model RoleOnUser {
@@ -253,6 +256,18 @@ model PermissionOnRole {
   permission Permission @relation("RolePermissions", fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
+}
+
+model UserPermission {
+  userId       Int
+  permissionId Int
+  createdAt    DateTime @default(now())
+  createdBy    Int?
+
+  user       User       @relation("UserDirectPermissions", fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation("UserDirectPermissions", fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, permissionId])
 }
 
 model Categories {

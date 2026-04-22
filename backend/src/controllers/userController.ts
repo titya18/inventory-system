@@ -322,6 +322,43 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
     }
 };
 
+export const getUserPermissions = async (req: Request, res: Response): Promise<void> => {
+    const userId = Number(req.params.id);
+    try {
+        const records = await prisma.userPermission.findMany({
+            where: { userId },
+            select: { permissionId: true },
+        });
+        res.json(records.map((r) => r.permissionId));
+    } catch (error) {
+        logger.error("Error fetching user permissions:", error);
+        res.status(500).json({ message: "Error fetching user permissions" });
+    }
+};
+
+export const updateUserPermissions = async (req: Request, res: Response): Promise<void> => {
+    const userId = Number(req.params.id);
+    const { permissionIds } = req.body as { permissionIds: number[] };
+    try {
+        await prisma.$transaction([
+            prisma.userPermission.deleteMany({ where: { userId } }),
+            ...(permissionIds?.length
+                ? [prisma.userPermission.createMany({
+                    data: permissionIds.map((permissionId) => ({
+                        userId,
+                        permissionId,
+                        createdBy: req.user?.id ?? null,
+                    })),
+                })]
+                : []),
+        ]);
+        res.json({ message: "User permissions updated successfully" });
+    } catch (error) {
+        logger.error("Error updating user permissions:", error);
+        res.status(500).json({ message: "Error updating user permissions" });
+    }
+};
+
 export const statusUser = async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const userId = id ? (Array.isArray(id) ? id[0] : id) : 0;

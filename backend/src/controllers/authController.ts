@@ -122,7 +122,8 @@ export const validateToken = async (req: Request, res: Response): Promise<void> 
             firstName: req.user.firstName,
             lastName: req.user.lastName,
             roleType: req.user.roleType,
-            roles: req.user.roles // Include role if needed
+            roles: req.user.roles,
+            directPermissions: req.user.directPermissions,
         });
     } else {
         logger.error("User not found");

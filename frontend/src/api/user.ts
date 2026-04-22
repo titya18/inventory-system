@@ -70,6 +70,27 @@ export const updateUser = async(id: number, user: UserType): Promise<UserType> =
     return response.json();
 };
 
+export const getUserPermissions = async (id: number): Promise<number[]> => {
+    const response = await fetch(`${API_BASE_URL}/api/user/${id}/permissions`, {
+        credentials: "include",
+    });
+    if (!response.ok) throw new Error("Error fetching user permissions");
+    return response.json();
+};
+
+export const updateUserPermissions = async (id: number, permissionIds: number[]): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/api/user/${id}/permissions`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ permissionIds }),
+    });
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || "Error updating user permissions");
+    }
+};
+
 export const deleteUser = async(id: number): Promise<UserType> => {
     const response = await fetch(`${API_BASE_URL}/api/user/${id}`, {
         credentials: "include",

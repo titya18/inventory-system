@@ -99,11 +99,17 @@ export const getAllRoleWithPagination = async (req: Request, res: Response): Pro
 
 export const getAllRoles = async (req: Request, res: Response): Promise<void> => {
     try {
-        const roles = await prisma.role.findMany();
+        const roles = await prisma.role.findMany({
+            include: {
+                permissions: {
+                    select: { permissionId: true },
+                },
+            },
+        });
         res.status(200).json(roles);
     } catch (error) {
         logger.error("Error fetching all roles:", error);
-        const typedError = error as Error;  // Type assertion
+        const typedError = error as Error;
         res.status(500).json({ message: typedError.message });
     }
 };

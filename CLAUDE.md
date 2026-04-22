@@ -609,14 +609,24 @@ If a CEQ is edited to **add** an invoice (`orderId`) that was previously absent,
 - **Roles**: Named collections of permissions
 - **`RoleOnUser`**: Many-to-many — user ↔ roles
 - **`PermissionOnRole`**: Many-to-many — role ↔ permissions
+- **`UserPermission`**: Direct user ↔ permission assignment (bypasses role chain); `@@id([userId, permissionId])`
+- **Permission resolution**: `authorize()` unions role permissions + direct user permissions — a user has a permission if it appears in **any role** OR in their **direct permissions**
 - **Admin bypass**: `roleType === "ADMIN"` skips all `authorize()` checks
 - Real-time updates via Socket.IO when roles/permissions change
+
+### Direct User Permissions (UserPermission)
+- `UserPermission` table: `userId`, `permissionId`, `createdAt`, `createdBy`
+- Backend endpoints: `GET /api/user/:id/permissions`, `PUT /api/user/:id/permissions`
+- `verifyToken` fetches `directPermissions` alongside roles; both available on `req.user`
+- `validateToken` response includes `directPermissions: string[]` — consumed by `AppContext`
+- Frontend: `hasPermission()` checks role permissions first, then `user.directPermissions`
+- UI: User edit form has a **Direct Permissions** panel (same card grid as RoleForm, amber/warning colour theme) — only shown for `roleType === "USER"`
 
 ---
 
 ## Database — 40+ Models
 
-**Core entities**: User, Role, Module, Permission, RoleOnUser, PermissionOnRole, Branch, Categories, Brands, Units, ProductUnitConversion, VariantAttribute, VariantValue, Products, ProductVariants, ProductVariantValues, ProductAssetItem, Stocks, PaymentMethods, Suppliers, Purchases, PurchaseDetails, PurchaseOnPayments, PurchaseAmountAuthorize, Customer, Quotations, QuotationDetails, Order, OrderItem, OrderItemAssetItem, OrderOnPayments, Services, StockMovements, StockAdjustments, AdjustmentDetails, StockTransfers, TransferDetails, StockRequests, RequestDetails, StockReturns, ReturnDetails, SaleReturns, SaleReturnItems, Expenses, Incomes, ExchangeRates, VatSyncLog, **CustomerEquipment**, **CustomerEquipmentItem**
+**Core entities**: User, Role, Module, Permission, RoleOnUser, PermissionOnRole, **UserPermission**, Branch, Categories, Brands, Units, ProductUnitConversion, VariantAttribute, VariantValue, Products, ProductVariants, ProductVariantValues, ProductAssetItem, Stocks, PaymentMethods, Suppliers, Purchases, PurchaseDetails, PurchaseOnPayments, PurchaseAmountAuthorize, Customer, Quotations, QuotationDetails, Order, OrderItem, OrderItemAssetItem, OrderOnPayments, Services, StockMovements, StockAdjustments, AdjustmentDetails, StockTransfers, TransferDetails, StockRequests, RequestDetails, StockReturns, ReturnDetails, SaleReturns, SaleReturnItems, Expenses, Incomes, ExchangeRates, VatSyncLog, **CustomerEquipment**, **CustomerEquipmentItem**
 
 **Key indexes**: `StockMovements[productVariantId, branchId, createdAt]`, `StockMovements[sourceMovementId]`, `ProductAssetItem[productVariantId, branchId, status]`
 
