@@ -169,9 +169,10 @@ export const getCustomerEquipmentById = async (req: Request, res: Response): Pro
                     select: { productId: true, baseUnitId: true },
                 });
                 let multiplier = 1;
-                if (variant && item.unitId && item.unitId !== variant.baseUnitId) {
+                const baseUnitId = variant?.baseUnitId ?? null;
+                if (variant && baseUnitId != null && item.unitId && item.unitId !== baseUnitId) {
                     const conv = await prisma.productUnitConversion.findFirst({
-                        where: { productId: variant.productId, fromUnitId: item.unitId, toUnitId: variant.baseUnitId },
+                        where: { productId: variant.productId, fromUnitId: item.unitId, toUnitId: baseUnitId },
                         select: { multiplier: true },
                     });
                     if (conv) multiplier = Number(conv.multiplier);
