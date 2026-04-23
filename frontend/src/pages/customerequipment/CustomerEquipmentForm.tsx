@@ -580,9 +580,14 @@ const CustomerEquipmentForm: React.FC = () => {
                                                 <span className="text-xs text-gray-400 ml-auto">[{item.productAssetItem.status}]</span>
                                             </>
                                         ) : (
-                                            <span className="text-gray-600">
-                                                Qty: <strong>{item.quantity}</strong>
-                                                {item.unit?.name && <span className="text-gray-400 ml-1">{item.unit.name}</span>}
+                                            <span className="text-gray-600 flex items-center gap-2">
+                                                Qty: <strong>{item.netReturnedQty !== undefined ? item.netReturnedQty : item.quantity}</strong>
+                                                {item.unit?.name && <span className="text-gray-400">{item.unit.name}</span>}
+                                                {item.netReturnedQty !== undefined && item.netReturnedQty !== item.quantity && (
+                                                    <span className="text-xs text-gray-400 italic">
+                                                        ({item.quantity} assigned, {item.quantity - item.netReturnedQty} returned via invoice)
+                                                    </span>
+                                                )}
                                             </span>
                                         )}
                                     </div>

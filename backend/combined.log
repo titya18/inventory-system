@@ -33312,3 +33312,6 @@ Unknown argument `productId`. Available options are marked with ?.
 2026-04-21 21:46:20 info: Sale return: auto-created SecondHand variant 27 from New variant 26 
 2026-04-21 21:46:20 info: Sale return: converting variant 26 → SecondHand variant 27 
 2026-04-21 21:59:17 info: CEQ return: non-tracked qty → SecondHand variant 27 
+2026-04-23 15:39:38 info: CEQ return non-tracked variantId=26: ceqBaseQty=5, saleReturnedBaseQty=2, netRestoreQty=3 
+2026-04-23 15:39:38 info: CEQ return non-tracked variantId=1: ceqBaseQty=610, saleReturnedBaseQty=305, netRestoreQty=305 
+2026-04-23 15:53:00 info: CEQ return non-tracked variantId=1: ceqBaseQty=1220, saleReturnedBaseQty=0, netRestoreQty=1220 

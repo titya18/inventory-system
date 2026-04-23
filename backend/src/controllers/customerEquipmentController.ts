@@ -139,7 +139,52 @@ export const getCustomerEquipmentById = async (req: Request, res: Response): Pro
             },
         });
         if (!record) { res.status(404).json({ message: "Record not found." }); return; }
-        res.status(200).json(record);
+
+        // For returned + invoice-linked CEQ, enrich each non-tracked item with netReturnedQty —
+        // the quantity actually restored to stock after deducting items already returned via Sale Return.
+        let enrichedItems: any[] = record.items;
+        if (record.returnedAt && record.orderId) {
+            enrichedItems = await Promise.all(record.items.map(async (item: any) => {
+                if (item.productAssetItemId || !item.productVariantId || !item.quantity) return item;
+
+                const saleReturnedRows = await prisma.saleReturnItems.findMany({
+                    where: {
+                        productVariantId: item.productVariantId,
+                        saleReturn: {
+                            orderId: record.orderId!,
+                            status: "APPROVED",
+                            deletedAt: null,
+                        },
+                    },
+                    select: { baseQty: true },
+                });
+                const saleReturnedBaseQty = saleReturnedRows.reduce(
+                    (sum: number, r: any) => sum + Number(r.baseQty || 0), 0
+                );
+                if (saleReturnedBaseQty <= 0) return item;
+
+                // Reverse-convert: netBaseQty → netUnitQty using stored unit multiplier
+                const variant = await prisma.productVariants.findUnique({
+                    where: { id: item.productVariantId },
+                    select: { productId: true, baseUnitId: true },
+                });
+                let multiplier = 1;
+                if (variant && item.unitId && item.unitId !== variant.baseUnitId) {
+                    const conv = await prisma.productUnitConversion.findFirst({
+                        where: { productId: variant.productId, fromUnitId: item.unitId, toUnitId: variant.baseUnitId },
+                        select: { multiplier: true },
+                    });
+                    if (conv) multiplier = Number(conv.multiplier);
+                }
+                const ceqBaseQty  = Number(item.quantity) * multiplier;
+                const netBaseQty  = Math.max(0, ceqBaseQty - saleReturnedBaseQty);
+                const netUnitQty  = multiplier > 0 ? netBaseQty / multiplier : netBaseQty;
+
+                return { ...item, netReturnedQty: netUnitQty };
+            }));
+        }
+
+        res.status(200).json({ ...record, items: enrichedItems });
     } catch (error) {
         logger.error("Error fetching customer equipment by ID:", error);
         res.status(500).json({ message: "Internal server error" });
@@ -671,18 +716,29 @@ export const returnCustomerEquipment = async (req: Request, res: Response): Prom
         const userId = loggedInUser.id;
 
         const updated = await prisma.$transaction(async (tx) => {
-            // Always restore stock on return — even when invoice is linked
-            // Handle per-item in case of New→SecondHand conversion
+            // Restore stock per item, accounting for quantities already returned via Sale Return.
+            // When orderId is set, the invoice handled the original stock cut.
+            // We must not double-restore what Sale Return already added back.
             for (const item of existingItems) {
                 if (item.productAssetItemId) {
+                    // ── TRACKED item ──────────────────────────────────────────────────────
                     const assetItem = await tx.productAssetItem.findUnique({
                         where: { id: item.productAssetItemId },
                         select: {
                             productVariantId: true,
+                            status: true,
                             productVariant: { select: { productId: true, productType: true, sku: true, barcode: true, name: true, trackingType: true, stockAlert: true, purchasePrice: true, purchasePriceUnitId: true, retailPrice: true, retailPriceUnitId: true, wholeSalePrice: true, wholeSalePriceUnitId: true, baseUnitId: true, isActive: true } },
                         },
                     });
                     if (!assetItem) continue;
+
+                    // When linked to an invoice and serial is already IN_STOCK, Sale Return already
+                    // restored this item — skip to avoid double-counting.
+                    const alreadyRestoredViaReturn = !!record.orderId && assetItem.status === "IN_STOCK";
+                    if (alreadyRestoredViaReturn) {
+                        logger.info(`CEQ return: skipping assetItem ${item.productAssetItemId} — already IN_STOCK via Sale Return`);
+                        continue;
+                    }
 
                     let restoreVariantId = assetItem.productVariantId;
 
@@ -724,11 +780,37 @@ export const returnCustomerEquipment = async (req: Request, res: Response): Prom
                     await adjustStocks(tx, restoreVariantId, record.branchId, 1, userId, currentDate);
 
                 } else if (item.productVariantId && item.quantity) {
+                    // ── NON-TRACKED item ──────────────────────────────────────────────────
                     const { baseQty } = await computeBaseQty(tx, {
                         productVariantId: item.productVariantId,
                         quantity: item.quantity,
                         unitId: item.unitId,
                     });
+
+                    // When linked to an invoice, subtract what Sale Return already restored
+                    // to avoid double-counting stock. Only restore the net remainder.
+                    let netRestoreQty = baseQty.toNumber();
+                    if (record.orderId) {
+                        const saleReturnedRows = await tx.saleReturnItems.findMany({
+                            where: {
+                                productVariantId: item.productVariantId,
+                                saleReturn: {
+                                    orderId: record.orderId,
+                                    status: "APPROVED",
+                                    deletedAt: null,
+                                },
+                            },
+                            select: { baseQty: true },
+                        });
+                        const alreadyReturnedBaseQty = saleReturnedRows.reduce(
+                            (sum, r) => sum + Number(r.baseQty || 0), 0
+                        );
+                        netRestoreQty = Math.max(0, baseQty.toNumber() - alreadyReturnedBaseQty);
+                        logger.info(`CEQ return non-tracked variantId=${item.productVariantId}: ceqBaseQty=${baseQty}, saleReturnedBaseQty=${alreadyReturnedBaseQty}, netRestoreQty=${netRestoreQty}`);
+                    }
+
+                    if (netRestoreQty <= 0) continue;
+
                     let restoreVariantId = item.productVariantId;
                     if (secondHandVariantSet.has(item.productVariantId)) {
                         const origVariant = await tx.productVariants.findUnique({ where: { id: item.productVariantId } });
@@ -757,7 +839,7 @@ export const returnCustomerEquipment = async (req: Request, res: Response): Prom
                             logger.info(`CEQ return: non-tracked qty → SecondHand variant ${restoreVariantId}`);
                         }
                     }
-                    await adjustStocks(tx, restoreVariantId, record.branchId, baseQty.toNumber(), userId, currentDate);
+                    await adjustStocks(tx, restoreVariantId, record.branchId, netRestoreQty, userId, currentDate);
                 }
             }
 
