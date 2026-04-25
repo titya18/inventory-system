@@ -165,6 +165,28 @@ const ExchangeRate: React.FC = () => {
         }
     }
 
+    const [isMefLoading, setIsMefLoading] = useState(false);
+
+    const handleFetchMef = async () => {
+        setIsMefLoading(true);
+        try {
+            const { rate } = await apiClient.fetchMefRate();
+            await queryClient.invalidateQueries({ queryKey: ["validateToken"] });
+            fetchExchangeRate();
+            toast.success(`Auto-updated: 1 USD = ${rate.toLocaleString()} KHR (from MEF)`, {
+                position: "top-right",
+                autoClose: 4000,
+            });
+        } catch (error: any) {
+            toast.error(error.message || "Failed to fetch rate from MEF API", {
+                position: "top-right",
+                autoClose: 3000,
+            });
+        } finally {
+            setIsMefLoading(false);
+        }
+    };
+
     const handleEditClick = (exchangeRateData: ExchangeRateType) => {
         setSelectExchangeRate({
             id: exchangeRateData.id,
@@ -200,6 +222,26 @@ const ExchangeRate: React.FC = () => {
                                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                                 </svg>
                                                 Add New
+                                            </button>
+                                        }
+                                        {hasPermission('Exchange-Rate-Create') &&
+                                            <button
+                                                className="btn btn-outline-success gap-2"
+                                                onClick={handleFetchMef}
+                                                disabled={isMefLoading}
+                                                title="Fetch latest USD/KHR rate from MEF (Ministry of Economy and Finance)"
+                                            >
+                                                {isMefLoading ? (
+                                                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                                                    </svg>
+                                                ) : (
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                                                    </svg>
+                                                )}
+                                                {isMefLoading ? 'Fetching...' : 'Auto Update from MEF'}
                                             </button>
                                         }
                                     </div>

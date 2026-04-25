@@ -46,6 +46,18 @@ export const getLastExchangeRate = async (): Promise<ExchangeRateType> => {
     return response.json();;
 }
 
+export const fetchMefRate = async (): Promise<{ rate: number; record: ExchangeRateType }> => {
+    const response = await fetch(`${API_BASE_URL}/api/exchange-rate/mef`, {
+        method: "POST",
+        credentials: "include",
+    });
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to fetch rate from MEF API");
+    }
+    return response.json();
+};
+
 // Create or Update Exchange Rate
 export const upsertExchangeRate = async (exchangeRateData: ExchangeRateType): Promise<ExchangeRateType> => {
     const { id, ...data } = exchangeRateData;

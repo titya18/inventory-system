@@ -5,7 +5,7 @@ import { syncVatPaymentToTarget } from "../services/syncVatPaymentToTarget.servi
 import { deleteVatPaymentFromTarget } from "../services/deleteVatPaymentFromTarget.service";
 
 export const startVatSyncRetryJob = () => {
-  cron.schedule("* * * * *", async () => {
+  cron.schedule("0 0 * * *", async () => {
     try {
       const failedLogs = await prisma.vatSyncLog.findMany({
         where: {

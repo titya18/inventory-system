@@ -490,6 +490,7 @@ export interface PaymentType {
 }
 
 export interface InvoicePaymentType {
+    id?: number;
     branchId: number | null;
     orderId: number | null;
     paymentMethodId: number | null;

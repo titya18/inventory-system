@@ -25,6 +25,7 @@ import Supplier from "./pages/supplier/Supplier";
 import Purchase from "./pages/purchase/Purchase";
 import PurchaseForm from "./pages/purchase/PurchaseForm";
 import PrintPurchase from "./pages/purchase/PrintPurchase";
+import PrintPurchasePaymentReceipt from "./pages/purchase/PrintPurchasePaymentReceipt";
 import Service from "./pages/service/Service";
 import Quotation from "./pages/quotation/Quotation";
 import QuotationForm from "./pages/quotation/QuotationForm";
@@ -35,6 +36,7 @@ import SaleReturnForm from "./pages/invoice/SaleReturnForm";
 import SaleReturn from "./pages/invoice/SaleReturn";
 import PrintInvoice from "./pages/invoice/PrintInvoice";
 import PrintSaleReturn from "./pages/invoice/PrintSaleReturn";
+import PrintPaymentReceipt from "./pages/invoice/PrintPaymentReceipt";
 import StockSummary from "./pages/stock/StockSummary";
 import LowStockReport from "./pages/stock/LowStockReport";
 import StockValuationReport from "./pages/stock/StockValuationReport";
@@ -67,6 +69,7 @@ import ReportIncome from "./pages/report/ReportIncome";
 import ProfitReport from "./pages/report/ProfitReport";
 import PurchaseAuthorizeAmount from "./pages/setting/PurchaseAuthorizeAmount";
 import ExchangeRate from "./pages/setting/ExchangeRate";
+import CompanySettings from "./pages/setting/CompanySettings";
 
 import Pos from "./pages/pos/Pos";
 
@@ -138,6 +141,7 @@ const App: React.FC = () => {
                         <Route path="/addpurchase" element={<PrivateRoute element={<Layout><PurchaseForm /></Layout>} />} />
                         <Route path="/editpurchase/:id" element={<PrivateRoute element={<Layout><PurchaseForm /></Layout>} />} />
                         <Route path="/printpurchase/:id" element={<PrivateRoute element={<Layout><PrintPurchase /></Layout>} />} />
+                        <Route path="/print-purchase-payment-receipt/:id" element={<PrivateRoute element={<Layout><PrintPurchasePaymentReceipt /></Layout>} />} />
                         {/* Quotation */}
                         <Route path="/quotation" element={<PrivateRoute element={<Layout><Quotation /></Layout>} />} />
                         <Route path="/addquotation" element={<PrivateRoute element={<Layout><QuotationForm /></Layout>} />} />
@@ -148,6 +152,7 @@ const App: React.FC = () => {
                         <Route path="/addsale" element={<PrivateRoute element={<Layout><InvoiceForm /></Layout>} />} />
                         <Route path="/editsale/:id" element={<PrivateRoute element={<Layout><InvoiceForm /></Layout>} />} />
                         <Route path="/printsale/:id" element={<PrivateRoute element={<Layout><PrintInvoice /></Layout>} />} />
+                        <Route path="/print-payment-receipt/:id" element={<PrivateRoute element={<Layout><PrintPaymentReceipt /></Layout>} />} />
                         <Route path="/sale-return/:id" element={<PrivateRoute element={<Layout><SaleReturnForm /></Layout>} />} />
                         <Route path="/returnsells" element={<PrivateRoute element={<Layout><SaleReturn /></Layout>} />} />
                         <Route path="/printsell-return/:id" element={<PrivateRoute element={<Layout><PrintSaleReturn /></Layout>} />} />
@@ -197,6 +202,7 @@ const App: React.FC = () => {
                         {/* setting */}
                         <Route path="/authorizeamount" element={<PrivateRoute element={<Layout><PurchaseAuthorizeAmount /></Layout>} />} />
                         <Route path="/exchangerate" element={<PrivateRoute element={<Layout><ExchangeRate /></Layout>} />} />
+                        <Route path="/companysettings" element={<PrivateRoute element={<Layout><CompanySettings /></Layout>} />} />
 
                         {/* Catch-all route for undefined paths */}
                         <Route path="*" element={<NotFound />} />

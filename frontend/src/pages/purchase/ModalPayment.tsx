@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSave, faClose, faClockRotateLeft } from '@fortawesome/free-solid-svg-icons';
+import { faSave, faClose, faClockRotateLeft, faPrint } from '@fortawesome/free-solid-svg-icons';
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
 import { useAppContext } from "../../hooks/useAppContext";
@@ -11,7 +12,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import ShowDeleteConfirmation from "../components/ShowDeleteConfirmation";
-import { MessageCircleOff, Trash2 } from "lucide-react";
+import { MessageCircleOff, Printer, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
 
 // Extend Day.js with plugins
@@ -40,17 +41,17 @@ interface ModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (
-        brandId: number | null, 
-        purchaseId: number | null, 
-        paymentMethodId: number | null, 
-        paidAmount: number | null, 
-        amount: number, 
+        brandId: number | null,
+        purchaseId: number | null,
+        paymentMethodId: number | null,
+        paidAmount: number | null,
+        amount: number,
         receive_usd: number | null,
         receive_khr: number | null,
         exchangerate: number | null,
-        due_balance: number, 
+        due_balance: number,
         createdAt: string | null
-    ) => void;
+    ) => Promise<number>;
     amountPurchase?: {
         branchId: number | null, 
         purchaseId: number | null, 
@@ -73,6 +74,7 @@ export interface FormData {
 };
 
 const ModalPayment: React.FC<ModalProps> = ({ isOpen, onClose, amountPurchase, onSubmit }) => {
+    const navigate = useNavigate();
     const [exchangeRate, setExchangeRate] = useState<number>(0);
     const [paymentMethods, setPaymentMethod] = useState<PaymentMethodData[]>([]);
     const [purchasePayments, setPurchasePayments] = useState<PaymentData[]>([]);
@@ -188,11 +190,10 @@ const ModalPayment: React.FC<ModalProps> = ({ isOpen, onClose, amountPurchase, o
         setValue("due_balance", Number(dueBalance.toFixed(2)));
     };
 
-    const handleFormSubmit = async (data: FormData) => {
+    const savePayment = async (data: FormData, printAfter: boolean) => {
         setIsLoading(true);
         try {
-            // Call the onSubmit function, making sure it recieve the correct format
-            await onSubmit(
+            const paymentId = await onSubmit(
                 amountPurchase?.branchId || null,
                 amountPurchase?.purchaseId || null,
                 data.paymentMethodId,
@@ -206,12 +207,18 @@ const ModalPayment: React.FC<ModalProps> = ({ isOpen, onClose, amountPurchase, o
             );
             reset();
             onClose();
+            if (printAfter && paymentId) {
+                navigate(`/print-purchase-payment-receipt/${paymentId}`);
+            }
         } catch (error) {
-            console.log("Error submitting from:", error);
+            console.log("Error submitting form:", error);
         } finally {
             setIsLoading(false);
         }
     };
+
+    const handleFormSubmit = (data: FormData) => savePayment(data, false);
+    const handleFormSubmitAndPrint = (data: FormData) => savePayment(data, true);
 
     const handleDeletePayment = async (id: number) => {
         const confirmed = await ShowDeleteConfirmation();
@@ -323,17 +330,27 @@ const ModalPayment: React.FC<ModalProps> = ({ isOpen, onClose, amountPurchase, o
                                                             </p>
                                                         </div>
 
-                                                        {LastRecord && (
-                                                            hasPermission("Delete-Payment-Purchase") && (
+                                                        <div className="ml-2 flex items-center gap-1">
+                                                            {rows.id && (
+                                                                <button
+                                                                    type="button"
+                                                                    title="Print Receipt"
+                                                                    onClick={() => navigate(`/print-purchase-payment-receipt/${rows.id}`)}
+                                                                    className="p-1.5 rounded text-indigo-500 hover:bg-indigo-50"
+                                                                >
+                                                                    <Printer size={15} />
+                                                                </button>
+                                                            )}
+                                                            {LastRecord && hasPermission("Delete-Payment-Purchase") && (
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => rows.id && handleDeletePayment(rows.id)}
-                                                                    className="ml-3 px-3 py-1 text-xs font-bold rounded bg-red-500 text-white hover:bg-red-600"
+                                                                    className="p-1.5 rounded text-red-500 hover:bg-red-50"
                                                                 >
-                                                                    <Trash2 color="red" />
+                                                                    <Trash2 size={15} />
                                                                 </button>
-                                                            )
-                                                        )}
+                                                            )}
+                                                        </div>
                                                     </div> 
                                                 );
                                             })
@@ -458,20 +475,31 @@ const ModalPayment: React.FC<ModalProps> = ({ isOpen, onClose, amountPurchase, o
                                             </div>
                                         </div>
 
-                                        <div className="flex justify-end items-center mt-8">
+                                        <div className="flex justify-end items-center mt-8 gap-2 flex-wrap">
                                             <button type="button" className="btn btn-outline-danger" onClick={onClose}>
                                                 <FontAwesomeIcon icon={faClose} className="mr-1" />
                                                 Discard
                                             </button>
                                             {hasPermission("Purchase-Payment") && (
-                                                <button
-                                                    type="submit"
-                                                    className="btn btn-primary ltr:ml-4 rtl:mr-4"
-                                                    disabled={isLoading || Number(amountPurchase?.amount ?? 0) === Number(amountPurchase?.paidAmount ?? 0)}
-                                                >
-                                                    <FontAwesomeIcon icon={faSave} className="mr-1" />
-                                                    {isLoading ? "Saving..." : "Save"}
-                                                </button>
+                                                <>
+                                                    <button
+                                                        type="submit"
+                                                        className="btn btn-primary"
+                                                        disabled={isLoading || Number(amountPurchase?.amount ?? 0) === Number(amountPurchase?.paidAmount ?? 0)}
+                                                    >
+                                                        <FontAwesomeIcon icon={faSave} className="mr-1" />
+                                                        {isLoading ? "Saving..." : "Save"}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-success"
+                                                        disabled={isLoading || Number(amountPurchase?.amount ?? 0) === Number(amountPurchase?.paidAmount ?? 0)}
+                                                        onClick={handleSubmit(handleFormSubmitAndPrint)}
+                                                    >
+                                                        <FontAwesomeIcon icon={faPrint} className="mr-1" />
+                                                        {isLoading ? "Saving..." : "Save & Print"}
+                                                    </button>
+                                                </>
                                             )}
                                         </div>
                                     </div>

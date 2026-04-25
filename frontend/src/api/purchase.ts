@@ -91,6 +91,17 @@ export const insertPurchasePayment = async (paymentData: PaymentType): Promise<P
     return response.json();
 };
 
+export const getPurchasePaymentReceipt = async (id: number): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/api/purchase/payment-receipt/${id}`, {
+        credentials: "include",
+    });
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || "Error fetching purchase payment receipt");
+    }
+    return response.json();
+};
+
 export const getPurchasePaymentById = async (id: number): Promise<PaymentType[]> => {
     const response = await fetch(`${API_BASE_URL}/api/purchase/payment/${id}`, {
         credentials: "include"

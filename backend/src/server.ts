@@ -3,6 +3,7 @@ import http from "http";
 import { Server as SocketIOServer } from "socket.io";
 import app from "./app"; // Import the Express app
 import { startVatSyncRetryJob } from "./jobs/vatSyncRetry.job";
+import { startExchangeRateSyncJob } from "./jobs/exchangeRateSync.job";
 
 // I used socket io for real time update user role permission that effect sidebar componen or other components
 // For Socket IO
@@ -44,6 +45,7 @@ server.listen(PORT, () => {
 
   // START VAT SYNC RETRY CRON HERE
   startVatSyncRetryJob();
+  startExchangeRateSyncJob();
 }).on("error", (err) => {
   console.error("Server failed to start:", err);
 });

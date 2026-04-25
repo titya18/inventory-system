@@ -132,6 +132,7 @@ export const useDashboardData = (filters: DashboardFilters) => {
           startDate: filters.startDate,
           endDate: filters.endDate,
           branchId: branchFilter,
+          statuses: "PENDING,SENT",
         }),
     }),
 
@@ -144,6 +145,7 @@ export const useDashboardData = (filters: DashboardFilters) => {
           startDate: filters.startDate,
           endDate: filters.endDate,
           branchId: branchFilter,
+          statuses: "RECEIVED,COMPLETED",
         }),
     }),
 
@@ -156,6 +158,7 @@ export const useDashboardData = (filters: DashboardFilters) => {
           startDate: filters.startDate,
           endDate: filters.endDate,
           branchId: branchFilter,
+          status: "APPROVED",
         }),
     }),
 

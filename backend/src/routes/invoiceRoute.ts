@@ -8,6 +8,7 @@ import {
     upsertInvoice,
     insertInvoicePayment,
     getInvoicePaymentById,
+    getPaymentReceipt,
     deleteInvoice,
     deletePayment,
     approveInvoice,
@@ -23,6 +24,7 @@ router.route("/").get(authorize(["Sale-View"]), getAllInvoices).post(validateInv
 router.route("/tracked-items").get(verifyToken, getAvailableTrackedItems);
 router.route("/payment").post(authorize(["Sale-Payment"]), insertInvoicePayment);
 router.route("/payment/:id").get(getInvoicePaymentById);
+router.route("/payment-receipt/:id").get(verifyToken, getPaymentReceipt);
 router.route("/next-ref/:branchId").get(getNextInvoiceRef);
 router.route("/:id").get(authorize(["Sale-View"]), getInvoiceById).put(authorize(["Sale-Edit"]), validateInvoiceRequest, upsertInvoice).delete(authorize(["Sale-Delete"]), deleteInvoice);
 router.route("/approve/:id").get(authorize(["Sale-Approve"]), approveInvoice);

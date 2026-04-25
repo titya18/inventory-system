@@ -891,6 +891,48 @@ export const insertPurchasePayment = async (req: Request, res: Response): Promis
     }
 }
 
+export const getPurchasePaymentReceipt = async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    try {
+        const payment = await prisma.purchaseOnPayments.findUnique({
+            where: { id: Number(id) },
+            include: {
+                paymentMethods: { select: { name: true } },
+                purchases: {
+                    select: {
+                        ref: true,
+                        grandTotal: true,
+                        paidAmount: true,
+                        suppliers: { select: { name: true, phone: true } },
+                        branch: { select: { name: true } },
+                        purchaseDetails: {
+                            select: {
+                                id: true,
+                                quantity: true,
+                                unitQty: true,
+                                cost: true,
+                                total: true,
+                                discount: true,
+                                discountMethod: true,
+                                products: { select: { name: true } },
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        if (!payment) {
+            res.status(404).json({ message: "Payment not found" });
+            return;
+        }
+        res.status(200).json(payment);
+    } catch (error) {
+        logger.error("Error fetching purchase payment receipt:", error);
+        const typedError = error as Error;
+        res.status(500).json({ message: typedError.message });
+    }
+};
+
 export const getPurchaseById = async (
     req: Request,
     res: Response

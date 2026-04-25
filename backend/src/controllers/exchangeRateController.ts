@@ -99,6 +99,70 @@ export const getLastExchangeRate = async (req: Request, res: Response): Promise<
     }
 };
 
+export const fetchAndSaveMefRate = async (req: Request, res: Response): Promise<void> => {
+    const MEF_URL = "https://data.mef.gov.kh/api/v1/realtime-api/exchange-rate?currency_id=USD";
+    try {
+        const mefResponse = await fetch(MEF_URL, {
+            signal: AbortSignal.timeout(10_000),
+        });
+
+        if (!mefResponse.ok) {
+            res.status(502).json({ message: `MEF API error: ${mefResponse.status}` });
+            return;
+        }
+
+        const mefData: any = await mefResponse.json();
+
+        // MEF response shape: { data: { average, bid, ask, unit, ... } }
+        let rate: number | null = null;
+        const d = mefData?.data;
+        const d0 = Array.isArray(d) ? d[0] : d;
+        const candidates = [
+            d0?.average,
+            d0?.bid,
+            d0?.ask,
+            d0?.exchange_rate,
+            d0?.rate,
+            d0?.amount,
+            mefData?.exchange_rate,
+            mefData?.rate,
+            mefData?.result?.average,
+            mefData?.result?.exchange_rate,
+        ];
+        for (const c of candidates) {
+            const n = Number(c);
+            if (c !== undefined && c !== null && !isNaN(n) && n > 0) { rate = n; break; }
+        }
+
+        if (!rate) {
+            res.status(502).json({ message: "Could not extract exchange rate from MEF API response", raw: mefData });
+            return;
+        }
+
+        const nowTz = dayjs().tz(tz);
+        const ts = new Date(Date.UTC(nowTz.year(), nowTz.month(), nowTz.date(), nowTz.hour(), nowTz.minute(), nowTz.second()));
+
+        const saved = await prisma.exchangeRates.create({
+            data: {
+                amount: rate,
+                createdAt: ts,
+                createdBy: req.user?.id ?? null,
+                updatedAt: ts,
+                updatedBy: req.user?.id ?? null,
+            },
+        });
+
+        res.status(201).json({ rate, record: saved });
+    } catch (error: any) {
+        logger.error("Error fetching MEF exchange rate:", error);
+        if (error.name === "TimeoutError" || error.code === "ECONNABORTED") {
+            res.status(504).json({ message: "MEF API request timed out" });
+        } else {
+            res.status(500).json({ message: "Failed to fetch exchange rate from MEF API" });
+        }
+    }
+};
+
 export const upsertExchangeRate = async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const { amount } = req.body;

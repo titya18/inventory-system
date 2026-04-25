@@ -8,6 +8,7 @@ import {
     upsertPurchase,
     insertPurchasePayment,
     getPurchasePaymentById,
+    getPurchasePaymentReceipt,
     deletePurchase,
     deletePayment,
     getNextPurchaseRef,
@@ -23,6 +24,7 @@ router.route("/").get(authorize(["Purchase-View"]), getAllPurchases).post(upload
 router.route("/amount-purchasing").get(getAmountPurchasings);
 router.route("/payment").post(authorize(["Purchase-Payment"]), insertPurchasePayment);
 router.route("/payment/:id").get(getPurchasePaymentById);
+router.route("/payment-receipt/:id").get(verifyToken, getPurchasePaymentReceipt);
 router.route("/next-ref/:branchId").get(getNextPurchaseRef);
 router.route("/:id").get(authorize(["Purchase-View"]), getPurchaseById).put(authorize(["Purchase-Edit"]), uploadImage, validatePurchaseRequest, upsertPurchase).delete(authorize(["Purchase-Delete"]), deletePurchase);
 router.route("/delpayment/:id").delete(authorize(["Delete-Payment-Purchase"]), deletePayment);

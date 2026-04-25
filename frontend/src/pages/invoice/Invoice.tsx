@@ -270,16 +270,16 @@ const Invoice: React.FC = () => {
     };
 
     const handleOnSubmitPayment = async (
-        branchId: number | null, 
-        orderId: number | null, 
-        paidAmount: number | null, 
-        paymentMethodId: number | null, 
-        totalPaid: number, 
+        branchId: number | null,
+        orderId: number | null,
+        paidAmount: number | null,
+        paymentMethodId: number | null,
+        totalPaid: number,
         receive_usd: number | null,
         receive_khr: number | null,
         exchangerate: number | null,
         due_balance: number
-    ) => {
+    ): Promise<number> => {
         try {
             await queryClient.invalidateQueries({ queryKey: ["validateToken"] });
             const paymentData: InvoicePaymentType = {
@@ -295,18 +295,21 @@ const Invoice: React.FC = () => {
                 createdAt: null,
                 paymentMethods: null,
             }
-            await apiClient.insertInvoicePayment(paymentData);
+            const result = await apiClient.insertInvoicePayment(paymentData);
             toast.success("Purchase payment insert successfully", {
                 position: "top-right",
                 autoClose: 2000
             });
             fetchInvoice();
+            return result.id ?? 0;
         } catch (error: any) {
             toast.error(error.message || "Error adding payment", {
                 position: "top-right",
                 autoClose: 2000
             });
+            return 0;
         }
+        return 0;
     };
 
     const handleViewNote = (note: string) => {

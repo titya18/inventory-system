@@ -873,8 +873,8 @@ const CustomerEquipmentForm: React.FC = () => {
                 {/* ── Serial History Modal ─────────────────────────────────── */}
                 {serialHistory && (
                     <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4">
-                        <div className="bg-white dark:bg-[#1c2e4a] rounded-lg shadow-xl w-full max-w-lg">
-                            <div className="flex items-center justify-between px-5 py-4 border-b">
+                        <div className="bg-white dark:bg-[#1c2e4a] rounded-lg shadow-xl w-full max-w-lg flex flex-col" style={{ maxHeight: '80vh' }}>
+                            <div className="flex items-center justify-between px-5 py-4 border-b flex-shrink-0">
                                 <div className="flex items-center gap-2">
                                     <History size={16} className="text-indigo-500" />
                                     <h5 className="font-semibold">Assignment History</h5>
@@ -882,11 +882,11 @@ const CustomerEquipmentForm: React.FC = () => {
                                         {serialHistory.serialNumber}
                                     </span>
                                 </div>
-                                <button type="button" onClick={() => setSerialHistory(null)} className="text-gray-400 hover:text-gray-600">
-                                    <X size={18} />
+                                <button type="button" onClick={() => setSerialHistory(null)} className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors">
+                                    <X size={16} />
                                 </button>
                             </div>
-                            <div className="px-5 py-4 max-h-96 overflow-y-auto">
+                            <div className="px-5 py-4 overflow-y-auto flex-grow">
                                 {historyLoading ? (
                                     <p className="text-center text-gray-400 py-6">Loading...</p>
                                 ) : serialHistory.records.length === 0 ? (
@@ -1262,8 +1262,8 @@ const CustomerEquipmentForm: React.FC = () => {
             {/* ── Serial History Modal ─────────────────────────────────────── */}
             {serialHistory && (
                 <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-[#1c2e4a] rounded-lg shadow-xl w-full max-w-lg">
-                        <div className="flex items-center justify-between px-5 py-4 border-b">
+                    <div className="bg-white dark:bg-[#1c2e4a] rounded-lg shadow-xl w-full max-w-lg flex flex-col" style={{ maxHeight: '80vh' }}>
+                        <div className="flex items-center justify-between px-5 py-4 border-b flex-shrink-0">
                             <div className="flex items-center gap-2">
                                 <History size={16} className="text-indigo-500" />
                                 <h5 className="font-semibold">Assignment History</h5>
@@ -1271,11 +1271,11 @@ const CustomerEquipmentForm: React.FC = () => {
                                     {serialHistory.serialNumber}
                                 </span>
                             </div>
-                            <button type="button" onClick={() => setSerialHistory(null)} className="text-gray-400 hover:text-gray-600">
-                                <X size={18} />
+                            <button type="button" onClick={() => setSerialHistory(null)} className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors">
+                                <X size={16} />
                             </button>
                         </div>
-                        <div className="px-5 py-4 max-h-96 overflow-y-auto">
+                        <div className="px-5 py-4 overflow-y-auto flex-grow">
                             {historyLoading ? (
                                 <p className="text-center text-gray-400 py-6">Loading...</p>
                             ) : serialHistory.records.length === 0 ? (

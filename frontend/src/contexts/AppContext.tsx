@@ -37,7 +37,12 @@ interface AppContextType {
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const socket = io(import.meta.env.VITE_API_URL || "http://localhost:4000", {
+// VITE_SOCKET_URL: direct backend URL for socket.io, bypassing any nginx reverse-proxy.
+// In production set this to http://<server-ip>:<backend-port> (e.g. http://202.93.8.4:4000).
+// Falls back to VITE_API_URL so local dev needs no extra config.
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || "http://localhost:4000";
+
+const socket = io(SOCKET_URL, {
   path: "/socket.io",
   transports: ["websocket"],
 });

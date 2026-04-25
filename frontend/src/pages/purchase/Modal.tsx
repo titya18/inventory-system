@@ -460,10 +460,9 @@ const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-[black]/60 z-[999] overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen px-4">
-        <div className="panel border-0 p-0 rounded-lg overflow-hidden w-full max-w-3xl my-8">
-          <div className="flex bg-[#fbfbfb] dark:bg-[#121c2c] items-center justify-between px-5 py-3">
+    <div className="fixed inset-0 bg-[black]/60 z-[999] flex items-center justify-center p-4">
+      <div className="panel border-0 p-0 rounded-lg w-full max-w-3xl flex flex-col" style={{ maxHeight: '92vh' }}>
+          <div className="flex bg-[#fbfbfb] dark:bg-[#121c2c] items-center justify-between px-5 py-3 flex-shrink-0 rounded-t-lg">
             <div>
               <h5 className="font-bold text-lg">
                 {(clickData as any)?.products?.name}
@@ -492,6 +491,7 @@ const Modal: React.FC<ModalProps> = ({
             </button>
           </div>
 
+          <div className="overflow-y-auto flex-grow">
           <form onSubmit={handleSubmit(handleFormSubmit)}>
             <div className="p-5">
               <div className="mb-4 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
@@ -857,9 +857,9 @@ const Modal: React.FC<ModalProps> = ({
               </div>
             </div>
           </form>
+          </div>
         </div>
       </div>
-    </div>
   );
 };
 

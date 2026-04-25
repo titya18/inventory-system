@@ -37,11 +37,11 @@ interface ReportInvoiceParams {
     pageSize: number;
     searchTerm?: string | null;
 
-    // new filters
-    startDate?: string; // YYYY-MM-DD
-    endDate?: string;   // YYYY-MM-DD
+    startDate?: string;
+    endDate?: string;
     saleType?: "RETAIL" | "WHOLESALE";
-    status?: string;    // PENDING, COMPLETED, etc (CANCELLED excluded in backend)
+    status?: string;
+    statuses?: string; // comma-separated multi-status, e.g. "RECEIVED,COMPLETED"
     branchId?: number;
 }
 
@@ -356,6 +356,7 @@ export const getAllReportQuotations = async ({
     endDate,
     saleType,
     status,
+    statuses,
     branchId
 }: ReportInvoiceParams): Promise<ReportQuotationResponse> => {
 
@@ -377,6 +378,7 @@ export const getAllReportQuotations = async ({
 
     if (saleType) params.set("saleType", saleType);
     if (status) params.set("status", status);
+    if (statuses) params.set("statuses", statuses);
     if (branchId) params.set("branchId", String(branchId));
 
     const url = `${API_BASE_URL}/api/report/reportQuotations?${params.toString()}`;
@@ -408,6 +410,7 @@ export const getAllReportPurchases = async ({
     startDate,
     endDate,
     status,
+    statuses,
     branchId
 }: ReportInvoiceParams): Promise<ReportPurchaseResponse> => {
 
@@ -428,6 +431,7 @@ export const getAllReportPurchases = async ({
     params.set("endDate", endDate || today);
 
     if (status) params.set("status", status);
+    if (statuses) params.set("statuses", statuses);
     if (branchId) params.set("branchId", String(branchId));
 
     const url = `${API_BASE_URL}/api/report/reportPurchases?${params.toString()}`;

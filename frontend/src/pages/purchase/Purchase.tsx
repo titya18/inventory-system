@@ -239,43 +239,30 @@ const Purchase: React.FC = () => {
     };
 
     const handleOnSubmitPayment = async (
-        branchId: number | null, 
-        purchaseId: number | null, 
+        branchId: number | null,
+        purchaseId: number | null,
         paymentMethodId: number | null,
-        paidAmount: number | null, 
-        amount: number, 
+        paidAmount: number | null,
+        amount: number,
         receive_usd: number | null,
         receive_khr: number | null,
         exchangerate: number | null,
         due_balance: number
-    ) => {
+    ): Promise<number> => {
         try {
             await queryClient.invalidateQueries({ queryKey: ["validateToken"] });
             const paymentData: PaymentType = {
-                branchId: branchId,
-                purchaseId: purchaseId,
-                paymentMethodId: paymentMethodId,
-                paidAmount: paidAmount,
-                amount: amount,
-                receive_usd: receive_usd,
-                receive_khr: receive_khr,
-                exchangerate: exchangerate,
-                due_balance: due_balance,
-                createdAt: null,
-                PaymentMethods: null,
-            }
- 
-            await apiClient.insertPurchasePayment(paymentData);
-            toast.success("Purchase payment insert successfully", {
-                position: "top-right",
-                autoClose: 2000
-            });
+                branchId, purchaseId, paymentMethodId, paidAmount, amount,
+                receive_usd, receive_khr, exchangerate, due_balance,
+                createdAt: null, PaymentMethods: null,
+            };
+            const result = await apiClient.insertPurchasePayment(paymentData);
+            toast.success("Purchase payment insert successfully", { position: "top-right", autoClose: 2000 });
             fetchPurchase();
+            return (result as any).id ?? 0;
         } catch (error: any) {
-            toast.error(error.message || "Error adding payment", {
-                position: "top-right",
-                autoClose: 2000
-            });
+            toast.error(error.message || "Error adding payment", { position: "top-right", autoClose: 2000 });
+            return 0;
         }
     };
 

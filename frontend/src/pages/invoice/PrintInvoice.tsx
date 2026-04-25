@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
-import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import * as apiClient from "../../api/invoice";
 import "./dateStyle.css";
@@ -9,101 +9,62 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { Print } from "@mui/icons-material";
 import { ArrowLeft } from "lucide-react";
-import { fi } from "date-fns/locale";
+import { useCompanySettings } from "@/hooks/useCompanySettings";
+import { getLogoUrl } from "@/api/settings";
 
 // Extend Day.js with plugins
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const InvoiceHeader: React.FC<{ data: any }> = ({ data }) => {
+const InvoiceHeader: React.FC<{ data: any; settings: any }> = ({ data, settings }) => {
   return (
-    <div className="invoice-header" style={{ 
+    <div className="invoice-header" style={{
       marginBottom: '20px',
       borderBottom: '2px solid #ffab93',
       paddingBottom: '10px'
     }}>
-      <div style={{ 
-        display: 'flex', 
+      <div style={{
+        display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'flex-start'
       }}>
-        {/* Left side - Company info */}
+        {/* Left side - Logo */}
         <div>
-          <div style={{ 
-            display: 'flex',
-            alignItems: 'center',
-            marginBottom: '10px'
-          }}>
-            <img 
-              src={`${import.meta.env.BASE_URL}admin_assets/images/izoom-logo.png`} 
-              alt="Logo" 
-              style={{ 
-                height: '80px',
-                marginRight: '15px'
-              }}
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+            <img
+              src={getLogoUrl(settings.logoUrl)}
+              alt="Logo"
+              style={{ height: '80px', marginRight: '15px' }}
             />
           </div>
         </div>
-        
-        {/* Right side - Invoice details */}
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '10px 20px 20px 20px',
-            minWidth: '100px',
-          }}
-        >
-          <div
-            className="khmer-muol"
-            style={{
-              fontSize: '16px',
-              color: '#000000',
-              marginBottom: '10px',
-            }}
-          >
-            ក្រុមហ៊ុន អាយហ៊្សូម សឹលូសិន ឯ.ក
-          </div>
 
-          <div
-            style={{
-              fontSize: '14px',
-            }}
-          >
-            <div
-              style={{
-                color: '#000000',
-                fontWeight: 900,
-                fontSize: '14px',
-                fontFamily: '"Times New Roman", Times, serif',
-                marginBottom: '5px',
-              }}
-            >
-              iZOOM SOLUTIONS CO., LTD
+        {/* Right side - Company registration */}
+        <div style={{ textAlign: 'center', padding: '10px 20px 20px 20px', minWidth: '100px' }}>
+          {settings.companyNameKh && (
+            <div className="khmer-muol" style={{ fontSize: '16px', color: '#000000', marginBottom: '10px' }}>
+              {settings.companyNameKh}
             </div>
-
-            <div
-              style={{
-                color: '#000000',
-                fontSize: '13px',
-                fontFamily: '"Times New Roman", Times, serif',
-              }}
-            >
-              លេខអត្តសញ្ញាណកម្ម អតប <b>(VATTIN) K008-902305248</b>
-            </div>
+          )}
+          <div style={{ fontSize: '14px' }}>
+            {settings.companyNameEn && (
+              <div style={{ color: '#000000', fontWeight: 900, fontSize: '14px', fontFamily: '"Times New Roman", Times, serif', marginBottom: '5px' }}>
+                {settings.companyNameEn}
+              </div>
+            )}
+            {settings.vatNumber && data?.vat_status === 1 && (
+              <div style={{ color: '#000000', fontSize: '13px', fontFamily: '"Times New Roman", Times, serif' }}>
+                លេខអត្តសញ្ញាណកម្ម អតប <b>(VATTIN) {settings.vatNumber}</b>
+              </div>
+            )}
           </div>
         </div>
-
       </div>
-      <div style={{ 
-        fontSize: '13px',
-        color: '#555',
-        marginTop: '5px',
-        lineHeight: '1.5'
-      }}>
-        <div>អាសយដ្ឋាន៖ ផ្ទះ#៤៨ ផ្លូវបុរីអង្គរ (បុរីអង្គរភ្នំពេញ) ភូមិបឹងរាំង សង្កាត់ទួលសង្កែទី២ ខណ្ឌឬស្សីកែវ រាជធានីភ្នំពេញ</div>
-        <div>Address N<sup>o</sup> #48, St. Borey Angkor (Borey Angkor Phnom Penh) Sangkat Tuol Sangke 2, Khan Russeykeo, Phnom Penh</div>
-        <div>ទូរស័ព្ទលេខ/Telephone : +855 16 589 299</div>
-        {/* <div>Email: sales@izooms.com.kh</div> */}
+
+      <div style={{ fontSize: '13px', color: '#555', marginTop: '5px', lineHeight: '1.5' }}>
+        {settings.addressKh && <div>{settings.addressKh}</div>}
+        {settings.addressEn && <div>Address N<sup>o</sup> {settings.addressEn}</div>}
+        {settings.phone    && <div>ទូរស័ព្ទលេខ/Telephone : {settings.phone}</div>}
       </div>
     </div>
   );
@@ -337,7 +298,6 @@ const formatCurrency = (value: any) => {
             const qty = parseFloat(item.qty) || 1;
             const price = parseFloat(item.price) || 0;
             const total = parseFloat(item.total) || 0;
-            const discount = (price * qty) - total;
 
             const formatQty = (qty: number, unit?: string) => {
               const cleanQty = Number(qty).toFixed(2).replace(/\.00$/, "");
@@ -349,12 +309,17 @@ const formatCurrency = (value: any) => {
               <tr key={index} style={{
                 borderBottom: index < items.length - 1 ? '1px solid #e0e6ed' : 'none'
               }}>
-                <td style={{ 
-                  padding: '0px 15px',
+                <td style={{
+                  padding: '8px 15px',
                   borderRight: '1px solid #e0e6ed'
                 }}>
                   <div style={{ fontWeight: 'bold' }}>
                     {item.productvariants?.name || item.description || `Item ${index + 1}`}
+                    {item.serialNumbers?.length > 0 && (
+                      <span style={{ fontWeight: 'normal', fontSize: '12px', color: '#555', marginLeft: '6px' }}>
+                        ({item.serialNumbers.join(', ')})
+                      </span>
+                    )}
                   </div>
                 </td>
                 <td style={{ 
@@ -420,7 +385,6 @@ const TotalsSection: React.FC<{ totals: any }> = ({ totals }) => {
   const subtotal = safeNumber(totals.subtotal || 0);
   const orderTax = safeNumber(totals.orderTax || 0);
   const discount = safeNumber(totals.discount || 0);
-  const shipping = safeNumber(totals.shipping || 0);
   const total = safeNumber(totals.total);
   const exChangeRate = safeNumber(totals.exChangeRate);
 
@@ -611,53 +575,13 @@ const TermsNotesSection: React.FC<{ data: any }> = ({ data }) => {
   );
 };
 
-// Footer Component
-const InvoiceFooter: React.FC<{ data: any }> = ({ data }) => {
-  return (
-    <div className="invoice-footer" style={{ textAlign: 'center' }}>
-      <div style={{ marginBottom: '20px' }}>
-        <img 
-          src={`${import.meta.env.BASE_URL}admin_assets/images/izoom-logo.png`} 
-          alt="Logo" 
-          style={{ height: '40px', marginBottom: '10px' }}
-        />
-      </div>
-      
-      <div style={{ 
-        fontSize: '14px',
-        color: '#555',
-        marginBottom: '15px'
-      }}>
-        {data.paymentMethod}
-      </div>
-      
-      <div style={{ 
-        display: 'flex',
-        justifyContent: 'center',
-        fontSize: '12px',
-        color: '#666',
-        gap: '20px'
-      }}>
-        <div>
-          Bank Name: <span style={{ fontWeight: 'bold' }}>{data.bankDetails.bankName}</span>
-        </div>
-        <div>
-          Account Number: <span style={{ fontWeight: 'bold' }}>{data.bankDetails.accountNumber}</span>
-        </div>
-        <div>
-          {/* IFSC: <span style={{ fontWeight: 'bold' }}>{data.bankDetails.ifsc}</span> */}
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // Main PrintPurchase Component
 const PrintInvoice: React.FC = () => {
   const printRef = useRef<HTMLDivElement>(null);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+  const { settings } = useCompanySettings();
+
   const [invoiceData, setInvoiceData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -739,6 +663,10 @@ const PrintInvoice: React.FC = () => {
             price: item.price || 0,
             discount: item.discount || 0,
             total: item.total || 0,
+            trackingType: item.productvariants?.trackingType ?? 'NONE',
+            serialNumbers: (item.productvariants?.trackingType && item.productvariants.trackingType !== 'NONE')
+              ? (item.selectedAssetItems ?? []).map((link: any) => link.productAssetItem?.serialNumber).filter(Boolean)
+              : [],
           })) || [],
           
           totals: {
@@ -750,8 +678,10 @@ const PrintInvoice: React.FC = () => {
             exChangeRate: invoice.exchangeRate || 4026
           },
           
+          vat_status: invoice.vat_status ?? 0,
+
           notes: "Please quote invoice number when remitting funds.",
-          terms: "Please pay within 7 days from the date of invoice, overdue interest @ 10% will be charged on delayed payments.",
+          terms: settings.invoiceTerms || "Please pay within 7 days from the date of invoice, overdue interest @ 10% will be charged on delayed payments.",
           paymentMethod: "Payment Made Via bank transfer / Cheque",
           bankDetails: {
             bankName: "Lorn Titya",
@@ -857,11 +787,11 @@ const PrintInvoice: React.FC = () => {
           boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
         }}
       >
-        <InvoiceHeader data={invoiceData} />
+        <InvoiceHeader data={invoiceData} settings={settings} />
         <AddressSection data={invoiceData} />
         <InvoiceItemsTable items={invoiceData.items} />
         <TotalsSection totals={invoiceData.totals} />
-        <TermsNotesSection data={invoiceData} />
+        <TermsNotesSection data={{ ...invoiceData, terms: settings.invoiceTerms || invoiceData?.terms }} />
         {/* <InvoiceFooter data={invoiceData} /> */}
       </div>
     </>

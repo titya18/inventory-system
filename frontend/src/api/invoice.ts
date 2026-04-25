@@ -55,6 +55,17 @@ export const getNextInvoiceRef = async (branchId: number): Promise<string> => {
     return response.json();
 };
 
+export const getPaymentReceipt = async (id: number): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/api/invoice/payment-receipt/${id}`, {
+        credentials: "include",
+    });
+    if (!response.ok) {
+        const errorResponse = await response.json();
+        throw new Error(errorResponse.message || "Error fetching payment receipt");
+    }
+    return response.json();
+};
+
 export const getInvoicePaymentById = async (id: number): Promise<InvoicePaymentType[]> => {
     const response = await fetch(`${API_BASE_URL}/api/invoice/payment/${id}`, {
         credentials: "include"

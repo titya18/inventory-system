@@ -861,6 +861,58 @@ export const getInvoicePaymentById = async (req: Request, res: Response): Promis
     }
 }
 
+export const getPaymentReceipt = async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    try {
+        const payment = await prisma.orderOnPayments.findUnique({
+            where: { id: Number(id) },
+            include: {
+                paymentMethods: { select: { name: true } },
+                orders: {
+                    select: {
+                        ref: true,
+                        totalAmount: true,
+                        paidAmount: true,
+                        customer: { select: { name: true, phone: true } },
+                        branch: { select: { name: true } },
+                        items: {
+                            select: {
+                                id: true,
+                                quantity: true,
+                                price: true,
+                                total: true,
+                                discount: true,
+                                discountMethod: true,
+                                taxNet: true,
+                                taxMethod: true,
+                                products: { select: { name: true } },
+                                productvariants: { select: { trackingType: true } },
+                                services: { select: { name: true } },
+                                selectedAssetItems: {
+                                    select: {
+                                        productAssetItem: {
+                                            select: { serialNumber: true, assetCode: true, macAddress: true }
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        if (!payment) {
+            res.status(404).json({ message: "Payment not found" });
+            return;
+        }
+        res.status(200).json(payment);
+    } catch (error) {
+        logger.error("Error fetching payment receipt:", error);
+        const typedError = error as Error;
+        res.status(500).json({ message: typedError.message });
+    }
+};
+
 export const deletePayment = async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const paymentId = id ? (Array.isArray(id) ? id[0] : id) : 0;

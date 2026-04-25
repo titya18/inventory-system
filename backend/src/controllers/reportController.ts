@@ -908,6 +908,8 @@ export const getAllReportQuotations = async (
 
     const conditions: Prisma.Sql[] = [];
 
+    conditions.push(Prisma.sql`qt."deletedAt" IS NULL`);
+
     if (loggedInUser.roleType === "ADMIN") {
       if (branchId) {
         conditions.push(Prisma.sql`qt."branchId" = ${branchId}`);
@@ -936,10 +938,22 @@ export const getAllReportQuotations = async (
       );
     }
 
+    const allowedQuotationStatuses = ["PENDING", "SENT", "INVOICED", "CANCELLED"];
+
     if (safeStatus) {
       conditions.push(
         Prisma.sql`qt."status" = ${safeStatus}::"QuotationStatus"`
       );
+    } else if (req.query.statuses) {
+      // Multi-status filter (used by dashboard): e.g. statuses=PENDING,SENT
+      const statusList = String(req.query.statuses)
+        .split(",").map(s => s.trim())
+        .filter(s => allowedQuotationStatuses.includes(s));
+      if (statusList.length > 0) {
+        conditions.push(
+          Prisma.sql`qt."status"::text = ANY(ARRAY[${Prisma.join(statusList.map(s => Prisma.sql`${s}`), ",")}])`
+        );
+      }
     }
 
     if (searchTerm) {
@@ -1142,6 +1156,8 @@ export const getAllReportPurchases = async (
 
     const conditions: Prisma.Sql[] = [];
 
+    conditions.push(Prisma.sql`pc."deletedAt" IS NULL`);
+
     if (loggedInUser.roleType === "ADMIN") {
       if (branchId) {
         conditions.push(Prisma.sql`pc."branchId" = ${branchId}`);
@@ -1166,6 +1182,16 @@ export const getAllReportPurchases = async (
 
     if (safeStatus) {
       conditions.push(Prisma.sql`pc."status" = ${safeStatus}::"PurchaseStatus"`);
+    } else if (req.query.statuses) {
+      // Multi-status filter (used by dashboard): e.g. statuses=RECEIVED,COMPLETED
+      const statusList = String(req.query.statuses)
+        .split(",").map(s => s.trim())
+        .filter(s => allowedStatuses.includes(s));
+      if (statusList.length > 0) {
+        conditions.push(
+          Prisma.sql`pc."status"::text = ANY(ARRAY[${Prisma.join(statusList.map(s => Prisma.sql`${s}`), ",")}])`
+        );
+      }
     }
 
     if (searchTerm) {
@@ -2935,6 +2961,8 @@ export const getAllReportSalesReturns = async (
       sortOrderText === "asc" ? Prisma.sql`ASC` : Prisma.sql`DESC`;
 
     const conditions: Prisma.Sql[] = [];
+
+    conditions.push(Prisma.sql`sr."deletedAt" IS NULL`);
 
     if (loggedInUser.roleType === "ADMIN") {
       if (branchId) {

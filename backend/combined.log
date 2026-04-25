@@ -33315,3 +33315,839 @@ Unknown argument `productId`. Available options are marked with ?.
 2026-04-23 15:39:38 info: CEQ return non-tracked variantId=26: ceqBaseQty=5, saleReturnedBaseQty=2, netRestoreQty=3 
 2026-04-23 15:39:38 info: CEQ return non-tracked variantId=1: ceqBaseQty=610, saleReturnedBaseQty=305, netRestoreQty=305 
 2026-04-23 15:53:00 info: CEQ return non-tracked variantId=1: ceqBaseQty=1220, saleReturnedBaseQty=0, netRestoreQty=1220 
+2026-04-24 10:12:06 info: CEQ return: skipping assetItem 65 — already IN_STOCK via Sale Return 
+2026-04-24 10:12:06 info: CEQ return non-tracked variantId=26: ceqBaseQty=5, saleReturnedBaseQty=0, netRestoreQty=5 
+2026-04-24 10:12:06 info: CEQ return non-tracked variantId=1: ceqBaseQty=610, saleReturnedBaseQty=0, netRestoreQty=610 
+2026-04-24 10:13:04 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=64 variantId=23 branchId=1 delta=-1 
+2026-04-24 13:44:33 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-04-24 14:02:44 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-04-24 20:37:29 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-04-24 21:04:44 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-04-24 21:04:53 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-04-24 21:05:06 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-04-24 21:31:19 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-04-24 21:32:18 error: Error fetching payment receipt: 
+Invalid `prisma.orderOnPayments.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:867:54
+
+  864 export const getPaymentReceipt = async (req: Request, res: Response): Promise<void> => {
+  865     const { id } = req.params;
+  866     try {
+→ 867         const payment = await prisma.orderOnPayments.findUnique({
+                where: {
+                  id: 4
+                },
+                include: {
+                  paymentMethods: {
+                    select: {
+                      name: true
+                    }
+                  },
+                  orders: {
+                    select: {
+                      ref: true,
+                      totalAmount: true,
+                      paidAmount: true,
+                      customer: {
+                        select: {
+                          name: true,
+                          phone: true
+                        }
+                      },
+                      branch: {
+                        select: {
+                          name: true
+                        }
+                      },
+                      items: {
+                        where: {
+                          deletedAt: null,
+                          ~~~~~~~~~
+              ?           AND?: OrderItemWhereInput | OrderItemWhereInput[],
+              ?           OR?: OrderItemWhereInput[],
+              ?           NOT?: OrderItemWhereInput | OrderItemWhereInput[],
+              ?           id?: IntFilter | Int,
+              ?           orderId?: IntFilter | Int,
+              ?           productId?: IntNullableFilter | Int | Null,
+              ?           productVariantId?: IntNullableFilter | Int | Null,
+              ?           serviceId?: IntNullableFilter | Int | Null,
+              ?           ItemType?: EnumItemTypeNullableFilter | ItemType | Null,
+              ?           unitId?: IntNullableFilter | Int | Null,
+              ?           unitQty?: DecimalNullableFilter | Decimal | Null,
+              ?           baseQty?: DecimalNullableFilter | Decimal | Null,
+              ?           cogs?: DecimalNullableFilter | Decimal | Null,
+              ?           taxNet?: DecimalNullableFilter | Decimal | Null,
+              ?           taxMethod?: StringNullableFilter | String | Null,
+              ?           discount?: DecimalNullableFilter | Decimal | Null,
+              ?           discountMethod?: StringNullableFilter | String | Null,
+              ?           total?: DecimalFilter | Decimal,
+              ?           quantity?: IntNullableFilter | Int | Null,
+              ?           price?: DecimalFilter | Decimal,
+              ?           costPerBaseUnit?: DecimalNullableFilter | Decimal | Null,
+              ?           serialSelectionMode?: StringNullableFilter | String | Null,
+              ?           order?: OrderRelationFilter | OrderWhereInput,
+              ?           products?: ProductsNullableRelationFilter | ProductsWhereInput | Null,
+              ?           productvariants?: ProductVariantsNullableRelationFilter | ProductVariantsWhereInput | Null,
+              ?           services?: ServicesNullableRelationFilter | ServicesWhereInput | Null,
+              ?           unit?: UnitsNullableRelationFilter | UnitsWhereInput | Null,
+              ?           stockMovements?: StockMovementsListRelationFilter,
+              ?           selectedAssetItems?: OrderItemAssetItemListRelationFilter
+                        },
+                        select: {
+                          id: true,
+                          quantity: true,
+                          unitPrice: true,
+                          total: true,
+                          discount: true,
+                          discountMethod: true,
+                          taxNet: true,
+                          taxMethod: true,
+                          products: {
+                            select: {
+                              name: true
+                            }
+                          },
+                          productvariants: {
+                            select: {
+                              barcode: true,
+                              productType: true
+                            }
+                          },
+                          services: {
+                            select: {
+                              name: true
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              })
+
+Unknown argument `deletedAt`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `prisma.orderOnPayments.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:867:54
+
+  864 export const getPaymentReceipt = async (req: Request, res: Response): Promise<void> => {
+  865     const { id } = req.params;
+  866     try {
+→ 867         const payment = await prisma.orderOnPayments.findUnique({
+                where: {
+                  id: 4
+                },
+                include: {
+                  paymentMethods: {
+                    select: {
+                      name: true
+                    }
+                  },
+                  orders: {
+                    select: {
+                      ref: true,
+                      totalAmount: true,
+                      paidAmount: true,
+                      customer: {
+                        select: {
+                          name: true,
+                          phone: true
+                        }
+                      },
+                      branch: {
+                        select: {
+                          name: true
+                        }
+                      },
+                      items: {
+                        where: {
+                          deletedAt: null,
+                          ~~~~~~~~~
+              ?           AND?: OrderItemWhereInput | OrderItemWhereInput[],
+              ?           OR?: OrderItemWhereInput[],
+              ?           NOT?: OrderItemWhereInput | OrderItemWhereInput[],
+              ?           id?: IntFilter | Int,
+              ?           orderId?: IntFilter | Int,
+              ?           productId?: IntNullableFilter | Int | Null,
+              ?           productVariantId?: IntNullableFilter | Int | Null,
+              ?           serviceId?: IntNullableFilter | Int | Null,
+              ?           ItemType?: EnumItemTypeNullableFilter | ItemType | Null,
+              ?           unitId?: IntNullableFilter | Int | Null,
+              ?           unitQty?: DecimalNullableFilter | Decimal | Null,
+              ?           baseQty?: DecimalNullableFilter | Decimal | Null,
+              ?           cogs?: DecimalNullableFilter | Decimal | Null,
+              ?           taxNet?: DecimalNullableFilter | Decimal | Null,
+              ?           taxMethod?: StringNullableFilter | String | Null,
+              ?           discount?: DecimalNullableFilter | Decimal | Null,
+              ?           discountMethod?: StringNullableFilter | String | Null,
+              ?           total?: DecimalFilter | Decimal,
+              ?           quantity?: IntNullableFilter | Int | Null,
+              ?           price?: DecimalFilter | Decimal,
+              ?           costPerBaseUnit?: DecimalNullableFilter | Decimal | Null,
+              ?           serialSelectionMode?: StringNullableFilter | String | Null,
+              ?           order?: OrderRelationFilter | OrderWhereInput,
+              ?           products?: ProductsNullableRelationFilter | ProductsWhereInput | Null,
+              ?           productvariants?: ProductVariantsNullableRelationFilter | ProductVariantsWhereInput | Null,
+              ?           services?: ServicesNullableRelationFilter | ServicesWhereInput | Null,
+              ?           unit?: UnitsNullableRelationFilter | UnitsWhereInput | Null,
+              ?           stockMovements?: StockMovementsListRelationFilter,
+              ?           selectedAssetItems?: OrderItemAssetItemListRelationFilter
+                        },
+                        select: {
+                          id: true,
+                          quantity: true,
+                          unitPrice: true,
+                          total: true,
+                          discount: true,
+                          discountMethod: true,
+                          taxNet: true,
+                          taxMethod: true,
+                          products: {
+                            select: {
+                              name: true
+                            }
+                          },
+                          productvariants: {
+                            select: {
+                              barcode: true,
+                              productType: true
+                            }
+                          },
+                          services: {
+                            select: {
+                              name: true
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              })
+
+Unknown argument `deletedAt`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async getPaymentReceipt (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:867:25)
+2026-04-24 21:32:18 error: Error fetching payment receipt: 
+Invalid `prisma.orderOnPayments.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:867:54
+
+  864 export const getPaymentReceipt = async (req: Request, res: Response): Promise<void> => {
+  865     const { id } = req.params;
+  866     try {
+→ 867         const payment = await prisma.orderOnPayments.findUnique({
+                where: {
+                  id: 4
+                },
+                include: {
+                  paymentMethods: {
+                    select: {
+                      name: true
+                    }
+                  },
+                  orders: {
+                    select: {
+                      ref: true,
+                      totalAmount: true,
+                      paidAmount: true,
+                      customer: {
+                        select: {
+                          name: true,
+                          phone: true
+                        }
+                      },
+                      branch: {
+                        select: {
+                          name: true
+                        }
+                      },
+                      items: {
+                        where: {
+                          deletedAt: null,
+                          ~~~~~~~~~
+              ?           AND?: OrderItemWhereInput | OrderItemWhereInput[],
+              ?           OR?: OrderItemWhereInput[],
+              ?           NOT?: OrderItemWhereInput | OrderItemWhereInput[],
+              ?           id?: IntFilter | Int,
+              ?           orderId?: IntFilter | Int,
+              ?           productId?: IntNullableFilter | Int | Null,
+              ?           productVariantId?: IntNullableFilter | Int | Null,
+              ?           serviceId?: IntNullableFilter | Int | Null,
+              ?           ItemType?: EnumItemTypeNullableFilter | ItemType | Null,
+              ?           unitId?: IntNullableFilter | Int | Null,
+              ?           unitQty?: DecimalNullableFilter | Decimal | Null,
+              ?           baseQty?: DecimalNullableFilter | Decimal | Null,
+              ?           cogs?: DecimalNullableFilter | Decimal | Null,
+              ?           taxNet?: DecimalNullableFilter | Decimal | Null,
+              ?           taxMethod?: StringNullableFilter | String | Null,
+              ?           discount?: DecimalNullableFilter | Decimal | Null,
+              ?           discountMethod?: StringNullableFilter | String | Null,
+              ?           total?: DecimalFilter | Decimal,
+              ?           quantity?: IntNullableFilter | Int | Null,
+              ?           price?: DecimalFilter | Decimal,
+              ?           costPerBaseUnit?: DecimalNullableFilter | Decimal | Null,
+              ?           serialSelectionMode?: StringNullableFilter | String | Null,
+              ?           order?: OrderRelationFilter | OrderWhereInput,
+              ?           products?: ProductsNullableRelationFilter | ProductsWhereInput | Null,
+              ?           productvariants?: ProductVariantsNullableRelationFilter | ProductVariantsWhereInput | Null,
+              ?           services?: ServicesNullableRelationFilter | ServicesWhereInput | Null,
+              ?           unit?: UnitsNullableRelationFilter | UnitsWhereInput | Null,
+              ?           stockMovements?: StockMovementsListRelationFilter,
+              ?           selectedAssetItems?: OrderItemAssetItemListRelationFilter
+                        },
+                        select: {
+                          id: true,
+                          quantity: true,
+                          unitPrice: true,
+                          total: true,
+                          discount: true,
+                          discountMethod: true,
+                          taxNet: true,
+                          taxMethod: true,
+                          products: {
+                            select: {
+                              name: true
+                            }
+                          },
+                          productvariants: {
+                            select: {
+                              barcode: true,
+                              productType: true
+                            }
+                          },
+                          services: {
+                            select: {
+                              name: true
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              })
+
+Unknown argument `deletedAt`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `prisma.orderOnPayments.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:867:54
+
+  864 export const getPaymentReceipt = async (req: Request, res: Response): Promise<void> => {
+  865     const { id } = req.params;
+  866     try {
+→ 867         const payment = await prisma.orderOnPayments.findUnique({
+                where: {
+                  id: 4
+                },
+                include: {
+                  paymentMethods: {
+                    select: {
+                      name: true
+                    }
+                  },
+                  orders: {
+                    select: {
+                      ref: true,
+                      totalAmount: true,
+                      paidAmount: true,
+                      customer: {
+                        select: {
+                          name: true,
+                          phone: true
+                        }
+                      },
+                      branch: {
+                        select: {
+                          name: true
+                        }
+                      },
+                      items: {
+                        where: {
+                          deletedAt: null,
+                          ~~~~~~~~~
+              ?           AND?: OrderItemWhereInput | OrderItemWhereInput[],
+              ?           OR?: OrderItemWhereInput[],
+              ?           NOT?: OrderItemWhereInput | OrderItemWhereInput[],
+              ?           id?: IntFilter | Int,
+              ?           orderId?: IntFilter | Int,
+              ?           productId?: IntNullableFilter | Int | Null,
+              ?           productVariantId?: IntNullableFilter | Int | Null,
+              ?           serviceId?: IntNullableFilter | Int | Null,
+              ?           ItemType?: EnumItemTypeNullableFilter | ItemType | Null,
+              ?           unitId?: IntNullableFilter | Int | Null,
+              ?           unitQty?: DecimalNullableFilter | Decimal | Null,
+              ?           baseQty?: DecimalNullableFilter | Decimal | Null,
+              ?           cogs?: DecimalNullableFilter | Decimal | Null,
+              ?           taxNet?: DecimalNullableFilter | Decimal | Null,
+              ?           taxMethod?: StringNullableFilter | String | Null,
+              ?           discount?: DecimalNullableFilter | Decimal | Null,
+              ?           discountMethod?: StringNullableFilter | String | Null,
+              ?           total?: DecimalFilter | Decimal,
+              ?           quantity?: IntNullableFilter | Int | Null,
+              ?           price?: DecimalFilter | Decimal,
+              ?           costPerBaseUnit?: DecimalNullableFilter | Decimal | Null,
+              ?           serialSelectionMode?: StringNullableFilter | String | Null,
+              ?           order?: OrderRelationFilter | OrderWhereInput,
+              ?           products?: ProductsNullableRelationFilter | ProductsWhereInput | Null,
+              ?           productvariants?: ProductVariantsNullableRelationFilter | ProductVariantsWhereInput | Null,
+              ?           services?: ServicesNullableRelationFilter | ServicesWhereInput | Null,
+              ?           unit?: UnitsNullableRelationFilter | UnitsWhereInput | Null,
+              ?           stockMovements?: StockMovementsListRelationFilter,
+              ?           selectedAssetItems?: OrderItemAssetItemListRelationFilter
+                        },
+                        select: {
+                          id: true,
+                          quantity: true,
+                          unitPrice: true,
+                          total: true,
+                          discount: true,
+                          discountMethod: true,
+                          taxNet: true,
+                          taxMethod: true,
+                          products: {
+                            select: {
+                              name: true
+                            }
+                          },
+                          productvariants: {
+                            select: {
+                              barcode: true,
+                              productType: true
+                            }
+                          },
+                          services: {
+                            select: {
+                              name: true
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              })
+
+Unknown argument `deletedAt`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async getPaymentReceipt (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:867:25)
+2026-04-24 21:32:59 error: Error fetching payment receipt: 
+Invalid `prisma.orderOnPayments.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:867:54
+
+  864 export const getPaymentReceipt = async (req: Request, res: Response): Promise<void> => {
+  865     const { id } = req.params;
+  866     try {
+→ 867         const payment = await prisma.orderOnPayments.findUnique({
+                where: {
+                  id: 5
+                },
+                include: {
+                  paymentMethods: {
+                    select: {
+                      name: true
+                    }
+                  },
+                  orders: {
+                    select: {
+                      ref: true,
+                      totalAmount: true,
+                      paidAmount: true,
+                      customer: {
+                        select: {
+                          name: true,
+                          phone: true
+                        }
+                      },
+                      branch: {
+                        select: {
+                          name: true
+                        }
+                      },
+                      items: {
+                        where: {
+                          deletedAt: null,
+                          ~~~~~~~~~
+              ?           AND?: OrderItemWhereInput | OrderItemWhereInput[],
+              ?           OR?: OrderItemWhereInput[],
+              ?           NOT?: OrderItemWhereInput | OrderItemWhereInput[],
+              ?           id?: IntFilter | Int,
+              ?           orderId?: IntFilter | Int,
+              ?           productId?: IntNullableFilter | Int | Null,
+              ?           productVariantId?: IntNullableFilter | Int | Null,
+              ?           serviceId?: IntNullableFilter | Int | Null,
+              ?           ItemType?: EnumItemTypeNullableFilter | ItemType | Null,
+              ?           unitId?: IntNullableFilter | Int | Null,
+              ?           unitQty?: DecimalNullableFilter | Decimal | Null,
+              ?           baseQty?: DecimalNullableFilter | Decimal | Null,
+              ?           cogs?: DecimalNullableFilter | Decimal | Null,
+              ?           taxNet?: DecimalNullableFilter | Decimal | Null,
+              ?           taxMethod?: StringNullableFilter | String | Null,
+              ?           discount?: DecimalNullableFilter | Decimal | Null,
+              ?           discountMethod?: StringNullableFilter | String | Null,
+              ?           total?: DecimalFilter | Decimal,
+              ?           quantity?: IntNullableFilter | Int | Null,
+              ?           price?: DecimalFilter | Decimal,
+              ?           costPerBaseUnit?: DecimalNullableFilter | Decimal | Null,
+              ?           serialSelectionMode?: StringNullableFilter | String | Null,
+              ?           order?: OrderRelationFilter | OrderWhereInput,
+              ?           products?: ProductsNullableRelationFilter | ProductsWhereInput | Null,
+              ?           productvariants?: ProductVariantsNullableRelationFilter | ProductVariantsWhereInput | Null,
+              ?           services?: ServicesNullableRelationFilter | ServicesWhereInput | Null,
+              ?           unit?: UnitsNullableRelationFilter | UnitsWhereInput | Null,
+              ?           stockMovements?: StockMovementsListRelationFilter,
+              ?           selectedAssetItems?: OrderItemAssetItemListRelationFilter
+                        },
+                        select: {
+                          id: true,
+                          quantity: true,
+                          unitPrice: true,
+                          total: true,
+                          discount: true,
+                          discountMethod: true,
+                          taxNet: true,
+                          taxMethod: true,
+                          products: {
+                            select: {
+                              name: true
+                            }
+                          },
+                          productvariants: {
+                            select: {
+                              barcode: true,
+                              productType: true
+                            }
+                          },
+                          services: {
+                            select: {
+                              name: true
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              })
+
+Unknown argument `deletedAt`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `prisma.orderOnPayments.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:867:54
+
+  864 export const getPaymentReceipt = async (req: Request, res: Response): Promise<void> => {
+  865     const { id } = req.params;
+  866     try {
+→ 867         const payment = await prisma.orderOnPayments.findUnique({
+                where: {
+                  id: 5
+                },
+                include: {
+                  paymentMethods: {
+                    select: {
+                      name: true
+                    }
+                  },
+                  orders: {
+                    select: {
+                      ref: true,
+                      totalAmount: true,
+                      paidAmount: true,
+                      customer: {
+                        select: {
+                          name: true,
+                          phone: true
+                        }
+                      },
+                      branch: {
+                        select: {
+                          name: true
+                        }
+                      },
+                      items: {
+                        where: {
+                          deletedAt: null,
+                          ~~~~~~~~~
+              ?           AND?: OrderItemWhereInput | OrderItemWhereInput[],
+              ?           OR?: OrderItemWhereInput[],
+              ?           NOT?: OrderItemWhereInput | OrderItemWhereInput[],
+              ?           id?: IntFilter | Int,
+              ?           orderId?: IntFilter | Int,
+              ?           productId?: IntNullableFilter | Int | Null,
+              ?           productVariantId?: IntNullableFilter | Int | Null,
+              ?           serviceId?: IntNullableFilter | Int | Null,
+              ?           ItemType?: EnumItemTypeNullableFilter | ItemType | Null,
+              ?           unitId?: IntNullableFilter | Int | Null,
+              ?           unitQty?: DecimalNullableFilter | Decimal | Null,
+              ?           baseQty?: DecimalNullableFilter | Decimal | Null,
+              ?           cogs?: DecimalNullableFilter | Decimal | Null,
+              ?           taxNet?: DecimalNullableFilter | Decimal | Null,
+              ?           taxMethod?: StringNullableFilter | String | Null,
+              ?           discount?: DecimalNullableFilter | Decimal | Null,
+              ?           discountMethod?: StringNullableFilter | String | Null,
+              ?           total?: DecimalFilter | Decimal,
+              ?           quantity?: IntNullableFilter | Int | Null,
+              ?           price?: DecimalFilter | Decimal,
+              ?           costPerBaseUnit?: DecimalNullableFilter | Decimal | Null,
+              ?           serialSelectionMode?: StringNullableFilter | String | Null,
+              ?           order?: OrderRelationFilter | OrderWhereInput,
+              ?           products?: ProductsNullableRelationFilter | ProductsWhereInput | Null,
+              ?           productvariants?: ProductVariantsNullableRelationFilter | ProductVariantsWhereInput | Null,
+              ?           services?: ServicesNullableRelationFilter | ServicesWhereInput | Null,
+              ?           unit?: UnitsNullableRelationFilter | UnitsWhereInput | Null,
+              ?           stockMovements?: StockMovementsListRelationFilter,
+              ?           selectedAssetItems?: OrderItemAssetItemListRelationFilter
+                        },
+                        select: {
+                          id: true,
+                          quantity: true,
+                          unitPrice: true,
+                          total: true,
+                          discount: true,
+                          discountMethod: true,
+                          taxNet: true,
+                          taxMethod: true,
+                          products: {
+                            select: {
+                              name: true
+                            }
+                          },
+                          productvariants: {
+                            select: {
+                              barcode: true,
+                              productType: true
+                            }
+                          },
+                          services: {
+                            select: {
+                              name: true
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              })
+
+Unknown argument `deletedAt`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async getPaymentReceipt (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:867:25)
+2026-04-24 21:32:59 error: Error fetching payment receipt: 
+Invalid `prisma.orderOnPayments.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:867:54
+
+  864 export const getPaymentReceipt = async (req: Request, res: Response): Promise<void> => {
+  865     const { id } = req.params;
+  866     try {
+→ 867         const payment = await prisma.orderOnPayments.findUnique({
+                where: {
+                  id: 5
+                },
+                include: {
+                  paymentMethods: {
+                    select: {
+                      name: true
+                    }
+                  },
+                  orders: {
+                    select: {
+                      ref: true,
+                      totalAmount: true,
+                      paidAmount: true,
+                      customer: {
+                        select: {
+                          name: true,
+                          phone: true
+                        }
+                      },
+                      branch: {
+                        select: {
+                          name: true
+                        }
+                      },
+                      items: {
+                        where: {
+                          deletedAt: null,
+                          ~~~~~~~~~
+              ?           AND?: OrderItemWhereInput | OrderItemWhereInput[],
+              ?           OR?: OrderItemWhereInput[],
+              ?           NOT?: OrderItemWhereInput | OrderItemWhereInput[],
+              ?           id?: IntFilter | Int,
+              ?           orderId?: IntFilter | Int,
+              ?           productId?: IntNullableFilter | Int | Null,
+              ?           productVariantId?: IntNullableFilter | Int | Null,
+              ?           serviceId?: IntNullableFilter | Int | Null,
+              ?           ItemType?: EnumItemTypeNullableFilter | ItemType | Null,
+              ?           unitId?: IntNullableFilter | Int | Null,
+              ?           unitQty?: DecimalNullableFilter | Decimal | Null,
+              ?           baseQty?: DecimalNullableFilter | Decimal | Null,
+              ?           cogs?: DecimalNullableFilter | Decimal | Null,
+              ?           taxNet?: DecimalNullableFilter | Decimal | Null,
+              ?           taxMethod?: StringNullableFilter | String | Null,
+              ?           discount?: DecimalNullableFilter | Decimal | Null,
+              ?           discountMethod?: StringNullableFilter | String | Null,
+              ?           total?: DecimalFilter | Decimal,
+              ?           quantity?: IntNullableFilter | Int | Null,
+              ?           price?: DecimalFilter | Decimal,
+              ?           costPerBaseUnit?: DecimalNullableFilter | Decimal | Null,
+              ?           serialSelectionMode?: StringNullableFilter | String | Null,
+              ?           order?: OrderRelationFilter | OrderWhereInput,
+              ?           products?: ProductsNullableRelationFilter | ProductsWhereInput | Null,
+              ?           productvariants?: ProductVariantsNullableRelationFilter | ProductVariantsWhereInput | Null,
+              ?           services?: ServicesNullableRelationFilter | ServicesWhereInput | Null,
+              ?           unit?: UnitsNullableRelationFilter | UnitsWhereInput | Null,
+              ?           stockMovements?: StockMovementsListRelationFilter,
+              ?           selectedAssetItems?: OrderItemAssetItemListRelationFilter
+                        },
+                        select: {
+                          id: true,
+                          quantity: true,
+                          unitPrice: true,
+                          total: true,
+                          discount: true,
+                          discountMethod: true,
+                          taxNet: true,
+                          taxMethod: true,
+                          products: {
+                            select: {
+                              name: true
+                            }
+                          },
+                          productvariants: {
+                            select: {
+                              barcode: true,
+                              productType: true
+                            }
+                          },
+                          services: {
+                            select: {
+                              name: true
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              })
+
+Unknown argument `deletedAt`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `prisma.orderOnPayments.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:867:54
+
+  864 export const getPaymentReceipt = async (req: Request, res: Response): Promise<void> => {
+  865     const { id } = req.params;
+  866     try {
+→ 867         const payment = await prisma.orderOnPayments.findUnique({
+                where: {
+                  id: 5
+                },
+                include: {
+                  paymentMethods: {
+                    select: {
+                      name: true
+                    }
+                  },
+                  orders: {
+                    select: {
+                      ref: true,
+                      totalAmount: true,
+                      paidAmount: true,
+                      customer: {
+                        select: {
+                          name: true,
+                          phone: true
+                        }
+                      },
+                      branch: {
+                        select: {
+                          name: true
+                        }
+                      },
+                      items: {
+                        where: {
+                          deletedAt: null,
+                          ~~~~~~~~~
+              ?           AND?: OrderItemWhereInput | OrderItemWhereInput[],
+              ?           OR?: OrderItemWhereInput[],
+              ?           NOT?: OrderItemWhereInput | OrderItemWhereInput[],
+              ?           id?: IntFilter | Int,
+              ?           orderId?: IntFilter | Int,
+              ?           productId?: IntNullableFilter | Int | Null,
+              ?           productVariantId?: IntNullableFilter | Int | Null,
+              ?           serviceId?: IntNullableFilter | Int | Null,
+              ?           ItemType?: EnumItemTypeNullableFilter | ItemType | Null,
+              ?           unitId?: IntNullableFilter | Int | Null,
+              ?           unitQty?: DecimalNullableFilter | Decimal | Null,
+              ?           baseQty?: DecimalNullableFilter | Decimal | Null,
+              ?           cogs?: DecimalNullableFilter | Decimal | Null,
+              ?           taxNet?: DecimalNullableFilter | Decimal | Null,
+              ?           taxMethod?: StringNullableFilter | String | Null,
+              ?           discount?: DecimalNullableFilter | Decimal | Null,
+              ?           discountMethod?: StringNullableFilter | String | Null,
+              ?           total?: DecimalFilter | Decimal,
+              ?           quantity?: IntNullableFilter | Int | Null,
+              ?           price?: DecimalFilter | Decimal,
+              ?           costPerBaseUnit?: DecimalNullableFilter | Decimal | Null,
+              ?           serialSelectionMode?: StringNullableFilter | String | Null,
+              ?           order?: OrderRelationFilter | OrderWhereInput,
+              ?           products?: ProductsNullableRelationFilter | ProductsWhereInput | Null,
+              ?           productvariants?: ProductVariantsNullableRelationFilter | ProductVariantsWhereInput | Null,
+              ?           services?: ServicesNullableRelationFilter | ServicesWhereInput | Null,
+              ?           unit?: UnitsNullableRelationFilter | UnitsWhereInput | Null,
+              ?           stockMovements?: StockMovementsListRelationFilter,
+              ?           selectedAssetItems?: OrderItemAssetItemListRelationFilter
+                        },
+                        select: {
+                          id: true,
+                          quantity: true,
+                          unitPrice: true,
+                          total: true,
+                          discount: true,
+                          discountMethod: true,
+                          taxNet: true,
+                          taxMethod: true,
+                          products: {
+                            select: {
+                              name: true
+                            }
+                          },
+                          productvariants: {
+                            select: {
+                              barcode: true,
+                              productType: true
+                            }
+                          },
+                          services: {
+                            select: {
+                              name: true
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              })
+
+Unknown argument `deletedAt`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async getPaymentReceipt (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:867:25)
+2026-04-24 21:34:52 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-04-24 21:36:08 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-04-24 21:40:56 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-04-25 08:34:00 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-04-25 11:53:20 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 

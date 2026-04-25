@@ -1573,6 +1573,20 @@ model CustomerEquipmentItem {
   unit              Units?             @relation("CEQItemUnit", fields: [unitId], references: [id])
 }
 
+model CompanySettings {
+  id            Int      @id @default(1)
+  companyNameKh String?  @db.VarChar(200)
+  companyNameEn String?  @db.VarChar(200)
+  addressKh     String?  @db.Text
+  addressEn     String?  @db.Text
+  phone         String?  @db.VarChar(50)
+  vatNumber     String?  @db.VarChar(100)
+  logoUrl       String?  @db.VarChar(500)
+  invoiceTerms  String?  @db.Text
+  updatedAt     DateTime @updatedAt
+  updatedBy     Int?
+}
+
 // How to run the Prisma Migrate
 // npx prisma migrate dev --name init or npx prisma migrate deploy
 // After run npx prisma migrate dev --name init or npx prisma migrate deploy and then run the below command

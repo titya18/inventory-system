@@ -9,100 +9,46 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { Print } from "@mui/icons-material";
 import { ArrowLeft } from "lucide-react";
+import { useCompanySettings } from "@/hooks/useCompanySettings";
+import { getLogoUrl } from "@/api/settings";
 
 // Extend Day.js with plugins
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const InvoiceHeader: React.FC<{ data: any }> = ({ data }) => {
+const InvoiceHeader: React.FC<{ data: any; settings: any }> = ({ settings }) => {
   return (
-    <div className="invoice-header" style={{ 
-      marginBottom: '20px',
-      borderBottom: '2px solid #ffab93',
-      paddingBottom: '10px'
-    }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between',
-        alignItems: 'flex-start'
-      }}>
-        {/* Left side - Company info */}
+    <div className="invoice-header" style={{ marginBottom: '20px', borderBottom: '2px solid #ffab93', paddingBottom: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div style={{ 
-            display: 'flex',
-            alignItems: 'center',
-            marginBottom: '10px'
-          }}>
-            <img 
-              src={`${import.meta.env.BASE_URL}admin_assets/images/izoom-logo.png`} 
-              alt="Logo" 
-              style={{ 
-                height: '80px',
-                marginRight: '15px'
-              }}
-            />
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+            <img src={getLogoUrl(settings.logoUrl)} alt="Logo" style={{ height: '80px', marginRight: '15px' }} />
           </div>
         </div>
-        
-        {/* Right side - Invoice details */}
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '10px 20px 20px 20px',
-            minWidth: '100px',
-          }}
-        >
-          <div
-            className="khmer-muol"
-            style={{
-              fontSize: '16px',
-              color: '#000000',
-              marginBottom: '10px',
-            }}
-          >
-            ក្រុមហ៊ុន អាយហ៊្សូម សឹលូសិន ឯ.ក
-          </div>
-
-          <div
-            style={{
-              fontSize: '14px',
-            }}
-          >
-            <div
-              style={{
-                color: '#000000',
-                fontWeight: 900,
-                fontSize: '14px',
-                fontFamily: '"Times New Roman", Times, serif',
-                marginBottom: '5px',
-              }}
-            >
-              iZOOM SOLUTIONS CO., LTD
+        <div style={{ textAlign: 'center', padding: '10px 20px 20px 20px', minWidth: '100px' }}>
+          {settings.companyNameKh && (
+            <div className="khmer-muol" style={{ fontSize: '16px', color: '#000000', marginBottom: '10px' }}>
+              {settings.companyNameKh}
             </div>
-
-            <div
-              style={{
-                color: '#000000',
-                fontSize: '13px',
-                fontFamily: '"Times New Roman", Times, serif',
-              }}
-            >
-              លេខអត្តសញ្ញាណកម្ម អតប <b>(VATTIN) K008-902305248</b>
-            </div>
+          )}
+          <div style={{ fontSize: '14px' }}>
+            {settings.companyNameEn && (
+              <div style={{ color: '#000000', fontWeight: 900, fontSize: '14px', fontFamily: '"Times New Roman", Times, serif', marginBottom: '5px' }}>
+                {settings.companyNameEn}
+              </div>
+            )}
+            {settings.vatNumber && (
+              <div style={{ color: '#000000', fontSize: '13px', fontFamily: '"Times New Roman", Times, serif' }}>
+                លេខអត្តសញ្ញាណកម្ម អតប <b>(VATTIN) {settings.vatNumber}</b>
+              </div>
+            )}
           </div>
         </div>
-
       </div>
-      <div style={{ 
-        fontSize: '13px',
-        color: '#555',
-        marginTop: '5px',
-        lineHeight: '1.5'
-      }}>
-        <div>អាសយដ្ឋាន៖ ផ្ទះ#៤៨ ផ្លូវបុរីអង្គរ (បុរីអង្គរភ្នំពេញ) ភូមិបឹងរាំង សង្កាត់ទួលសង្កែទី២ ខណ្ឌឬស្សីកែវ រាជធានីភ្នំពេញ</div>
-        <div>Address N<sup>o</sup> #48, St. Borey Angkor (Borey Angkor Phnom Penh) Sangkat Tuol Sangke 2, Khan Russeykeo, Phnom Penh</div>
-        <div>ទូរស័ព្ទលេខ/Telephone : +855 16 589 299</div>
-        {/* <div>Email: sales@izooms.com.kh</div> */}
+      <div style={{ fontSize: '13px', color: '#555', marginTop: '5px', lineHeight: '1.5' }}>
+        {settings.addressKh && <div>{settings.addressKh}</div>}
+        {settings.addressEn && <div>Address N<sup>o</sup> {settings.addressEn}</div>}
+        {settings.phone    && <div>ទូរស័ព្ទលេខ/Telephone : {settings.phone}</div>}
       </div>
     </div>
   );
@@ -601,7 +547,8 @@ const PrintQuotation: React.FC = () => {
   const printRef = useRef<HTMLDivElement>(null);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+  const { settings } = useCompanySettings();
+
   const [quotationData, setQuotationData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -694,7 +641,7 @@ const PrintQuotation: React.FC = () => {
           },
           
           notes: quotation.note,
-          terms: "Please pay within 15 days from the date of invoice, overdue interest @ 14% will be charged on delayed payments.",
+          terms: settings.invoiceTerms || "Please pay within 15 days from the date of invoice, overdue interest @ 14% will be charged on delayed payments.",
           paymentMethod: "Payment Made Via bank transfer / Cheque",
           bankDetails: {
             bankName: "Lorn Titya",
@@ -800,11 +747,11 @@ const PrintQuotation: React.FC = () => {
           boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
         }}
       >
-        <InvoiceHeader data={quotationData} />
+        <InvoiceHeader data={quotationData} settings={settings} />
         <AddressSection data={quotationData} />
         <InvoiceItemsTable items={quotationData.items} />
         <TotalsSection totals={quotationData.totals} />
-        <TermsNotesSection data={quotationData} />
+        <TermsNotesSection data={{ ...quotationData, terms: settings.invoiceTerms || quotationData?.terms }} />
         {/* <InvoiceFooter data={quotationData} /> */}
       </div>
     </>
