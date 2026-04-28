@@ -1,6 +1,6 @@
 import { useCart } from "@/hooks/useCart";
 import { Button } from "@/components/ui/button";
-import { Minus, Plus, Trash2, Edit } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 export const OrderDetails = () => {
@@ -30,14 +30,11 @@ export const OrderDetails = () => {
           {items.map((item) => (
             <tr key={item.product.id} className="border-b border-border/50 animate-fade-in">
               <td className="py-3">
-                <div className="flex items-center gap-1">
-                  <span className="text-sm font-medium text-foreground line-clamp-1">
-                    {item.product.name}
-                  </span>
-                  <Edit className="w-3 h-3 text-muted-foreground" />
-                </div>
+                <span className="text-sm font-medium text-foreground line-clamp-1 block">
+                  {item.product.name}
+                </span>
                 <span className="text-xs text-muted-foreground">
-                  Price: ${item.product.price}
+                  ${Number(item.product.price).toFixed(2)} / {item.product.unitName || "pcs"}
                 </span>
               </td>
               <td className="py-3">
@@ -65,7 +62,7 @@ export const OrderDetails = () => {
               </td>
               <td className="py-3 text-right">
                 <span className="text-sm font-semibold">
-                  ${(item.product.price * item.quantity).toLocaleString()}
+                  ${(item.product.price * item.quantity).toFixed(2)}
                 </span>
               </td>
               <td className="py-3">

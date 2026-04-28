@@ -350,8 +350,8 @@ const StockRequest: React.FC = () => {
             </div>
 
             {showDeleteModal && (
-                <div className="fixed inset-0 bg-[black]/60 z-[999] overflow-y-auto">
-                    <div className="flex items-center justify-center min-h-screen px-4">
+                <div className="fixed inset-0 bg-[black]/60 z-[999] flex items-center justify-center p-4">
+                    
                         <div className="panel border-0 p-0 rounded-lg overflow-hidden w-full max-w-lg my-8">
                             <div className="flex bg-[#fbfbfb] dark:bg-[#121c2c] items-center justify-between px-5 py-3">
                                 <h5 className="flex font-bold text-lg">
@@ -389,13 +389,12 @@ const StockRequest: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
                 </div>
             )}
 
             {showNoteModal && (
-                <div className="fixed inset-0 bg-[black]/60 z-[999] overflow-y-auto">
-                    <div className="flex items-center justify-center min-h-screen px-4">
+                <div className="fixed inset-0 bg-[black]/60 z-[999] flex items-center justify-center p-4">
+                    
                         <div className="panel border-0 p-0 rounded-lg overflow-hidden w-full max-w-lg my-8">
                             <div className="flex bg-[#fbfbfb] dark:bg-[#121c2c] items-center justify-between px-5 py-3">
                                 <h5 className="flex font-bold text-lg">
@@ -421,7 +420,6 @@ const StockRequest: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
                 </div>
             )}
         </>

@@ -1,50 +1,36 @@
-import { categories } from "@/data/products";
-import { Button } from "@/components/ui/button";
-import { 
-  LayoutGrid, 
-  Headphones, 
-  Footprints, 
-  Smartphone, 
-  Watch, 
-  Laptop,
-  Cpu,
-  Gem
-} from "lucide-react";
-
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  grid: LayoutGrid,
-  headphones: Headphones,
-  shoe: Footprints,
-  smartphone: Smartphone,
-  watch: Watch,
-  laptop: Laptop,
-  cpu: Cpu,
-  gem: Gem,
-};
+interface Category { id: number | string; name: string; }
 
 interface CategoryTabsProps {
+  categories: Category[];
   selectedCategory: string;
-  onCategoryChange: (category: string) => void;
+  onCategoryChange: (id: string) => void;
+  productCounts?: Record<string, number>;
 }
 
-export const CategoryTabs = ({ selectedCategory, onCategoryChange }: CategoryTabsProps) => {
+export const CategoryTabs = ({ categories, selectedCategory, onCategoryChange, productCounts = {} }: CategoryTabsProps) => {
   return (
-    <div className="flex flex-wrap gap-2">
-      {categories.map((category) => {
-        const Icon = iconMap[category.icon] || LayoutGrid;
-        const isActive = selectedCategory === category.id;
-        
+    <div className="flex gap-2 flex-nowrap min-w-0">
+      {categories.map((cat) => {
+        const isActive = selectedCategory === String(cat.id);
+        const count = productCounts[String(cat.id)] ?? 0;
+
         return (
-          <Button
-            key={category.id}
-            variant={isActive ? "categoryActive" : "category"}
-            size="sm"
-            className="gap-2 px-4"
-            onClick={() => onCategoryChange(category.id)}
+          <button
+            key={cat.id}
+            onClick={() => onCategoryChange(String(cat.id))}
+            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+              isActive
+                ? "bg-primary text-white shadow-sm"
+                : "bg-card border border-border text-muted-foreground hover:border-primary hover:text-primary"
+            }`}
           >
-            <Icon className="w-4 h-4" />
-            {category.name}
-          </Button>
+            {cat.name}
+            <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+              isActive ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+            }`}>
+              {count}
+            </span>
+          </button>
         );
       })}
     </div>

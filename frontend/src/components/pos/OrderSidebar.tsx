@@ -1,81 +1,85 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
 import { Button } from "@/components/ui/button";
 import { OrderDetails } from "./OrderDetails";
-import { 
-  Percent, 
-  Receipt, 
-  Truck, 
-  Pause, 
-  XCircle, 
-  CreditCard, 
-  ClipboardList, 
-  RefreshCw,
-  ArrowRightLeft,
-  Banknote,
-  Wallet,
-  Gift,
-  Building,
-  FileCheck,
-  UserPlus
-} from "lucide-react";
+import { PaymentModal } from "./PaymentModal";
+import { getAllCustomers } from "@/api/customer";
+import { getAllPaymentMethods } from "@/api/paymentMethod";
+import { getLastExchangeRate } from "@/api/exchangeRate";
+import { CustomerType, PaymentMethodType } from "@/data_types/types";
+import { RefreshCw, XCircle, UserPlus } from "lucide-react";
 
-export const OrderSidebar = () => {
-  const { 
-    items, 
-    subtotal, 
-    shipping, 
-    tax, 
-    discount, 
-    grandTotal, 
-    clearCart 
-  } = useCart();
+interface OrderSidebarProps {
+  branchId: number;
+}
 
-  const orderId = `#${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+export const OrderSidebar = ({ branchId }: OrderSidebarProps) => {
+  const navigate = useNavigate();
+  const { items, subtotal, grandTotal, clearCart } = useCart();
 
-  const actionButtons = [
-    { label: "Discount", variant: "discount" as const, icon: Percent },
-    { label: "Tax", variant: "tax" as const, icon: Receipt },
-    { label: "Shipping", variant: "shipping" as const, icon: Truck },
-    { label: "Hold", variant: "hold" as const, icon: Pause },
-    { label: "Void", variant: "void" as const, icon: XCircle },
-    { label: "Payment", variant: "payment" as const, icon: CreditCard },
-    { label: "View Orders", variant: "orders" as const, icon: ClipboardList },
-    { label: "Reset", variant: "reset" as const, icon: RefreshCw, onClick: clearCart },
-    { label: "Transaction", variant: "transaction" as const, icon: ArrowRightLeft },
-  ];
+  const [customers, setCustomers] = useState<CustomerType[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodType[]>([]);
+  const [exchangeRate, setExchangeRate] = useState<number>(4100);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number>(0);
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<number | null>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
-  const paymentMethods = [
-    { id: "cash", label: "Cash", icon: Banknote },
-    { id: "card", label: "Card", icon: CreditCard },
-    { id: "points", label: "Points", icon: Gift },
-    { id: "deposit", label: "Deposit", icon: Building },
-    { id: "cheque", label: "Cheque", icon: FileCheck },
-  ];
+  useEffect(() => {
+    getAllCustomers()
+      .then(setCustomers)
+      .catch(() => {});
+
+    getAllPaymentMethods()
+      .then(setPaymentMethods)
+      .catch(() => {});
+
+    getLastExchangeRate()
+      .then((rate) => {
+        if (rate?.amount) setExchangeRate(Number(rate.amount));
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleVoid = () => {
+    if (items.length === 0) return;
+    if (window.confirm("Void this order? All items will be removed.")) {
+      clearCart();
+    }
+  };
+
+  const handlePaySuccess = (paymentId: number) => {
+    setIsPaymentModalOpen(false);
+    navigate(`/print-payment-receipt/${paymentId}`);
+  };
+
+  const total = grandTotal();
 
   return (
-    <aside className="w-[380px] bg-sidebar border-l border-sidebar-border flex flex-col h-full">
+    <aside className="w-full lg:w-[320px] flex-shrink-0 bg-sidebar border-t lg:border-t-0 lg:border-l border-sidebar-border flex flex-col lg:h-full">
       {/* Header */}
       <div className="p-4 border-b border-sidebar-border">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <h2 className="font-heading font-semibold text-lg text-sidebar-foreground">
-              New Order
-            </h2>
-            <span className="bg-warning text-warning-foreground text-xs font-bold px-2 py-0.5 rounded">
-              {orderId}
-            </span>
-          </div>
+          <h2 className="font-heading font-semibold text-lg text-sidebar-foreground">
+            New Order
+          </h2>
           <Button variant="ghost" size="sm" className="gap-1 text-primary hover:text-primary">
             <UserPlus className="w-4 h-4" />
-            Add Customer
+            Walk-in
           </Button>
         </div>
 
-        <select className="w-full h-10 px-3 rounded-lg border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="">Choose a Name</option>
-          <option value="john">John Doe</option>
-          <option value="jane">Jane Smith</option>
-          <option value="alex">Alex Johnson</option>
+        <select
+          className="w-full h-10 px-3 rounded-lg border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          value={selectedCustomerId}
+          onChange={(e) => setSelectedCustomerId(Number(e.target.value))}
+        >
+          <option value={0}>Walk-in Customer</option>
+          {customers.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}{c.phone ? ` — ${c.phone}` : ""}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -97,70 +101,98 @@ export const OrderSidebar = () => {
           <div className="mt-4 pt-4 border-t border-sidebar-border space-y-2 text-sm">
             <div className="flex justify-between text-sidebar-foreground">
               <span>Sub Total</span>
-              <span className="font-medium">${subtotal().toLocaleString()}</span>
+              <span className="font-medium">${subtotal().toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sidebar-foreground">
-              <span>Shipping</span>
-              <span className="font-medium">${shipping}</span>
+              <span>Tax</span>
+              <span className="font-medium">$0.00</span>
             </div>
             <div className="flex justify-between text-sidebar-foreground">
-              <span>Tax (15%)</span>
-              <span className="font-medium">${tax().toFixed(0)}</span>
-            </div>
-            <div className="flex justify-between text-success">
-              <span>Discount (5%)</span>
-              <span className="font-medium">-${discount().toFixed(0)}</span>
+              <span>Discount</span>
+              <span className="font-medium">$0.00</span>
             </div>
             <div className="flex justify-between text-lg font-bold pt-2 border-t border-sidebar-border">
               <span>Grand Total</span>
-              <span>${grandTotal().toLocaleString()}</span>
+              <span>${total.toFixed(2)}</span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Action Buttons */}
+      {/* Actions + Payment */}
       <div className="p-4 border-t border-sidebar-border">
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          {actionButtons.map((btn) => (
-            <Button
-              key={btn.label}
-              variant={btn.variant}
-              size="sm"
-              className="gap-1 text-xs"
-              onClick={btn.onClick}
-            >
-              <btn.icon className="w-3 h-3" />
-              {btn.label}
-            </Button>
-          ))}
+        {/* Quick action buttons */}
+        <div className="flex gap-2 mb-4">
+          <Button
+            variant="reset"
+            size="sm"
+            className="gap-1 text-xs flex-1"
+            onClick={clearCart}
+          >
+            <RefreshCw className="w-3 h-3" />
+            Reset
+          </Button>
+          <Button
+            variant="void"
+            size="sm"
+            className="gap-1 text-xs flex-1"
+            onClick={handleVoid}
+            disabled={items.length === 0}
+          >
+            <XCircle className="w-3 h-3" />
+            Void
+          </Button>
         </div>
 
         {/* Payment Methods */}
-        <div className="mb-4">
-          <p className="text-sm font-medium text-sidebar-foreground mb-2">
-            Select Payment
-          </p>
-          <div className="flex gap-2">
-            {paymentMethods.map((method) => (
-              <button
-                key={method.id}
-                className="flex-1 flex flex-col items-center gap-1 p-2 rounded-lg bg-card border border-border hover:border-primary hover:bg-primary/5 transition-colors"
-              >
-                <method.icon className="w-5 h-5 text-warning" />
-                <span className="text-xs text-sidebar-foreground">
-                  {method.label}
-                </span>
-              </button>
-            ))}
+        {paymentMethods.length > 0 && (
+          <div className="mb-4">
+            <p className="text-sm font-medium text-sidebar-foreground mb-2">
+              Select Payment
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {paymentMethods.map((method) => (
+                <button
+                  key={method.id}
+                  className={`flex-1 min-w-[70px] flex flex-col items-center gap-1 p-2 rounded-lg border transition-colors ${
+                    selectedPaymentMethodId === method.id
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "bg-card border-border hover:border-primary hover:bg-primary/5"
+                  }`}
+                  onClick={() => setSelectedPaymentMethodId(method.id ?? null)}
+                >
+                  <span className="text-xs text-sidebar-foreground font-medium">
+                    {method.name}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Pay Button */}
-        <Button variant="pay" className="w-full" size="xl">
-          Pay: ${grandTotal().toLocaleString()}
+        <Button
+          variant="pay"
+          className="w-full"
+          size="xl"
+          disabled={items.length === 0 || !selectedPaymentMethodId}
+          onClick={() => setIsPaymentModalOpen(true)}
+        >
+          Pay: ${total.toFixed(2)}
         </Button>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        branchId={branchId}
+        customerId={selectedCustomerId}
+        grandTotal={total}
+        exchangeRate={exchangeRate}
+        paymentMethodId={selectedPaymentMethodId}
+        onSuccess={handlePaySuccess}
+      />
     </aside>
   );
 };

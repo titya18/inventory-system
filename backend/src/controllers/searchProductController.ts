@@ -79,6 +79,10 @@ export const searchProducts = async (req: Request, res: Response): Promise<void>
           select: {
             id: true,
             name: true,
+            image: true,
+            categories: {
+              select: { id: true, name: true },
+            },
             unitConversions: {
               select: {
                 id: true,
