@@ -138,60 +138,62 @@ const Pos: React.FC = () => {
 
       <div className="flex flex-col lg:flex-row lg:flex-1 lg:overflow-hidden">
         {/* ── Left: Products ── */}
-        <main className="flex flex-col lg:flex-1 lg:overflow-hidden">
+        <main className="flex-1 min-w-0 flex flex-col lg:overflow-hidden">
 
           {/* Top bar */}
-          <div className="px-4 pt-3 pb-2 border-b border-border">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div>
-                  <h1 className="font-heading text-lg font-semibold text-foreground">
-                    Welcome, {user?.name ?? "User"}
-                  </h1>
-                  <p className="text-xs text-muted-foreground">{formattedDate}</p>
-                </div>
-
-                {/* Branch selector for admin / users without a branch */}
-                {!userBranchId && branches.length > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <GitBranch className="w-4 h-4 text-muted-foreground" />
-                    <select
-                      className="h-8 px-2 rounded-lg border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                      value={selectedBranchId ?? ""}
-                      onChange={(e) => setSelectedBranchId(Number(e.target.value))}
-                    >
-                      {branches.map((b) => (
-                        <option key={b.id} value={b.id}>{b.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+          <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-indigo-50 via-white to-blue-50 flex items-center gap-3 flex-shrink-0">
+            {/* User avatar + info */}
+            <div className="flex items-center gap-2.5 flex-shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center shadow-sm flex-shrink-0">
+                <span className="text-white text-sm font-bold">
+                  {(user?.name ?? "U").charAt(0).toUpperCase()}
+                </span>
               </div>
-
-              {/* Search */}
-              <div className="relative w-72">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Search by name or barcode…"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-9 pl-9 pr-9 rounded-lg border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
+              <div>
+                <p className="text-sm font-bold text-gray-800 leading-none">{user?.name ?? "User"}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">{formattedDate}</p>
               </div>
+            </div>
+
+            {/* Branch selector */}
+            {!userBranchId && branches.length > 0 && (
+              <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2.5 h-9 shadow-sm">
+                <GitBranch className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
+                <select
+                  className="bg-transparent text-sm text-gray-700 focus:outline-none cursor-pointer"
+                  value={selectedBranchId ?? ""}
+                  onChange={(e) => setSelectedBranchId(Number(e.target.value))}
+                >
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Search */}
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search by name or barcode…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-9 pl-9 pr-9 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-sm"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
 
           {/* Category tabs */}
-          <div className="px-4 py-2 border-b border-border overflow-x-auto flex-shrink-0">
+          <div className="px-4 py-2.5 border-b border-gray-100 bg-white overflow-x-auto flex-shrink-0">
             <CategoryTabs
               categories={categories}
               selectedCategory={selectedCategory}
@@ -201,7 +203,7 @@ const Pos: React.FC = () => {
           </div>
 
           {/* Product grid */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-950">
             {!effectiveBranchId ? (
               <div className="flex flex-col items-center justify-center h-64 gap-2 text-muted-foreground">
                 <GitBranch className="w-10 h-10 opacity-30" />

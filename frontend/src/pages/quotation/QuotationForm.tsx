@@ -955,7 +955,7 @@ const QuotationForm: React.FC = () => {
             const isProduct = QuotationDetailData.ItemType === "PRODUCT";
 
             const newDetail: QuotationDetailType = {
-                id: QuotationDetailData.id ?? Date.now(),
+                id: QuotationDetailData.id || Date.now(),
                 quotationId: QuotationDetailData.quotationId ?? 0,
 
                 productId: QuotationDetailData.productId ?? 0,

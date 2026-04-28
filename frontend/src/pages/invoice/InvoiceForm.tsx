@@ -771,7 +771,7 @@ const InvoiceForm: React.FC = () => {
             const isProduct = InvoiceDetailData.ItemType === "PRODUCT";
 
             const newDetail: InvoiceDetailType = {
-                id: InvoiceDetailData.id ?? Date.now(),
+                id: InvoiceDetailData.id || Date.now(),
                 orderId: InvoiceDetailData.orderId ?? 0,
 
                 productId: InvoiceDetailData.productId ?? 0,
