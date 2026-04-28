@@ -81,7 +81,7 @@ import NotFound from "./pages/notfound/NotFount";
 const App: React.FC = () => {
     return (
         // <Router>
-        <BrowserRouter basename="/inventories">
+        <BrowserRouter basename="/inventory">
             <AppContextProvider>
                 <LanguageProvider>
                     <Routes>
