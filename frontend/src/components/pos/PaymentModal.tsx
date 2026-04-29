@@ -47,25 +47,34 @@ export const PaymentModal = ({
       const ref = await getNextInvoiceRef(branchId);
 
       // 2. Build invoice items from cart
-      const invoiceItems = items.map((item) => ({
-        id: 0,
-        orderId: 0,
-        productId: item.product.productId,
-        productVariantId: item.product.variantId,
-        ItemType: "PRODUCT",
-        quantity: item.quantity,
-        unitQty: item.quantity,
-        baseQty: item.quantity,
-        unitId: item.product.unitId ?? null,
-        price: item.product.price,
-        taxNet: 0,
-        taxMethod: "0",
-        discount: 0,
-        discountMethod: "0",
-        total: item.product.price * item.quantity,
-        costPerBaseUnit: 0,
-        stocks: item.product.stock,
-      }));
+      const invoiceItems = items.map((item) => {
+        const unitQty = item.quantity;
+        const baseQty = unitQty * (item.multiplier ?? 1);
+        return {
+          id: 0,
+          orderId: 0,
+          productId: item.product.productId,
+          productVariantId: item.product.variantId,
+          ItemType: "PRODUCT",
+          quantity: unitQty,
+          unitQty,
+          baseQty,
+          unitId: item.unitId ?? item.product.unitId ?? null,
+          price: item.unitPrice,
+          taxNet: 0,
+          taxMethod: "0",
+          discount: 0,
+          discountMethod: "0",
+          total: item.unitPrice * unitQty,
+          costPerBaseUnit: 0,
+          stocks: item.product.stock,
+          // Serial tracking
+          serialSelectionMode: item.serialSelectionMode ?? "AUTO",
+          selectedTrackedItemIds: item.selectedTrackedItemIds ?? [],
+          selectedTrackedItems: item.selectedTrackedItems ?? [],
+          trackingType: item.product.trackingType,
+        };
+      });
 
       // 3. Build invoice payload
       const invoicePayload: InvoiceType = {

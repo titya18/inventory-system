@@ -13,11 +13,11 @@ interface OrderSidebarProps {
   branchId: number;
 }
 
-const METHOD_STYLES = [
-  { icon: Banknote,   active: "bg-emerald-500 text-white border-emerald-500", idle: "bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100" },
-  { icon: Building2,  active: "bg-blue-500 text-white border-blue-500",    idle: "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100" },
-  { icon: CreditCard, active: "bg-violet-500 text-white border-violet-500", idle: "bg-violet-50 text-violet-600 border-violet-200 hover:bg-violet-100" },
-  { icon: Wallet,     active: "bg-amber-500 text-white border-amber-500",   idle: "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100" },
+const METHOD_COLORS = [
+  { icon: Banknote,   active: { background: '#059669', color: '#fff', borderColor: '#059669' }, idle: { background: '#ecfdf5', color: '#059669', borderColor: '#6ee7b7' } },
+  { icon: Building2,  active: { background: '#2563eb', color: '#fff', borderColor: '#2563eb' }, idle: { background: '#eff6ff', color: '#2563eb', borderColor: '#93c5fd' } },
+  { icon: CreditCard, active: { background: '#7c3aed', color: '#fff', borderColor: '#7c3aed' }, idle: { background: '#f5f3ff', color: '#7c3aed', borderColor: '#c4b5fd' } },
+  { icon: Wallet,     active: { background: '#d97706', color: '#fff', borderColor: '#d97706' }, idle: { background: '#fffbeb', color: '#d97706', borderColor: '#fcd34d' } },
 ];
 
 export const OrderSidebar = ({ branchId }: OrderSidebarProps) => {
@@ -54,51 +54,56 @@ export const OrderSidebar = ({ branchId }: OrderSidebarProps) => {
   return (
     <aside className="lg:w-[340px] flex-shrink-0 flex flex-col lg:h-full border-t lg:border-t-0 lg:border-l border-gray-200 bg-gray-50">
 
-      {/* ── Dark header ── */}
-      <div className="flex-shrink-0 bg-gray-900 px-4 pt-4 pb-3">
-        {/* Title row */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
-              <ShoppingCart className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-white font-bold text-sm tracking-widest uppercase">New Order</span>
-            {items.length > 0 && (
-              <span className="bg-primary text-white text-[10px] font-extrabold rounded-full w-5 h-5 flex items-center justify-center shadow">
-                {items.length}
-              </span>
-            )}
+      {/* ── Dark header: title + controls only ── */}
+      <div className="flex-shrink-0 px-4 py-3 flex items-center justify-between" style={{ backgroundColor: '#1e293b' }}>
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
+            <ShoppingCart className="w-3.5 h-3.5" style={{ color: '#94a3b8' }} />
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={clearCart}
-              title="Reset"
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={handleVoid}
-              disabled={items.length === 0}
-              title="Void"
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-red-400 hover:bg-white/10 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
-            >
-              <XCircle className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <span className="font-bold text-sm tracking-wider uppercase" style={{ color: '#e2e8f0' }}>New Order</span>
+          {items.length > 0 && (
+            <span className="text-[10px] font-extrabold rounded-full w-5 h-5 flex items-center justify-center" style={{ backgroundColor: '#6366f1', color: '#fff' }}>
+              {items.length}
+            </span>
+          )}
         </div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={clearCart}
+            title="Reset order"
+            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+            style={{ color: '#94a3b8', backgroundColor: 'transparent' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={handleVoid}
+            disabled={items.length === 0}
+            title="Void order"
+            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+            style={{ color: items.length === 0 ? '#475569' : '#f87171', backgroundColor: 'transparent', cursor: items.length === 0 ? 'not-allowed' : 'pointer' }}
+            onMouseEnter={e => { if (items.length > 0) e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.15)'; }}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <XCircle className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
 
-        {/* Customer select */}
-        <div className="flex items-center gap-2 bg-white/10 border border-white/10 rounded-xl px-3 py-2">
-          <User className="w-3.5 h-3.5 text-white/50 flex-shrink-0" />
+      {/* ── Customer selector (light bg so native dropdown is readable) ── */}
+      <div className="flex-shrink-0 px-3 py-2 border-b border-gray-100" style={{ backgroundColor: '#f8fafc' }}>
+        <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-gray-200">
+          <User className="w-3.5 h-3.5 flex-shrink-0 text-indigo-400" />
           <select
-            className="bg-transparent text-white text-sm flex-1 focus:outline-none appearance-none cursor-pointer"
+            className="bg-transparent text-sm flex-1 focus:outline-none cursor-pointer text-gray-700"
             value={selectedCustomerId}
             onChange={(e) => setSelectedCustomerId(Number(e.target.value))}
           >
-            <option value={0} className="text-gray-900">Walk-in Customer</option>
+            <option value={0}>Walk-in Customer</option>
             {customers.map((c) => (
-              <option key={c.id} value={c.id} className="text-gray-900">
+              <option key={c.id} value={c.id}>
                 {c.name}{c.phone ? ` — ${c.phone}` : ""}
               </option>
             ))}
@@ -131,9 +136,12 @@ export const OrderSidebar = ({ branchId }: OrderSidebarProps) => {
         </div>
 
         {/* Grand total highlight */}
-        <div className="mx-4 mb-3 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 px-4 py-3 flex items-center justify-between shadow-md shadow-indigo-500/20">
-          <span className="text-indigo-100 text-sm font-semibold">Grand Total</span>
-          <span className="text-white font-extrabold text-2xl">${total.toFixed(2)}</span>
+        <div
+          className="mx-4 mb-2 rounded-xl px-3 py-2 flex items-center justify-between"
+          style={{ background: 'linear-gradient(to right,#4f46e5,#6366f1)', boxShadow: '0 3px 10px rgba(99,102,241,0.25)' }}
+        >
+          <span className="text-xs font-semibold" style={{ color: '#c7d2fe' }}>Grand Total</span>
+          <span className="font-extrabold text-lg" style={{ color: '#fff' }}>${total.toFixed(2)}</span>
         </div>
 
         {/* Payment methods */}
@@ -144,16 +152,16 @@ export const OrderSidebar = ({ branchId }: OrderSidebarProps) => {
             </p>
             <div className="grid grid-cols-2 gap-2">
               {paymentMethods.map((method, i) => {
-                const style = METHOD_STYLES[i % METHOD_STYLES.length];
-                const Icon = style.icon;
+                const colors = METHOD_COLORS[i % METHOD_COLORS.length];
+                const Icon = colors.icon;
                 const isSelected = selectedPaymentMethodId === method.id;
+                const btnStyle = isSelected ? colors.active : colors.idle;
                 return (
                   <button
                     key={method.id}
                     onClick={() => setSelectedPaymentMethodId(method.id ?? null)}
-                    className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs font-bold transition-all ${
-                      isSelected ? style.active : style.idle
-                    }`}
+                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl border text-xs font-bold transition-all"
+                    style={{ ...btnStyle, borderWidth: '1.5px', borderStyle: 'solid' }}
                   >
                     <Icon className="w-3.5 h-3.5" />
                     {method.name}
@@ -165,17 +173,20 @@ export const OrderSidebar = ({ branchId }: OrderSidebarProps) => {
         )}
 
         {/* Pay button */}
-        <div className="px-4 pb-4">
-          <button
-            disabled={items.length === 0 || !selectedPaymentMethodId}
-            onClick={() => setIsPaymentModalOpen(true)}
-            className="w-full py-3.5 rounded-xl font-extrabold text-base transition-all active:scale-[0.98]
-              bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600
-              text-white shadow-lg shadow-green-500/30
-              disabled:from-gray-100 disabled:to-gray-100 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed"
-          >
-            {items.length === 0 ? "Select items to pay" : `Pay  $${total.toFixed(2)}`}
-          </button>
+        <div className="px-4 pb-4 mt-2">
+          {(items.length === 0 || !selectedPaymentMethodId) ? (
+            <div className="w-full py-2.5 rounded-xl text-sm font-medium text-center border-2 border-dashed border-gray-200 text-gray-400 select-none">
+              {items.length === 0 ? "Add items to pay" : "Select payment method"}
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsPaymentModalOpen(true)}
+              className="w-full py-2.5 rounded-xl font-bold text-sm transition-all active:scale-[0.98]"
+              style={{ background: 'linear-gradient(to right,#22c55e,#10b981)', color: '#fff', boxShadow: '0 4px 14px rgba(34,197,94,0.4)' }}
+            >
+              Pay  ${total.toFixed(2)}
+            </button>
+          )}
         </div>
       </div>
 

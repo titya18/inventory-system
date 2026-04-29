@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import CustomerSearchInput from "@/components/CustomerSearchInput";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faSave, faCirclePlus } from "@fortawesome/free-solid-svg-icons";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
@@ -1497,17 +1498,12 @@ const QuotationForm: React.FC = () => {
                                 <div>
                                     <label>Customer</label>
                                     <div className="flex">
-                                        <select 
-                                            id="customerId" className="form-input ltr:rounded-r-none rtl:rounded-l-none ltr:border-r-0 rtl:border-l-0" 
-                                            {...register("customerId")} 
-                                        >
-                                            <option value="">Select a customer...</option>
-                                            {customers.map((option) => (
-                                            <option key={option.id} value={option.id}>
-                                                {option.name}
-                                            </option>
-                                            ))}
-                                        </select>
+                                        <CustomerSearchInput
+                                            customers={customers}
+                                            value={watch("customerId")}
+                                            onChange={(id) => setValue("customerId", id ? Number(id) : undefined)}
+                                            className="flex-1"
+                                        />
                                         <button type="button" onClick={() => { setIsCustomerModalOpen(true) }} className="bg-secondary text-white flex justify-center items-center ltr:rounded-r-md rtl:rounded-l-md px-3 font-semibold border ltr:border-l-0 rtl:border-r-0 border-secondary">
                                             <FontAwesomeIcon icon={faCirclePlus} />
                                         </button>

@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import autoprefixer from 'autoprefixer';
 
 export default defineConfig({
   plugins: [react()],
@@ -10,10 +11,17 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  css: {
+    postcss: {
+      plugins: [autoprefixer()],
+    },
+  },
   server: {
     port: 3000,
   },
   build: {
+    target: ['chrome87', 'firefox78', 'safari14', 'edge88'],
+    cssTarget: ['chrome87', 'firefox78', 'safari14', 'edge88'],
     rollupOptions: {
       output: {
         manualChunks: {

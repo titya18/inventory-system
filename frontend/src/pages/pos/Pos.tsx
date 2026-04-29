@@ -18,7 +18,7 @@ export interface POSCategory {
   name: string;
 }
 
-const mapVariantToProduct = (v: any): POSProduct => {
+const mapVariantToProduct = (v: any, branchId: number): POSProduct => {
   const retailUnit =
     v.unitOptions?.find((u: any) => u.unitId === v.defaultRetailUnitId) ??
     v.unitOptions?.find((u: any) => u.isBaseUnit) ??
@@ -28,6 +28,14 @@ const mapVariantToProduct = (v: any): POSProduct => {
   const image = rawImage
     ? rawImage.startsWith("http") ? rawImage : `${API_BASE}/${rawImage}`
     : null;
+
+  const unitOptions = (v.unitOptions ?? []).map((u: any) => ({
+    unitId: u.unitId,
+    unitName: u.unitName,
+    price: Number(u.suggestedRetailPrice ?? u.price ?? 0),
+    isBaseUnit: Boolean(u.isBaseUnit),
+    multiplier: Number(u.conversionQty ?? u.multiplier ?? 1),
+  }));
 
   return {
     id: String(v.id),
@@ -43,6 +51,8 @@ const mapVariantToProduct = (v: any): POSProduct => {
     trackingType: v.trackingType ?? "NONE",
     unitId: retailUnit?.unitId ?? v.defaultRetailUnitId ?? v.baseUnitId ?? null,
     unitName: retailUnit?.unitName ?? v.baseUnit?.name ?? "",
+    branchId,
+    unitOptions,
   };
 };
 
@@ -66,15 +76,17 @@ const Pos: React.FC = () => {
   const userBranchId = user?.branchId && user.branchId > 0 ? user.branchId : null;
   const effectiveBranchId = userBranchId ?? selectedBranchId;
 
+  // Keep a ref so loadProducts always reads latest branchId without being recreated
+  const branchIdRef = useRef(effectiveBranchId);
+  branchIdRef.current = effectiveBranchId;
+
   // Load branches for admin users (or any user without a branchId)
   useEffect(() => {
     if (!userBranchId) {
       getAllBranches()
         .then((data) => {
           setBranches(data.map((b: any) => ({ id: b.id, name: b.name })));
-          if (data.length > 0) {
-            setSelectedBranchId(data[0].id ?? null);
-          }
+          setSelectedBranchId(0); // 0 = All Branches default
         })
         .catch(() => {});
     }
@@ -92,31 +104,34 @@ const Pos: React.FC = () => {
       .catch(() => {});
   }, []);
 
+  // Stable load function — reads branchId from ref, never recreated
   const loadProducts = useCallback(async (term: string) => {
-    if (!effectiveBranchId) return;
+    const branchId = branchIdRef.current;
+    if (!branchId) return; // 0 or null = no branch selected
     setLoading(true);
     try {
-      const variants = await searchProduct(term, effectiveBranchId);
-      setAllProducts((variants || []).map(mapVariantToProduct));
+      const variants = await searchProduct(term, branchId);
+      setAllProducts((variants || []).map((v: any) => mapVariantToProduct(v, branchId)));
     } catch (err) {
       console.error("POS product load failed:", err);
       setAllProducts([]);
     } finally {
       setLoading(false);
     }
-  }, [effectiveBranchId]);
+  }, []); // stable — no deps needed
 
-  // Initial load when branchId becomes available
+  // Branch change: immediate reload (clears any pending debounce)
   useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
     loadProducts(searchQuery);
-  }, [loadProducts]); // runs whenever effectiveBranchId changes
+  }, [effectiveBranchId]); // eslint-disable-line
 
-  // Debounced search
+  // Search: debounced reload
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => loadProducts(searchQuery), 400);
     return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
-  }, [searchQuery, loadProducts]);
+  }, [searchQuery]); // eslint-disable-line
 
   const filteredProducts =
     selectedCategory === "all"
@@ -144,8 +159,11 @@ const Pos: React.FC = () => {
           <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-indigo-50 via-white to-blue-50 flex items-center gap-3 flex-shrink-0">
             {/* User avatar + info */}
             <div className="flex items-center gap-2.5 flex-shrink-0">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center shadow-sm flex-shrink-0">
-                <span className="text-white text-sm font-bold">
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg, #6366f1, #3b82f6)' }}
+              >
+                <span className="text-sm font-bold" style={{ color: '#fff' }}>
                   {(user?.name ?? "U").charAt(0).toUpperCase()}
                 </span>
               </div>
@@ -157,13 +175,14 @@ const Pos: React.FC = () => {
 
             {/* Branch selector */}
             {!userBranchId && branches.length > 0 && (
-              <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2.5 h-9 shadow-sm">
+              <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2.5 h-9 shadow-sm flex-shrink-0">
                 <GitBranch className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
                 <select
                   className="bg-transparent text-sm text-gray-700 focus:outline-none cursor-pointer"
-                  value={selectedBranchId ?? ""}
+                  value={selectedBranchId ?? 0}
                   onChange={(e) => setSelectedBranchId(Number(e.target.value))}
                 >
+                  <option value={0}>All Branches</option>
                   {branches.map((b) => (
                     <option key={b.id} value={b.id}>{b.name}</option>
                   ))}
@@ -172,21 +191,18 @@ const Pos: React.FC = () => {
             )}
 
             {/* Search */}
-            <div className="relative flex-1 min-w-0">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <div className="relative flex-1 min-w-0 flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2.5 h-9 shadow-sm">
+              <Search className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search by name or barcode…"
+                placeholder="Search by name, SKU or barcode..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-9 pl-9 pr-9 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-sm"
+                className="flex-1 bg-transparent text-sm text-gray-700 focus:outline-none min-w-0"
               />
               {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-4 h-4" />
+                <button onClick={() => setSearchQuery("")} className="flex-shrink-0 text-gray-400 hover:text-gray-600">
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
@@ -205,9 +221,12 @@ const Pos: React.FC = () => {
           {/* Product grid */}
           <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-950">
             {!effectiveBranchId ? (
-              <div className="flex flex-col items-center justify-center h-64 gap-2 text-muted-foreground">
-                <GitBranch className="w-10 h-10 opacity-30" />
-                <p className="text-sm">Select a branch to load products</p>
+              <div className="flex flex-col items-center justify-center h-64 gap-3 text-gray-300">
+                <GitBranch className="w-12 h-12" />
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-gray-400">No branch selected</p>
+                  <p className="text-xs text-gray-300 mt-0.5">Select a branch above to load products</p>
+                </div>
               </div>
             ) : (
               <ProductGrid products={filteredProducts} loading={loading} />

@@ -1,122 +1,132 @@
 import { create } from "zustand";
 
+export interface UnitOption {
+  unitId: number;
+  unitName: string;
+  price: number;        // suggestedRetailPrice for this unit
+  isBaseUnit: boolean;
+  multiplier: number;   // how many base units = 1 of this unit
+}
+
 export interface POSProduct {
-  id: string;           // productVariantId as string (cart key)
+  id: string;
   variantId: number;
   productId: number;
   name: string;
-  price: number;        // retailPrice for this unit
-  stock: number;        // current stock in branch
+  price: number;
+  stock: number;
   categoryId: number;
   categoryName: string;
   image?: string | null;
   barcode?: string;
-  trackingType: string; // "NONE" | "ASSET_ONLY" | "MAC_ONLY" | "ASSET_AND_MAC"
+  trackingType: string;
   unitId: number | null;
   unitName: string;
+  branchId: number;
+  unitOptions: UnitOption[];
 }
 
-interface CartItem {
+export interface CartItem {
   product: POSProduct;
   quantity: number;
+  // Unit (may differ from product default for conversion products)
+  unitId: number | null;
+  unitName: string;
+  unitPrice: number;
+  multiplier: number;   // base units per selected unit
+  // Serial tracking
+  serialSelectionMode: "AUTO" | "MANUAL";
+  selectedTrackedItemIds: number[];
+  selectedTrackedItems: any[];
 }
 
 interface CartStore {
   items: CartItem[];
-  taxRate: number;
-  discountRate: number;
-  shipping: number;
   addItem: (product: POSProduct) => void;
+  addItemWithConfig: (config: Omit<CartItem, "quantity"> & { quantity?: number }) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
-  setTaxRate: (rate: number) => void;
-  setDiscountRate: (rate: number) => void;
-  setShipping: (amount: number) => void;
   subtotal: () => number;
-  tax: () => number;
-  discount: () => number;
   grandTotal: () => number;
 }
 
+const defaultCartItem = (product: POSProduct): CartItem => ({
+  product,
+  quantity: 1,
+  unitId: product.unitId,
+  unitName: product.unitName,
+  unitPrice: product.price,
+  multiplier: 1,
+  serialSelectionMode: "AUTO",
+  selectedTrackedItemIds: [],
+  selectedTrackedItems: [],
+});
+
 export const useCart = create<CartStore>((set, get) => ({
   items: [],
-  taxRate: 0,
-  discountRate: 0,
-  shipping: 0,
 
   addItem: (product: POSProduct) => {
     const items = get().items;
-    const existingItem = items.find((item) => item.product.id === product.id);
+    const existing = items.find((i) => i.product.id === product.id);
+    const currentQty = existing?.quantity ?? 0;
+    if (product.stock > 0 && currentQty >= product.stock) return;
 
-    if (existingItem) {
+    if (existing) {
       set({
-        items: items.map((item) =>
-          item.product.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
+        items: items.map((i) =>
+          i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i
         ),
       });
     } else {
-      set({ items: [...items, { product, quantity: 1 }] });
+      set({ items: [...items, defaultCartItem(product)] });
+    }
+  },
+
+  addItemWithConfig: (config) => {
+    const items = get().items;
+    const existing = items.find((i) => i.product.id === config.product.id);
+    const newItem: CartItem = { ...config, quantity: config.quantity ?? 1 };
+
+    if (existing) {
+      set({ items: items.map((i) => (i.product.id === config.product.id ? newItem : i)) });
+    } else {
+      set({ items: [...items, newItem] });
     }
   },
 
   removeItem: (productId: string) => {
     const items = get().items;
-    const existingItem = items.find((item) => item.product.id === productId);
-
-    if (existingItem && existingItem.quantity > 1) {
+    const existing = items.find((i) => i.product.id === productId);
+    if (existing && existing.quantity > 1) {
       set({
-        items: items.map((item) =>
-          item.product.id === productId
-            ? { ...item, quantity: item.quantity - 1 }
-            : item
+        items: items.map((i) =>
+          i.product.id === productId ? { ...i, quantity: i.quantity - 1 } : i
         ),
       });
     } else {
-      set({ items: items.filter((item) => item.product.id !== productId) });
+      set({ items: items.filter((i) => i.product.id !== productId) });
     }
   },
 
   updateQuantity: (productId: string, quantity: number) => {
     if (quantity <= 0) {
-      set({ items: get().items.filter((item) => item.product.id !== productId) });
+      set({ items: get().items.filter((i) => i.product.id !== productId) });
     } else {
       set({
-        items: get().items.map((item) =>
-          item.product.id === productId ? { ...item, quantity } : item
-        ),
+        items: get().items.map((i) => {
+          if (i.product.id !== productId) return i;
+          const maxQty = i.product.stock > 0 ? i.product.stock : quantity;
+          return { ...i, quantity: Math.min(quantity, maxQty) };
+        }),
       });
     }
   },
 
   clearCart: () => set({ items: [] }),
 
-  setTaxRate: (rate: number) => set({ taxRate: rate }),
-  setDiscountRate: (rate: number) => set({ discountRate: rate }),
-  setShipping: (amount: number) => set({ shipping: amount }),
+  subtotal: () =>
+    get().items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0),
 
-  subtotal: () => {
-    return get().items.reduce(
-      (sum, item) => sum + item.product.price * item.quantity,
-      0
-    );
-  },
-
-  tax: () => {
-    return get().subtotal() * get().taxRate;
-  },
-
-  discount: () => {
-    return get().subtotal() * get().discountRate;
-  },
-
-  grandTotal: () => {
-    const subtotal = get().subtotal();
-    const tax = get().tax();
-    const disc = get().discount();
-    const shipping = get().shipping;
-    return subtotal + shipping + tax - disc;
-  },
+  grandTotal: () => get().subtotal(),
 }));
