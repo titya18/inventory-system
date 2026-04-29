@@ -33,7 +33,10 @@ export const POSAddItemModal = ({ product, onClose }: Props) => {
   const [selectedIds, setSelectedIds] = useState<number[]>(cartItem?.selectedTrackedItemIds ?? []);
   const [loadingSerials, setLoadingSerials] = useState(false);
 
-  const maxQty = product.stock;
+  // Max qty in selected unit: stock (base units) ÷ multiplier (base units per selected unit)
+  const maxQty = selectedUnit.multiplier > 0
+    ? Math.floor(product.stock / selectedUnit.multiplier)
+    : product.stock;
   const needsSerial = isTracked(product.trackingType);
   const needsUnit = hasMultipleUnits(product);
 
@@ -89,7 +92,7 @@ export const POSAddItemModal = ({ product, onClose }: Props) => {
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-gray-800 text-sm leading-tight truncate">{product.name}</h3>
-            <p className="text-xs text-gray-400 mt-0.5">${Number(product.price).toFixed(2)} · Stock: {product.stock} {product.unitName}</p>
+            <p className="text-xs text-gray-400 mt-0.5">${Number(product.price).toFixed(2)} · Stock: {product.stock} {product.baseUnitName || product.unitName}</p>
           </div>
           <button onClick={onClose} className="ml-3 w-7 h-7 rounded-full bg-gray-100 hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition-colors flex-shrink-0">
             <X className="w-3.5 h-3.5" />
@@ -107,7 +110,11 @@ export const POSAddItemModal = ({ product, onClose }: Props) => {
                 {product.unitOptions.map(opt => (
                   <button
                     key={opt.unitId}
-                    onClick={() => setSelectedUnit(opt)}
+                    onClick={() => {
+                      setSelectedUnit(opt);
+                      const newMax = opt.multiplier > 0 ? Math.floor(product.stock / opt.multiplier) : product.stock;
+                      setQuantity(q => Math.min(q, Math.max(1, newMax)));
+                    }}
                     className={`py-2.5 px-3 rounded-xl border text-xs font-semibold transition-all text-left ${
                       selectedUnit.unitId === opt.unitId
                         ? "border-primary bg-primary text-white"

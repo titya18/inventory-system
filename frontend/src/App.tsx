@@ -80,7 +80,7 @@ import NotFound from "./pages/notfound/NotFount";
 
 const App: React.FC = () => {
     return (
-        <Router>
+        // <Router>
         <BrowserRouter basename="/inventory">
             <AppContextProvider>
                 <LanguageProvider>
@@ -210,7 +210,7 @@ const App: React.FC = () => {
                 </LanguageProvider>
             </AppContextProvider>
         </BrowserRouter>
-        </Router>
+        // </Router>
     );
 };
 

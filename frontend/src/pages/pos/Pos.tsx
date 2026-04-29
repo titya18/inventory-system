@@ -51,6 +51,7 @@ const mapVariantToProduct = (v: any, branchId: number): POSProduct => {
     trackingType: v.trackingType ?? "NONE",
     unitId: retailUnit?.unitId ?? v.defaultRetailUnitId ?? v.baseUnitId ?? null,
     unitName: retailUnit?.unitName ?? v.baseUnit?.name ?? "",
+    baseUnitName: v.baseUnit?.name ?? v.unitOptions?.find((u: any) => u.isBaseUnit)?.unitName ?? retailUnit?.unitName ?? "",
     branchId,
     unitOptions,
   };

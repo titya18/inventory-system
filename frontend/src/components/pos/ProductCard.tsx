@@ -9,7 +9,9 @@ export const ProductCard = ({ product }: { product: POSProduct }) => {
   const cartItem = items.find((i) => i.product.id === product.id);
   const qty = cartItem?.quantity ?? 0;
   const isOutOfStock = product.stock <= 0;
-  const isAtMaxStock = product.stock > 0 && qty >= product.stock;
+  // Compare cart qty (in selected unit) × multiplier vs stock (in base units)
+  const cartBaseQty = qty * (cartItem?.multiplier ?? 1);
+  const isAtMaxStock = product.stock > 0 && cartBaseQty >= product.stock;
   const [imgError, setImgError] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
@@ -20,7 +22,7 @@ export const ProductCard = ({ product }: { product: POSProduct }) => {
     e?.stopPropagation();
     if (isOutOfStock) return;
     if (isAtMaxStock) {
-      toast.warning(`Only ${product.stock} ${product.unitName || "pcs"} available in stock`, {
+      toast.warning(`Only ${product.stock} ${product.baseUnitName || product.unitName || "pcs"} available in stock`, {
         position: "top-center", autoClose: 2000, toastId: `max-stock-${product.id}`,
       });
       return;
@@ -69,7 +71,7 @@ export const ProductCard = ({ product }: { product: POSProduct }) => {
 
           {isAtMaxStock && (
             <div className="absolute top-0 left-0 right-0 text-[10px] font-bold text-center py-0.5" style={{ backgroundColor: '#f59e0b', color: '#fff' }}>
-              Max stock ({product.stock} {product.unitName || "pcs"})
+              Max stock ({product.stock} {product.baseUnitName || product.unitName || "pcs"})
             </div>
           )}
 
@@ -138,9 +140,9 @@ export const ProductCard = ({ product }: { product: POSProduct }) => {
                 : product.stock <= 5 ? "bg-amber-50 text-amber-500"
                 : "bg-green-50 text-green-600"
               }`}
-              title={`${product.stock} ${product.unitName || "pcs"}`}
+              title={`${product.stock} ${product.baseUnitName || product.unitName || "pcs"}`}
             >
-              {product.stock} {cartItem?.unitName ?? product.unitName}
+              {product.stock} {product.baseUnitName || product.unitName || "pcs"}
             </span>
           </div>
           {/* Show serial mode badge if tracked and in cart */}

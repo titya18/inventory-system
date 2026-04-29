@@ -22,6 +22,7 @@ export interface POSProduct {
   trackingType: string;
   unitId: number | null;
   unitName: string;
+  baseUnitName: string;   // unit that stock quantity is tracked in
   branchId: number;
   unitOptions: UnitOption[];
 }
