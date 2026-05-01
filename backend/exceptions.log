@@ -2943,3 +2943,303 @@ ReferenceError: validateBranchRequest is not defined
     at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
     at Module.require (node:internal/modules/cjs/loader:1449:12)
     at require (node:internal/modules/helpers:135:16)
+2026-04-30 14:20:07 error: uncaughtException: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+2026-04-30 14:21:08 error: uncaughtException: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+2026-04-30 14:22:26 error: uncaughtException: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+2026-04-30 14:23:04 error: uncaughtException: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+2026-04-30 14:23:42 error: uncaughtException: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+2026-04-30 14:24:14 error: uncaughtException: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+2026-04-30 14:26:27 error: uncaughtException: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:519:28: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+2026-04-30 14:28:47 error: uncaughtException: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:1098:26: ERROR: Expected "{" but found ","
+Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:1098:26: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:1098:26: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+2026-04-30 14:28:49 error: uncaughtException: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:1098:26: ERROR: Expected "{" but found ","
+Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:1098:26: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:1098:26: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+2026-04-30 14:28:50 error: uncaughtException: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:1098:26: ERROR: Expected "{" but found ","
+Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:1098:26: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:1098:26: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+2026-04-30 14:28:50 error: uncaughtException: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:1098:26: ERROR: Expected "{" but found ","
+Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:1098:26: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:1098:26: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+2026-04-30 14:28:52 error: uncaughtException: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:1098:26: ERROR: Expected "{" but found ","
+Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:1098:26: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:1098:26: ERROR: Expected "{" but found ","
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)

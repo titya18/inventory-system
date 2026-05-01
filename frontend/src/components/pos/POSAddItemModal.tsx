@@ -14,18 +14,25 @@ const isTracked = (t: string) => t && t !== "NONE";
 const hasMultipleUnits = (p: POSProduct) => p.unitOptions.length > 1;
 
 export const POSAddItemModal = ({ product, onClose }: Props) => {
-  const { items, addItemWithConfig } = useCart();
+  const { items, addItemWithConfig, saleType } = useCart();
+  const unitPrice = (unit: UnitOption) => saleType === "WHOLESALE" ? unit.wholeSalePrice : unit.price;
   const cartItem = items.find((i) => i.product.id === product.id);
 
   // Unit selection
   const defaultUnit: UnitOption = product.unitOptions.find(u => u.unitId === product.unitId)
     ?? product.unitOptions[0]
-    ?? { unitId: product.unitId ?? 0, unitName: product.unitName, price: product.price, isBaseUnit: true, multiplier: 1 };
+    ?? { unitId: product.unitId ?? 0, unitName: product.unitName, price: product.price, wholeSalePrice: product.wholeSalePrice, isBaseUnit: true, multiplier: 1 };
 
   const [selectedUnit, setSelectedUnit] = useState<UnitOption>(
     cartItem ? (product.unitOptions.find(u => u.unitId === cartItem.unitId) ?? defaultUnit) : defaultUnit
   );
   const [quantity, setQuantity] = useState(cartItem?.quantity ?? 1);
+
+  // Tax & discount
+  const [taxType, setTaxType] = useState<"Include" | "Exclude">(cartItem?.taxType ?? "Include");
+  const [orderTax, setOrderTax] = useState(cartItem?.orderTax ?? 0);
+  const [discountType, setDiscountType] = useState<"Fixed" | "%">(cartItem?.discountType ?? "Fixed");
+  const [discount, setDiscount] = useState(cartItem?.discount ?? 0);
 
   // Serial selection
   const [serialMode, setSerialMode] = useState<"AUTO" | "MANUAL">(cartItem?.serialSelectionMode ?? "AUTO");
@@ -75,11 +82,15 @@ export const POSAddItemModal = ({ product, onClose }: Props) => {
       quantity,
       unitId: selectedUnit.unitId,
       unitName: selectedUnit.unitName,
-      unitPrice: selectedUnit.price,
+      unitPrice: unitPrice(selectedUnit),
       multiplier: selectedUnit.multiplier,
       serialSelectionMode: needsSerial ? serialMode : "AUTO",
       selectedTrackedItemIds: needsSerial && serialMode === "MANUAL" ? selectedIds : [],
       selectedTrackedItems: needsSerial && serialMode === "MANUAL" ? selectedItems : [],
+      taxType,
+      orderTax,
+      discountType,
+      discount,
     });
     onClose();
   };
@@ -92,7 +103,7 @@ export const POSAddItemModal = ({ product, onClose }: Props) => {
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-gray-800 text-sm leading-tight truncate">{product.name}</h3>
-            <p className="text-xs text-gray-400 mt-0.5">${Number(product.price).toFixed(2)} · Stock: {product.stock} {product.baseUnitName || product.unitName}</p>
+            <p className="text-xs text-gray-400 mt-0.5">${unitPrice(selectedUnit).toFixed(2)} · Stock: {product.stock} {product.baseUnitName || product.unitName}</p>
           </div>
           <button onClick={onClose} className="ml-3 w-7 h-7 rounded-full bg-gray-100 hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition-colors flex-shrink-0">
             <X className="w-3.5 h-3.5" />
@@ -123,7 +134,7 @@ export const POSAddItemModal = ({ product, onClose }: Props) => {
                   >
                     <div>{opt.unitName}</div>
                     <div className={`text-[11px] mt-0.5 ${selectedUnit.unitId === opt.unitId ? "text-white/80" : "text-gray-400"}`}>
-                      ${opt.price.toFixed(2)}
+                      ${unitPrice(opt).toFixed(2)}
                     </div>
                   </button>
                 ))}
@@ -161,6 +172,78 @@ export const POSAddItemModal = ({ product, onClose }: Props) => {
                 <Plus className="w-4 h-4" />
               </button>
               <span className="text-xs text-gray-400">max {maxQty}</span>
+            </div>
+          </div>
+
+          {/* Tax & Discount */}
+          <div>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Tax & Discount</p>
+            <div className="rounded-xl border border-gray-200 overflow-hidden divide-y divide-gray-100">
+
+              {/* Tax row */}
+              <div className="flex items-center gap-2 px-3 py-2.5">
+                <div className="flex rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                  {(["Include", "Exclude"] as const).map(t => (
+                    <button
+                      key={t}
+                      onClick={() => setTaxType(t)}
+                      className="px-2.5 py-1.5 text-xs font-semibold transition-colors"
+                      style={{
+                        backgroundColor: taxType === t ? "#6366f1" : "#f8fafc",
+                        color: taxType === t ? "#fff" : "#64748b",
+                      }}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-xs text-gray-400 flex-shrink-0">Tax Type</span>
+                <div className="flex items-center gap-1 ml-auto">
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.01}
+                    value={orderTax}
+                    onChange={e => setOrderTax(Math.max(0, Number(e.target.value)))}
+                    className="w-16 h-8 text-center border border-gray-200 rounded-lg text-sm font-semibold text-gray-800 focus:outline-none focus:border-indigo-400"
+                  />
+                  <span className="text-xs text-gray-400">%</span>
+                </div>
+              </div>
+
+              {/* Discount row */}
+              <div className="flex items-center gap-2 px-3 py-2.5">
+                <div className="flex rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                  {(["Fixed", "%"] as const).map(d => (
+                    <button
+                      key={d}
+                      onClick={() => setDiscountType(d)}
+                      className="px-2.5 py-1.5 text-xs font-semibold transition-colors"
+                      style={{
+                        backgroundColor: discountType === d ? "#f59e0b" : "#f8fafc",
+                        color: discountType === d ? "#fff" : "#64748b",
+                      }}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-xs text-gray-400 flex-shrink-0">Discount</span>
+                <div className="flex items-center gap-1 ml-auto">
+                  {discountType === "Fixed" && <span className="text-xs text-gray-400">$</span>}
+                  <input
+                    type="number"
+                    min={0}
+                    max={discountType === "%" ? 100 : undefined}
+                    step={0.01}
+                    value={discount}
+                    onChange={e => setDiscount(Math.max(0, Number(e.target.value)))}
+                    className="w-16 h-8 text-center border border-gray-200 rounded-lg text-sm font-semibold text-gray-800 focus:outline-none focus:border-amber-400"
+                  />
+                  {discountType === "%" && <span className="text-xs text-gray-400">%</span>}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -231,7 +314,13 @@ export const POSAddItemModal = ({ product, onClose }: Props) => {
             className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ background: canConfirm() ? 'linear-gradient(to right,#6366f1,#4f46e5)' : undefined, backgroundColor: canConfirm() ? undefined : '#e5e7eb' }}
           >
-            {cartItem ? "Update" : "Add to Cart"} · ${(selectedUnit.price * quantity).toFixed(2)}
+            {(() => {
+            const base = unitPrice(selectedUnit) * quantity;
+            const disc = discountType === "%" ? base * (discount / 100) : discount;
+            const afterDisc = Math.max(0, base - disc);
+            const total = taxType === "Exclude" ? afterDisc * (1 + orderTax / 100) : afterDisc;
+            return `${cartItem ? "Update" : "Add to Cart"} · $${total.toFixed(2)}`;
+          })()}
           </button>
         </div>
       </div>

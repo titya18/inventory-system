@@ -1409,7 +1409,7 @@ const PurchaseForm: React.FC = () => {
                                         {...register("taxRate")}/>
                                 </div>
                                 <div>
-                                    <label>discount</label>
+                                    <label>Discount</label>
                                     <input type="text" className="form-input" 
                                         placeholder="0"
                                         {...register("discount")}/>

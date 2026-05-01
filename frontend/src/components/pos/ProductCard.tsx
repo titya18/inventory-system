@@ -5,7 +5,8 @@ import { toast } from "react-toastify";
 import { POSAddItemModal } from "./POSAddItemModal";
 
 export const ProductCard = ({ product }: { product: POSProduct }) => {
-  const { items, addItem, removeItem } = useCart();
+  const { items, addItemWithConfig, removeItem, updateQuantity, saleType } = useCart();
+  const displayPrice = saleType === "WHOLESALE" ? product.wholeSalePrice : product.price;
   const cartItem = items.find((i) => i.product.id === product.id);
   const qty = cartItem?.quantity ?? 0;
   const isOutOfStock = product.stock <= 0;
@@ -30,7 +31,16 @@ export const ProductCard = ({ product }: { product: POSProduct }) => {
     if (needsModal) {
       setShowModal(true);
     } else {
-      addItem(product);
+      addItemWithConfig({
+        product,
+        unitId: product.unitId,
+        unitName: product.unitName,
+        unitPrice: displayPrice,
+        multiplier: 1,
+        serialSelectionMode: "AUTO",
+        selectedTrackedItemIds: [],
+        selectedTrackedItems: [],
+      });
     }
   };
 
@@ -70,8 +80,10 @@ export const ProductCard = ({ product }: { product: POSProduct }) => {
           )}
 
           {isAtMaxStock && (
-            <div className="absolute top-0 left-0 right-0 text-[10px] font-bold text-center py-0.5" style={{ backgroundColor: '#f59e0b', color: '#fff' }}>
-              Max stock ({product.stock} {product.baseUnitName || product.unitName || "pcs"})
+            <div className="absolute top-2 left-1/2 -translate-x-1/2">
+              <span className="text-[10px] font-bold whitespace-nowrap px-2 py-0.5 rounded-full shadow-sm" style={{ backgroundColor: '#fffbeb', color: '#b45309', border: '1px solid #fcd34d' }}>
+                Max stock
+              </span>
             </div>
           )}
 
@@ -103,7 +115,11 @@ export const ProductCard = ({ product }: { product: POSProduct }) => {
                 <Minus className="w-3 h-3" />
               </button>
               <span className="text-xs font-bold text-gray-700 min-w-[16px] text-center">{qty}</span>
-              <button onClick={handleAdd} disabled={isAtMaxStock} className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${isAtMaxStock ? "bg-amber-100 text-amber-400 cursor-not-allowed" : "bg-primary text-white hover:bg-primary/80"}`}>
+              <button
+                onClick={e => { e.stopPropagation(); if (!isAtMaxStock) updateQuantity(product.id, qty + 1); else handleAdd(); }}
+                disabled={isAtMaxStock}
+                className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${isAtMaxStock ? "bg-amber-100 text-amber-400 cursor-not-allowed" : "bg-primary text-white hover:bg-primary/80"}`}
+              >
                 <Plus className="w-3 h-3" />
               </button>
             </div>
@@ -130,9 +146,20 @@ export const ProductCard = ({ product }: { product: POSProduct }) => {
 
         {/* ── Info ── */}
         <div className="px-3 py-2.5 flex flex-col gap-2 flex-1">
-          <p className="text-xs font-semibold text-gray-800 leading-snug line-clamp-2 min-h-[2.5em]">{product.name}</p>
+          <div>
+            <p className="text-xs font-semibold text-gray-800 leading-snug line-clamp-2">{product.name}</p>
+            {product.productType === "SecondHand" ? (
+              <span className="inline-block mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "#fef3c7", color: "#b45309" }}>
+                2nd Hand
+              </span>
+            ) : product.productType === "New" ? (
+              <span className="inline-block mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "#eff6ff", color: "#2563eb" }}>
+                New
+              </span>
+            ) : null}
+          </div>
           <div className="flex items-center justify-between gap-1 mt-auto">
-            <span className="text-primary font-bold text-sm">${Number(cartItem?.unitPrice ?? product.price).toFixed(2)}</span>
+            <span className="text-primary font-bold text-sm">${Number(cartItem?.unitPrice ?? displayPrice).toFixed(2)}</span>
             <span
               className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full max-w-[80px] truncate ${
                 product.stock <= 0 ? "bg-red-50 text-red-400"

@@ -37,6 +37,7 @@ import reportRoute from './routes/reportRoute';
 import exchangRateRoute from './routes/exchangeRateRoute';
 import customerEquipmentRoute from './routes/customerEquipmentRoute';
 import settingsRoute from './routes/settingsRoute';
+import cashSessionRoute from './routes/cashSessionRoute';
 
 const app = express();
 
@@ -111,6 +112,7 @@ app.use('/api/report', reportRoute);
 app.use('/api/exchange-rate', exchangRateRoute);
 app.use('/api/customerequipment', customerEquipmentRoute);
 app.use('/api/settings', settingsRoute);
+app.use('/api/cashsession', cashSessionRoute);
 
 // Default route
 app.get("/api", (req, res) => {

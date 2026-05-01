@@ -2,8 +2,8 @@ import React, { useEffect } from "react";
 // import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { ToastContainer, toast } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css'; // Import the toast styles
+import { toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 import Sidebar from "../components/Sidebar";
 
 type Props = {
@@ -29,7 +29,6 @@ const Layout = ({children}: Props) => {
     }, []);
     return (
         <>
-            <ToastContainer newestOnTop={true}/>
             <div className="main-container min-h-screen text-black dark:text-white-dark navbar-sticky">
                 {/* start sidebar section */}
                 <Sidebar />

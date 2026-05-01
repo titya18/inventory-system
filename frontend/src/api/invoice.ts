@@ -52,7 +52,9 @@ export const getNextInvoiceRef = async (branchId: number): Promise<string> => {
         throw new Error("Error fetching next-ref");
     }
 
-    return response.json();
+    const data = await response.json();
+    // Backend returns { ref: "ZM2026-XXXXX" } — extract the string
+    return typeof data === "object" ? data.ref : data;
 };
 
 export const getPaymentReceipt = async (id: number): Promise<any> => {

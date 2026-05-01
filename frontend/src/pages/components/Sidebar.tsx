@@ -3,19 +3,19 @@ import { useLocation } from 'react-router-dom';
 // import { AppContext } from "../../contexts/AppContext";
 import { useAppContext } from '../../hooks/useAppContext';
 import { NavLink } from "react-router-dom";
-import { 
-    ChartColumnStacked, 
-    Users, 
-    GitBranchPlus, 
-    AlignEndHorizontal, 
-    LayoutList, 
-    Tags, 
-    Boxes, 
-    SquareUserRound, 
-    ShoppingCart, 
-    HeartHandshake, 
-    TextQuote, 
-    FilePenLine, 
+import {
+    ChartColumnStacked,
+    Users,
+    GitBranchPlus,
+    AlignEndHorizontal,
+    LayoutList,
+    Tags,
+    Boxes,
+    SquareUserRound,
+    ShoppingCart,
+    HeartHandshake,
+    TextQuote,
+    FilePenLine,
     Layers,
     Layers2,
     FolderSync,
@@ -33,7 +33,9 @@ import {
     ChartCandlestick,
     Wallet,
     MonitorSmartphone,
-    ScanBarcode
+    ScanBarcode,
+    Store,
+    Landmark
 } from 'lucide-react';
 
 // Define a type for the state
@@ -777,7 +779,9 @@ const Sidebar: React.FC = () => {
                             hasPermission('Return-Report') ||
                             hasPermission('Transfer-Report') ||
                             hasPermission('Expense-Report') ||
-                            hasPermission('Income-Report')
+                            hasPermission('Income-Report') ||
+                            hasPermission('Cash-Session-View') ||
+                            hasPermission('Cash-Session-Report')
                         ) && (
                             <h2 className="-mx-4 mb-1 flex items-center bg-white-light/30 px-7 py-3 font-extrabold uppercase dark:bg-dark dark:bg-opacity-[0.08]">
                                 <svg
@@ -1155,10 +1159,29 @@ const Sidebar: React.FC = () => {
                             </li>
                         }
 
+                        {(hasPermission('Cash-Session-View') || hasPermission('Cash-Session-Report')) &&
+                            <li className="nav-item">
+                                <ul>
+                                    <li className="nav-item" onClick={() => handleToggleMenu(null)}>
+                                        <NavLink
+                                            to="/cashsession"
+                                            className={location.pathname.includes('cashsession') ? 'active' : ''}
+                                        >
+                                            <div className="flex items-center">
+                                                <Landmark />
+                                                <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Cash Sessions</span>
+                                            </div>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+
                         {(
                             hasPermission('Amount-Purchase-View') ||
                             hasPermission('Exchange-Rate-View') ||
-                            hasPermission('Role-Create')
+                            hasPermission('Company-Settings-View') ||
+                            hasPermission('POS-View')
                         ) && (
                             <h2 className="-mx-4 mb-1 flex items-center bg-white-light/30 px-7 py-3 font-extrabold uppercase dark:bg-dark dark:bg-opacity-[0.08]">
                                 <svg
@@ -1212,7 +1235,7 @@ const Sidebar: React.FC = () => {
                             </li>
                         }
 
-                        {hasPermission('Role-Create') &&
+                        {hasPermission('Company-Settings-View') &&
                             <li className="nav-item">
                                 <ul>
                                     <li className="nav-item" onClick={() => handleToggleMenu(null)}>
@@ -1230,21 +1253,23 @@ const Sidebar: React.FC = () => {
                             </li>
                         }
 
-                        {/* <li className="nav-item">
+                        {hasPermission('POS-View') &&
+                            <li className="nav-item">
                                 <ul>
                                     <li className="nav-item" onClick={() => handleToggleMenu(null)}>
                                         <NavLink
                                             to="/pos"
-                                            className={['pos'].some(seg => location.pathname.includes(seg)) ? 'active' : ''}
+                                            className={location.pathname === '/pos' ? 'active' : ''}
                                         >
                                             <div className="flex items-center">
-                                                <BanknoteArrowUp />
+                                                <Store />
                                                 <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Point of Sale</span>
                                             </div>
                                         </NavLink>
                                     </li>
                                 </ul>
-                            </li> */}
+                            </li>
+                        }
                     </ul>
                 </div>
             </nav>

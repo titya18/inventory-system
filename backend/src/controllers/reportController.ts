@@ -3838,3 +3838,73 @@ export const getCustomerEquipmentReport = async (req: Request, res: Response): P
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
+export const getCashSessionReport = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const branchId = getQueryNumber(req.query.branchId, 0);
+        const from = getQueryString(req.query.from, undefined);
+
+        if (!branchId || !from) {
+            res.status(400).json({ message: "branchId and from are required" });
+            return;
+        }
+
+        // Filter by paymentDate using the exact session open/close window.
+        // Now that invoiceController uses new Date() per-request, paymentDate is real UTC.
+        const fromDate = new Date(from);
+        const toDate   = new Date(); // now = session close time
+
+        // Payments by method during session
+        const paymentRows = await prisma.$queryRaw<any[]>`
+            SELECT
+                op."paymentMethodId",
+                pm."name"                                   AS "paymentMethodName",
+                COUNT(op."id")::int                         AS "transactionCount",
+                COALESCE(SUM(op."totalPaid"), 0)            AS "totalPaid",
+                COALESCE(SUM(op."receive_usd"), 0)          AS "totalUSD",
+                COALESCE(SUM(op."receive_khr"::numeric), 0) AS "totalKHR"
+            FROM "OrderOnPayments" op
+            LEFT JOIN "PaymentMethods" pm ON op."paymentMethodId" = pm."id"
+            WHERE op."branchId" = ${branchId}
+              AND op."paymentDate" >= ${fromDate}
+              AND op."paymentDate" <= ${toDate}
+              AND (op."status" IS NULL OR op."status" = 'PAID')
+            GROUP BY op."paymentMethodId", pm."name"
+            ORDER BY pm."name"
+        `;
+
+        // Overall totals
+        const totals = await prisma.$queryRaw<any[]>`
+            SELECT
+                COUNT(DISTINCT op."orderId")::int           AS "orderCount",
+                COALESCE(SUM(op."totalPaid"), 0)            AS "grandTotal",
+                COALESCE(SUM(op."receive_usd"), 0)          AS "totalUSD",
+                COALESCE(SUM(op."receive_khr"::numeric), 0) AS "totalKHR"
+            FROM "OrderOnPayments" op
+            WHERE op."branchId" = ${branchId}
+              AND op."paymentDate" >= ${fromDate}
+              AND op."paymentDate" <= ${toDate}
+              AND (op."status" IS NULL OR op."status" = 'PAID')
+        `;
+
+        res.json({
+            from: fromDate,
+            to: toDate,
+            payments: paymentRows.map((r) => ({
+                ...r,
+                totalPaid: Number(r.totalPaid),
+                totalUSD: Number(r.totalUSD),
+                totalKHR: Number(r.totalKHR),
+            })),
+            totals: {
+                orderCount: totals[0]?.orderCount ?? 0,
+                grandTotal: Number(totals[0]?.grandTotal ?? 0),
+                totalUSD: Number(totals[0]?.totalUSD ?? 0),
+                totalKHR: Number(totals[0]?.totalKHR ?? 0),
+            },
+        });
+    } catch (error) {
+        logger.error("Error in getCashSessionReport:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};

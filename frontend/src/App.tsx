@@ -2,6 +2,8 @@ import React from "react";
 import { BrowserRouter, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { AppContextProvider } from "./contexts/AppContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import PrivateRoute from "./PrivateRoute";
 import Layout from "./pages/layouts/Layout";
 import SignUp from "./pages/signup/SignUp";
@@ -72,10 +74,12 @@ import ExchangeRate from "./pages/setting/ExchangeRate";
 import CompanySettings from "./pages/setting/CompanySettings";
 
 import Pos from "./pages/pos/Pos";
+import CustomerDisplay from "./pages/pos/CustomerDisplay";
 
 import { Customer } from "./pages/customer/Customer";
 import CustomerEquipment from "./pages/customerequipment/CustomerEquipment";
 import CustomerEquipmentForm from "./pages/customerequipment/CustomerEquipmentForm";
+import CashSessionReport from "./pages/cashsession/CashSessionReport";
 import NotFound from "./pages/notfound/NotFount";
 
 const App: React.FC = () => {
@@ -84,6 +88,7 @@ const App: React.FC = () => {
         <BrowserRouter basename="/inventory">
             <AppContextProvider>
                 <LanguageProvider>
+                    <ToastContainer newestOnTop position="top-right" autoClose={3000} />
                     <Routes>
                         {/* Sign-In and Sign-Up */}
                         <Route path="/" element={<SignIn />} />
@@ -91,6 +96,7 @@ const App: React.FC = () => {
 
                         {/* POS */}
                         <Route path="/pos" element={<PrivateRoute element={<Pos />} />} />
+                        <Route path="/pos-display" element={<CustomerDisplay />} />
 
                         {/* Dashboard */}
                         <Route path="/dashboard" element={<PrivateRoute element={<Layout><Dashboard /></Layout>} />} />
@@ -114,6 +120,9 @@ const App: React.FC = () => {
                         <Route path="/customerequipment/create" element={<PrivateRoute element={<Layout><CustomerEquipmentForm /></Layout>} />} />
                         <Route path="/customerequipment/:id" element={<PrivateRoute element={<Layout><CustomerEquipmentForm /></Layout>} />} />
                         <Route path="/customerequipment/:id/edit" element={<PrivateRoute element={<Layout><CustomerEquipmentForm /></Layout>} />} />
+
+                        {/* Cash Sessions */}
+                        <Route path="/cashsession" element={<PrivateRoute element={<Layout><CashSessionReport /></Layout>} />} />
 
                         {/* Branch */}
                         <Route path="/branches" element={<PrivateRoute element={<Layout><Branch /></Layout>} />} />

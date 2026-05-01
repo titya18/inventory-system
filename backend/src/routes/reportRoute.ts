@@ -19,6 +19,7 @@ import {
     getDashboardLowStockProducts,
     profitReport,
     getCustomerEquipmentReport,
+    getCashSessionReport,
 } from "../controllers/reportController";
 
 const router = express.Router();
@@ -41,4 +42,5 @@ router.route("/dashboardTopSellingProducts").get(getDashboardTopSellingProducts)
 router.route("/dashboardLowStockProducts").get(getDashboardLowStockProducts);
 router.route("/profitReport").get(authorize(["Profit-Report"]), profitReport);
 router.route("/reportCustomerEquipment").get(authorize(["Customer-Equipment-Report"]), getCustomerEquipmentReport);
+router.route("/cashSessionReport").get(getCashSessionReport);
 export default router;

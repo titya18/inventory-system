@@ -977,3 +977,39 @@ export const getCustomerEquipmentReport = async ({
     if (!res.ok) throw new Error("Failed to fetch customer equipment report");
     return res.json();
 };
+
+export interface CashSessionPayment {
+    paymentMethodId: number;
+    paymentMethodName: string;
+    transactionCount: number;
+    totalPaid: number;
+    totalUSD: number;
+    totalKHR: number;
+}
+
+export interface CashSessionReport {
+    from: string;
+    to: string;
+    payments: CashSessionPayment[];
+    totals: {
+        orderCount: number;
+        grandTotal: number;
+        totalUSD: number;
+        totalKHR: number;
+    };
+}
+
+export const getCashSessionReport = async (
+    branchId: number,
+    from: string
+): Promise<CashSessionReport> => {
+    const params = new URLSearchParams({ branchId: String(branchId), from });
+    const res = await fetch(`${API_BASE_URL}/api/report/cashSessionReport?${params}`, {
+        credentials: "include",
+    });
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || `Server error ${res.status}`);
+    }
+    return res.json();
+};

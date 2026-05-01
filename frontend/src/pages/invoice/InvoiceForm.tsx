@@ -1230,8 +1230,8 @@ const InvoiceForm: React.FC = () => {
                                     <div className="flex">
                                         <CustomerSearchInput
                                             customers={customers}
-                                            value={watch("customerId")}
-                                            onChange={(id) => setValue("customerId", id ? Number(id) : undefined)}
+                                            value={watch("customerId") ?? undefined}
+                                            onChange={(id) => setValue("customerId", id ? Number(id) : 0)}
                                             className="flex-1"
                                         />
                                         <button type="button" onClick={() => { setIsCustomerModalOpen(true) }} className="bg-secondary text-white flex justify-center items-center ltr:rounded-r-md rtl:rounded-l-md px-3 font-semibold border ltr:border-l-0 rtl:border-r-0 border-secondary">
@@ -1541,7 +1541,7 @@ const InvoiceForm: React.FC = () => {
                                         {...register("taxRate")}/>
                                 </div>
                                 <div>
-                                    <label>discount</label>
+                                    <label>Discount</label>
                                     <input type="text" className="form-input" 
                                         placeholder="0"
                                         {...register("discount")}/>

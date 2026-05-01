@@ -50,6 +50,9 @@ async function main() {
       { name: "Reports" },
       { name: "Settings" },
       { name: "Customer Equipment" },
+      { name: "POS" },
+      { name: "Cash Session" },
+      { name: "Company Settings" },
     ],
   });
 
@@ -196,6 +199,11 @@ async function main() {
       { name: "Customer-Equipment-Delete", moduleId: 27 },
       { name: "Customer-Equipment-Return", moduleId: 27 },
       { name: "Customer-Equipment-Report", moduleId: 27 },
+      { name: "POS-View", moduleId: 28 },
+      { name: "Cash-Session-View", moduleId: 29 },
+      { name: "Cash-Session-Report", moduleId: 29 },
+      { name: "Company-Settings-View", moduleId: 30 },
+      { name: "Company-Settings-Edit", moduleId: 30 },
     ],
   });
 

@@ -19,8 +19,8 @@ import { prisma } from "../lib/prisma";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 const tz = "Asia/Phnom_Penh";
-const now = dayjs().tz(tz);
-const currentDate = new Date(Date.UTC(now.year(), now.month(), now.date(), now.hour(), now.minute(), now.second()));
+// Per-request timestamp — returns actual UTC now each call (was a broken module-level constant)
+const getCurrentDate = () => new Date();
 
 export const getAllInvoices = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -313,9 +313,9 @@ export const upsertInvoice = async (req: Request, res: Response): Promise<void> 
         exchangeRate: lastExchange?.amount ?? 0,
         status,
         note,
-        approvedAt: status === "APPROVED" ? currentDate : null,
+        approvedAt: status === "APPROVED" ? getCurrentDate() : null,
         approvedBy: status === "APPROVED" ? loggedInUser.id : null,
-        updatedAt: currentDate,
+        updatedAt: getCurrentDate(),
         updatedBy: req.user?.id ?? null,
       };
 
@@ -342,7 +342,7 @@ export const upsertInvoice = async (req: Request, res: Response): Promise<void> 
         invoice = await tx.order.create({
           data: {
             ...invoicePayload,
-            createdAt: currentDate,
+            createdAt: getCurrentDate(),
             createdBy: req.user?.id ?? null,
           },
         });
@@ -516,7 +516,7 @@ export const upsertInvoice = async (req: Request, res: Response): Promise<void> 
             invoiceRef: invoice.ref,
             sellQty,
             userId: loggedInUser.id,
-            currentDate,
+            currentDate: getCurrentDate(),
           });
 
           await tx.orderItem.update({
@@ -530,7 +530,7 @@ export const upsertInvoice = async (req: Request, res: Response): Promise<void> 
             where: { id: stock.id },
             data: {
               quantity: { decrement: sellQty },
-              updatedAt: currentDate,
+              updatedAt: getCurrentDate(),
               updatedBy: loggedInUser.id,
             },
           });
@@ -543,7 +543,7 @@ export const upsertInvoice = async (req: Request, res: Response): Promise<void> 
                 data: {
                   status: "SOLD",
                   soldOrderItemId: item.id,
-                  updatedAt: currentDate,
+                  updatedAt: getCurrentDate(),
                   updatedBy: loggedInUser.id,
                 },
               });
@@ -629,14 +629,14 @@ export const insertInvoicePayment = async (req: Request, res: Response): Promise
                     branchId: parseInt(branchId, 10),
                     orderId: parseInt(orderId, 10),
                     paymentMethodId: parseInt(paymentMethodId, 10),
-                    paymentDate: currentDate,
+                    paymentDate: getCurrentDate(),
                     totalPaid: finalAmount,
                     receive_usd,
                     receive_khr,
                     exchangerate,
-                    createdAt: currentDate,
+                    createdAt: getCurrentDate(),
                     createdBy: req.user ? req.user.id : null,
-                    updatedAt: currentDate,
+                    updatedAt: getCurrentDate(),
                     updatedBy: req.user ? req.user.id : null,
                     status: "PAID"
                 },
@@ -934,11 +934,11 @@ export const deletePayment = async (req: Request, res: Response): Promise<void> 
             await tx.orderOnPayments.update({
                 where: { id: Number(paymentId) },
                 data: {
-                    deletedAt: currentDate,
+                    deletedAt: getCurrentDate(),
                     deletedBy: req.user ? req.user.id : null,
                     delReason,
                     status: "CANCELLED",
-                    updatedAt: currentDate,
+                    updatedAt: getCurrentDate(),
                     updatedBy: req.user ? req.user.id : null,
                 }
             });
@@ -1017,7 +1017,7 @@ export const deleteInvoice = async (req: Request, res: Response): Promise<void> 
         await prisma.order.update({
             where: { id: Number(orderId) },
             data: {
-                deletedAt: currentDate,
+                deletedAt: getCurrentDate(),
                 deletedBy: req.user ? req.user.id : null,
                 delReason,
                 status: "CANCELLED"
@@ -1095,7 +1095,7 @@ export const approveInvoice = async (req: Request, res: Response): Promise<void>
           invoiceRef: invoice.ref,
           sellQty,
           userId: loggedInUser.id,
-          currentDate,
+          currentDate: getCurrentDate(),
         });
 
         await tx.orderItem.update({
@@ -1109,7 +1109,7 @@ export const approveInvoice = async (req: Request, res: Response): Promise<void>
           where: { id: stock.id },
           data: {
             quantity: { decrement: sellQty },
-            updatedAt: currentDate,
+            updatedAt: getCurrentDate(),
             updatedBy: loggedInUser.id,
           },
         });
@@ -1118,10 +1118,10 @@ export const approveInvoice = async (req: Request, res: Response): Promise<void>
       return await tx.order.update({
         where: { id: invoice.id },
         data: {
-          approvedAt: currentDate,
+          approvedAt: getCurrentDate(),
           approvedBy: loggedInUser.id,
           status: "APPROVED",
-          updatedAt: currentDate,
+          updatedAt: getCurrentDate(),
           updatedBy: loggedInUser.id,
         },
         include: {
@@ -1164,9 +1164,9 @@ export const declareInvoiceToVat = async (req: Request, res: Response): Promise<
         where: { id: Number(orderId) },
         data: {
           vat_status: 1,
-          declared_at: currentDate,
+          declared_at: getCurrentDate(),
           declared_by: req.user ? req.user.id : null,
-          updatedAt: currentDate,
+          updatedAt: getCurrentDate(),
           updatedBy: req.user ? req.user.id : null,
         },
         include: {

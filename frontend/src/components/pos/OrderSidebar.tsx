@@ -7,7 +7,10 @@ import { getAllCustomers } from "@/api/customer";
 import { getAllPaymentMethods } from "@/api/paymentMethod";
 import { getLastExchangeRate } from "@/api/exchangeRate";
 import { CustomerType, PaymentMethodType } from "@/data_types/types";
-import { RefreshCw, XCircle, ShoppingCart, User, Banknote, CreditCard, Building2, Wallet } from "lucide-react";
+import { RefreshCw, XCircle, ShoppingCart, Banknote, CreditCard, Building2, Wallet, PauseCircle, ListOrdered, Landmark, AlertTriangle } from "lucide-react";
+import { HeldOrdersModal } from "./HeldOrdersModal";
+import { OpenCashModal, getOpenCashSession } from "./OpenCashModal";
+import { CustomerPicker } from "./CustomerPicker";
 
 interface OrderSidebarProps {
   branchId: number;
@@ -22,7 +25,23 @@ const METHOD_COLORS = [
 
 export const OrderSidebar = ({ branchId }: OrderSidebarProps) => {
   const navigate = useNavigate();
-  const { items, subtotal, grandTotal, clearCart } = useCart();
+  const { items, subtotal, grandTotal, clearCart, holdCurrentOrder, heldOrders, saleType, setSaleType, addItemWithConfig } = useCart();
+
+  const handleSaleTypeToggle = (type: "RETAIL" | "WHOLESALE") => {
+    if (type === saleType) return;
+    setSaleType(type);
+    // Reprice all items in the cart to the new sale type price
+    items.forEach((item) => {
+      const unit = item.product.unitOptions.find(u => u.unitId === item.unitId) ?? item.product.unitOptions[0];
+      const newPrice = type === "WHOLESALE"
+        ? (unit?.wholeSalePrice ?? item.product.wholeSalePrice)
+        : (unit?.price ?? item.product.price);
+      addItemWithConfig({ ...item, unitPrice: newPrice });
+    });
+  };
+  const [showHeldOrders, setShowHeldOrders] = useState(false);
+  const [showOpenCash, setShowOpenCash] = useState(false);
+  const [cashOpened, setCashOpened] = useState(() => !!getOpenCashSession());
 
   const [customers, setCustomers] = useState<CustomerType[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodType[]>([]);
@@ -39,9 +58,11 @@ export const OrderSidebar = ({ branchId }: OrderSidebarProps) => {
       .catch(() => {});
   }, []);
 
+  const [showVoidConfirm, setShowVoidConfirm] = useState(false);
+
   const handleVoid = () => {
     if (items.length === 0) return;
-    if (window.confirm("Void this order? All items will be removed.")) clearCart();
+    setShowVoidConfirm(true);
   };
 
   const handlePaySuccess = (paymentId: number) => {
@@ -54,8 +75,25 @@ export const OrderSidebar = ({ branchId }: OrderSidebarProps) => {
   return (
     <aside className="lg:w-[340px] flex-shrink-0 flex flex-col lg:h-full border-t lg:border-t-0 lg:border-l border-gray-200 bg-gray-50">
 
+      {/* ── Sale type toggle ── */}
+      <div className="flex-shrink-0 px-3 py-2 flex gap-1.5" style={{ backgroundColor: '#0f172a' }}>
+        {(["RETAIL", "WHOLESALE"] as const).map(type => (
+          <button
+            key={type}
+            onClick={() => handleSaleTypeToggle(type)}
+            className="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all"
+            style={{
+              backgroundColor: saleType === type ? (type === "RETAIL" ? '#6366f1' : '#d97706') : 'rgba(255,255,255,0.07)',
+              color: saleType === type ? '#fff' : '#64748b',
+            }}
+          >
+            {type === "RETAIL" ? "Retail" : "Wholesale"}
+          </button>
+        ))}
+      </div>
+
       {/* ── Dark header: title + controls only ── */}
-      <div className="flex-shrink-0 px-4 py-3 flex items-center justify-between" style={{ backgroundColor: '#1e293b' }}>
+      <div className="flex-shrink-0 px-4 py-2.5 flex items-center justify-between" style={{ backgroundColor: '#1e293b' }}>
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
             <ShoppingCart className="w-3.5 h-3.5" style={{ color: '#94a3b8' }} />
@@ -68,6 +106,49 @@ export const OrderSidebar = ({ branchId }: OrderSidebarProps) => {
           )}
         </div>
         <div className="flex items-center gap-1">
+          {/* Open cash drawer */}
+          <button
+            onClick={() => setShowOpenCash(true)}
+            title={cashOpened ? "Cash drawer open" : "Open cash drawer"}
+            className="w-7 h-7 rounded-lg flex items-center justify-center relative transition-colors"
+            style={{ color: cashOpened ? '#34d399' : '#94a3b8', backgroundColor: 'transparent' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Landmark className="w-3.5 h-3.5" />
+            {cashOpened && (
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#34d399' }} />
+            )}
+          </button>
+          {/* Held orders list */}
+          <button
+            onClick={() => setShowHeldOrders(true)}
+            title="Held orders"
+            className="w-7 h-7 rounded-lg flex items-center justify-center relative transition-colors"
+            style={{ color: '#fbbf24', backgroundColor: 'transparent' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <ListOrdered className="w-3.5 h-3.5" />
+            {heldOrders.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold"
+                style={{ backgroundColor: '#f59e0b', color: '#fff' }}>
+                {heldOrders.length}
+              </span>
+            )}
+          </button>
+          {/* Hold current order */}
+          <button
+            onClick={() => { if (items.length > 0) holdCurrentOrder(); }}
+            disabled={items.length === 0}
+            title="Hold order"
+            className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+            style={{ color: items.length === 0 ? '#475569' : '#a78bfa', backgroundColor: 'transparent', cursor: items.length === 0 ? 'not-allowed' : 'pointer' }}
+            onMouseEnter={e => { if (items.length > 0) (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'); }}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <PauseCircle className="w-3.5 h-3.5" />
+          </button>
           <button
             onClick={clearCart}
             title="Reset order"
@@ -92,23 +173,14 @@ export const OrderSidebar = ({ branchId }: OrderSidebarProps) => {
         </div>
       </div>
 
-      {/* ── Customer selector (light bg so native dropdown is readable) ── */}
+      {/* ── Customer selector ── */}
       <div className="flex-shrink-0 px-3 py-2 border-b border-gray-100" style={{ backgroundColor: '#f8fafc' }}>
-        <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-gray-200">
-          <User className="w-3.5 h-3.5 flex-shrink-0 text-indigo-400" />
-          <select
-            className="bg-transparent text-sm flex-1 focus:outline-none cursor-pointer text-gray-700"
-            value={selectedCustomerId}
-            onChange={(e) => setSelectedCustomerId(Number(e.target.value))}
-          >
-            <option value={0}>Walk-in Customer</option>
-            {customers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}{c.phone ? ` — ${c.phone}` : ""}
-              </option>
-            ))}
-          </select>
-        </div>
+        <CustomerPicker
+          customers={customers}
+          selectedCustomerId={selectedCustomerId}
+          onSelect={setSelectedCustomerId}
+          onCustomerCreated={(c) => setCustomers((prev) => [...prev, c])}
+        />
       </div>
 
       {/* ── Items list (scrollable) ── */}
@@ -174,7 +246,16 @@ export const OrderSidebar = ({ branchId }: OrderSidebarProps) => {
 
         {/* Pay button */}
         <div className="px-4 pb-4 mt-2">
-          {(items.length === 0 || !selectedPaymentMethodId) ? (
+          {!cashOpened ? (
+            <button
+              onClick={() => setShowOpenCash(true)}
+              className="w-full py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
+              style={{ background: 'linear-gradient(to right,#f59e0b,#d97706)', color: '#fff', boxShadow: '0 4px 14px rgba(245,158,11,0.35)' }}
+            >
+              <Landmark className="w-4 h-4" />
+              Open Cash Drawer First
+            </button>
+          ) : (items.length === 0 || !selectedPaymentMethodId) ? (
             <div className="w-full py-2.5 rounded-xl text-sm font-medium text-center border-2 border-dashed border-gray-200 text-gray-400 select-none">
               {items.length === 0 ? "Add items to pay" : "Select payment method"}
             </div>
@@ -190,6 +271,16 @@ export const OrderSidebar = ({ branchId }: OrderSidebarProps) => {
         </div>
       </div>
 
+      {showHeldOrders && <HeldOrdersModal onClose={() => setShowHeldOrders(false)} />}
+
+      {showOpenCash && (
+        <OpenCashModal
+          exchangeRate={exchangeRate}
+          branchId={branchId}
+          onClose={() => { setShowOpenCash(false); setCashOpened(!!getOpenCashSession()); }}
+        />
+      )}
+
       <PaymentModal
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
@@ -198,8 +289,47 @@ export const OrderSidebar = ({ branchId }: OrderSidebarProps) => {
         grandTotal={total}
         exchangeRate={exchangeRate}
         paymentMethodId={selectedPaymentMethodId}
+        saleType={saleType}
         onSuccess={handlePaySuccess}
       />
+
+      {/* Void order confirmation */}
+      {showVoidConfirm && (
+        <div
+          className="fixed inset-0 flex items-center justify-center p-4"
+          style={{ zIndex: 99999, backgroundColor: "rgba(15,23,42,0.6)", backdropFilter: "blur(2px)" }}
+        >
+          <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ backgroundColor: "#fff", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+            <div className="px-5 pt-5 pb-4 flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "#fef2f2" }}>
+                <AlertTriangle className="w-5 h-5" style={{ color: "#ef4444" }} />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm" style={{ color: "#1e293b" }}>Void Order?</h3>
+                <p className="text-sm mt-1" style={{ color: "#64748b" }}>
+                  All <span className="font-semibold" style={{ color: "#ef4444" }}>{items.length} item{items.length !== 1 ? "s" : ""}</span> will be removed from the cart. This cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="px-5 pb-5 flex gap-2">
+              <button
+                onClick={() => setShowVoidConfirm(false)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+                style={{ backgroundColor: "#f1f5f9", color: "#64748b" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { clearCart(); setShowVoidConfirm(false); }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold"
+                style={{ background: "linear-gradient(to right,#ef4444,#dc2626)", color: "#fff", boxShadow: "0 4px 14px rgba(239,68,68,0.3)" }}
+              >
+                Void Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 };
