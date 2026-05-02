@@ -491,7 +491,58 @@ If a CEQ is edited to **add** an invoice (`orderId`) that was previously absent,
 
 ---
 
-## Reports System (17 Report Types)
+## POS System (QuickPOS)
+
+Full-featured Point-of-Sale interface at `/pos`. Separate from the main invoice workflow — designed for fast cashier operation.
+
+### POS Components (`frontend/src/components/pos/`)
+| Component | Description |
+|-----------|-------------|
+| `POSHeader.tsx` | Top bar: logo, clock, Dashboard button, fullscreen, **customer display** button (opens `/pos-display`), **user dropdown with Sign Out** |
+| `OrderSidebar.tsx` | Right panel: Retail/Wholesale toggle, cart items, customer picker, payment methods, Pay button, cash drawer guard |
+| `OrderDetails.tsx` | Cart line items: qty stepper with max-stock toast, **red trash** (deletes whole line), **pencil edit** (opens modal for tax/discount), discount/tax badges |
+| `ProductCard.tsx` | Product tile: New/SecondHand badge, out-of-stock overlay, max-stock badge, +/- controls, gear icon for tracked/multi-unit |
+| `ProductGrid.tsx` | Responsive grid of ProductCards |
+| `CategoryTabs.tsx` | Horizontal category filter tabs with product counts |
+| `POSAddItemModal.tsx` | Per-item config: unit selector, qty stepper, **Tax & Discount section** (taxType Include/Exclude + %, discountType Fixed/% + amount), serial picker |
+| `CustomerPicker.tsx` | Searchable customer dropdown (filter by name/phone) + **quick-create customer modal** (Name*, Phone*, Address* required, phone uniqueness checked client-side) |
+| `BarcodeScanner.tsx` | Camera barcode/QR scanner using `@zxing/browser` (works on all browsers including Windows Chrome); opens in overlay; detects EAN-13, Code 128, QR, UPC, PDF417, etc. Hardware scanners work directly in the search box |
+| `PaymentModal.tsx` | USD/KHR numpad, **order-level Tax % and Discount $** fields, exact-amount shortcut, change calculation, order note; on success: writes "Thank You" signal to localStorage for customer display |
+| `OpenCashModal.tsx` | Open/view/close cash drawer; shift selector (Morning/Afternoon/Night/Custom); captures opener user |
+| `CloseCashModal.tsx` | Cash session report: opening balance, sales by payment method, cash reconciliation, actual counted vs expected, difference badge, closing note |
+| `HeldOrdersModal.tsx` | Manage held (parked) orders |
+| `CustomerDisplay.tsx` | **Customer-facing screen** at `/pos-display` — reads `pos-customer-display` from localStorage, updates in real-time via `storage` event; shows item list, totals, KHR equivalent; "Thank You" screen 5s after payment |
+
+### POS Key Behaviours
+- **Sale type**: Retail (indigo) / Wholesale (amber) toggle reprices all cart items on switch
+- **Branch guard**: Admin users pick branch via dropdown; switching branch with items in cart shows styled confirmation modal
+- **Cash session guard**: "Open Cash Drawer First" button replaces Pay when no open session
+- **Cart persistence**: Zustand store + `localStorage("pos-cart")`; also writes to `localStorage("pos-customer-display")` on every change
+- **Barcode scan**: Click 📷 scan button in header → opens `BarcodeScanner` overlay → detected value populates search input
+- **Per-item tax/discount**: Set in `POSAddItemModal`; line total in sidebar reflects these; passed to invoice `taxNet`/`taxMethod`/`discount`/`discountMethod` on payment
+- **Order-level tax/discount**: Set in `PaymentModal` before confirming payment; affects `totalAmount` sent to invoice
+- **Customer display**: Click 🖥 in header → opens new window at `/pos-display`; no auth required; auto-updates via localStorage events
+- **Held orders**: Pause/resume multiple simultaneous orders; unique name auto-assigned (`Order 1`, `Order 2`, …)
+
+### POS Permissions (Module IDs 28–30)
+| Permission | Module | Description |
+|---|---|---|
+| `POS-View` | 28 (POS) | Access to `/pos` page |
+| `Cash-Session-View` | 29 (Cash Session) | See Cash Sessions report in sidebar |
+| `Cash-Session-Report` | 29 (Cash Session) | Same — view cash session history |
+| `Company-Settings-View` | 30 (Company Settings) | Access company settings page |
+| `Company-Settings-Edit` | 30 (Company Settings) | Edit company settings |
+
+### Cash Session Workflow
+1. Open session: enter opening USD + KHR amounts, shift (Morning/Afternoon/Night/Custom), note
+2. Sell: all sales within session are tracked by `paymentDate` range
+3. Close session: view sales by payment method, enter actual cash counted, see over/short difference
+4. History: `/cashsession` → `Cash Sessions` in Report sidebar section (moved from Setting)
+5. DB model: `CashSession` — fields: `shift`, `saleType`, `openedById`, `openingUSD/KHR`, `exchangeRate`, `totalSalesUSD`, `cashSalesUSD`, `actualCashUSD`, `differenceUSD`, `paymentSummary` (JSON)
+
+---
+
+## Reports System (19 Report Types)
 
 ### Financial Reports
 | Report | Description | Key Calculation |
@@ -517,6 +568,8 @@ If a CEQ is edited to **add** an invoice (`orderId`) that was previously absent,
 | **Return Report** | Returns to supplier |
 | **Quotation Report** | Quotation pipeline (PENDING/SENT/INVOICED/CANCELLED) |
 | **Customer Equipment Report** | Equipment assigned to customers — summary cards (Total/Active/Returned/Sold/Rented/Installed), filters (date range, status, assignType, branch, search), serial + non-tracked item display, export; requires `Customer-Equipment-Report` permission |
+| **Top Selling Products Report** | Products ranked by qty sold — filters: date range, branch, category, search; sortable by qty/revenue/COGS/profit/orders; summary cards (total qty, revenue, COGS, net profit); rank medals 🥇🥈🥉; margin % per row. Route `/reportTopSellingProducts`, permission `Top-Selling-Products-Report` |
+| **Top Sales Person Report** | Staff ranked by total sales — filters: date range, branch; sortable by total sales/order count/avg sale value; summary cards (people, orders, total sales); progress bar showing share of total; first/last sale dates. Route `/reportTopSalesPerson`, permission `Top-Sales-Person-Report`. **Avg Sale Value** = Total Sales ÷ Orders (measures upselling ability and discount discipline) |
 
 ### Profit Report Logic
 - **Gross Profit**: `SUM(OrderItem.total - OrderItem.cogs)` — all approved invoices
@@ -721,6 +774,15 @@ If a CEQ is edited to **add** an invoice (`orderId`) that was previously absent,
 | 46 | Profit Report showed negative Sales (e.g. $-270) and wrong 100% Margin for fully-returned invoices — `netSales = totalAmount - returnedAmount` went below zero when returns exceeded invoice total; margin CASE only guarded `= 0` so (-270/-270)*100 = 100% | `reportController.ts` `profitReport` — wrapped both `netSales` and `netCogs` with `GREATEST(0, ...)` in per-row query and summary `order_agg` CTE; margin guard changed from `<= 0` to prevent 100% on negative-sales rows |
 | 47 | CEQ Return double-counted stock when invoice-linked CEQ items had already been partially/fully returned via Sale Return — `returnCustomerEquipment` had comment `// Always restore stock on return — even when invoice is linked` and ignored Sale Return history entirely | `customerEquipmentController.ts` `returnCustomerEquipment` — TRACKED: fetch serial `status`; if `orderId` set and status already `IN_STOCK` (restored by Sale Return), skip and `continue`. NON-TRACKED: query `SaleReturnItems` for same `orderId + productVariantId` with `status=APPROVED`; `netRestoreQty = max(0, ceqBaseQty − alreadyReturnedBaseQty)`; skip if `netRestoreQty <= 0` |
 | 48 | Assignment History modal close button not visible when list is long — `sticky top-0` header inside `overflow-y-auto` overlay does not reliably stay visible; close button scrolled out of view | `CustomerEquipmentForm.tsx` — replaced overlay-scroll pattern with fixed-height modal: outer `flex items-center justify-center`, modal `flex flex-col` + `maxHeight: 80vh`, header `flex-shrink-0` (always visible), content `overflow-y-auto flex-grow` (scrolls internally); close button styled as circular icon (`w-8 h-8 rounded-full bg-gray-100 hover:bg-red-100`) |
+| 49 | POS `+` button in `OrderDetails` silently did nothing when at max stock — `updateQuantity` clamped to stock level with no feedback | `OrderDetails.tsx` — `+` button now always clickable; when at max stock shows `toast.warning("Max stock reached: only N pcs available")` via `react-toastify` with `toastId` dedup |
+| 50 | POS trash icon (🗑) in `OrderDetails` decremented qty by 1 instead of removing the entire line — `removeItem` in `useCart` is a decrement function | `OrderDetails.tsx` — trash button now calls `updateQuantity(id, 0)` which removes the item; always styled red (inline `color: #ef4444`) |
+| 51 | POS `+` button on product card called `addItemWithConfig` without `quantity`, defaulting to `1` and replacing the existing cart item's qty — clicking `+` on a qty-3 item reset it back to 1 | `ProductCard.tsx` — `+` button now calls `updateQuantity(product.id, qty + 1)` which increments while preserving existing unit/price/serial config |
+| 52 | POS `BarcodeDetector` API not available on Windows Chrome (only works natively on Android/macOS) — scanner overlay showed "not supported in this browser" error | `BarcodeScanner.tsx` — replaced native `BarcodeDetector` with `@zxing/browser` + `@zxing/library` which work cross-browser; prefers back/rear camera on mobile |
+| 53 | POS cart items loaded from localStorage before `taxType`/`discount`/`orderTax`/`discountType` fields were added showed `$NaN` in `OrderDetails` — undefined fields caused arithmetic NaN | `OrderDetails.tsx` + `useCart.ts` subtotal — all calculations now use `?? 0` / `?? "Fixed"` / `?? "Include"` defaults |
+| 54 | `QuotationForm.tsx` TypeScript error: `watch("customerId")` returns `number \| null` but `CustomerSearchInput.value` expects `string \| number \| undefined`; `setValue` received `undefined` instead of `null` | `QuotationForm.tsx` — `value={watch("customerId") ?? undefined}`, `onChange` passes `null` (not `undefined`) to `setValue` |
+| 55 | `InvoiceForm.tsx` TypeScript error: `setValue("customerId", undefined)` — field typed as `number`, not `number \| undefined` | `InvoiceForm.tsx` — `value={watch("customerId") ?? undefined}`, `onChange` passes `0` (walk-in) instead of `undefined` |
+| 56 | POS invoice items sent to backend with hardcoded `taxNet: 0, taxMethod: "0", discount: 0, discountMethod: "0"` — per-item tax/discount set in `POSAddItemModal` was never passed through | `PaymentModal.tsx` `handleConfirm` — `invoiceItems` now reads `item.orderTax`, `item.taxType`, `item.discount`, `item.discountType`; computes correct `lineTotal`; passes `taxNet`, `taxMethod`, `discount`, `discountMethod` per item |
+| 57 | Top Sales Person report: `column u.name does not exist` — `User` table has `firstName`/`lastName` only, no `name` column | `reportController.ts` `getTopSalesPersonReport` — removed `u.name` from SELECT and GROUP BY; `fullName` constructed as `firstName + " " + lastName` in `safeData` mapping |
 
 ---
 
@@ -733,6 +795,7 @@ If a CEQ is edited to **add** an invoice (`orderId`) that was previously absent,
 - **Fixed**: Added `timeout-minutes: 20` to deploy steps (default was too short)
 - **Pattern**: SSH into VPS → git pull → `docker compose build {service}` → `docker compose up -d --no-deps {service}`
 - **Sequences note**: If a new database is seeded with explicit IDs, PostgreSQL sequences for tables like `Module` and `Permission` may be out of sync. Run: `SELECT setval('"Module_id_seq"', (SELECT MAX(id) FROM "Module") + 1, false);` and same for Permission.
+- **One-time permission scripts**: `backend/prisma/seed-pos-permissions.ts` (modules 28–30: POS, Cash Session, Company Settings), `backend/prisma/seed-report-permissions.ts` (permissions 217–218: Top-Selling-Products-Report, Top-Sales-Person-Report). Run via `docker exec` against `node_react_pos` DB if outside Docker network.
 
 ---
 
