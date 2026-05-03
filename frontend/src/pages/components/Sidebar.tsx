@@ -35,7 +35,9 @@ import {
     MonitorSmartphone,
     ScanBarcode,
     Store,
-    Landmark
+    Landmark,
+    TrendingUp,
+    UserCheck
 } from 'lucide-react';
 
 // Define a type for the state
@@ -781,7 +783,9 @@ const Sidebar: React.FC = () => {
                             hasPermission('Expense-Report') ||
                             hasPermission('Income-Report') ||
                             hasPermission('Cash-Session-View') ||
-                            hasPermission('Cash-Session-Report')
+                            hasPermission('Cash-Session-Report') ||
+                            hasPermission('Top-Selling-Products-Report') ||
+                            hasPermission('Top-Sales-Person-Report')
                         ) && (
                             <h2 className="-mx-4 mb-1 flex items-center bg-white-light/30 px-7 py-3 font-extrabold uppercase dark:bg-dark dark:bg-opacity-[0.08]">
                                 <svg
@@ -1152,6 +1156,42 @@ const Sidebar: React.FC = () => {
                                             <div className="flex items-center">
                                                 <BanknoteArrowUp />
                                                 <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Income Report</span>
+                                            </div>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+
+                        {hasPermission('Top-Selling-Products-Report') &&
+                            <li className="nav-item">
+                                <ul>
+                                    <li className="nav-item" onClick={() => handleToggleMenu(null)}>
+                                        <NavLink
+                                            to="/reportTopSellingProducts"
+                                            className={location.pathname.includes('reportTopSellingProducts') ? 'active' : ''}
+                                        >
+                                            <div className="flex items-center">
+                                                <TrendingUp />
+                                                <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Top Selling Products</span>
+                                            </div>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+
+                        {hasPermission('Top-Sales-Person-Report') &&
+                            <li className="nav-item">
+                                <ul>
+                                    <li className="nav-item" onClick={() => handleToggleMenu(null)}>
+                                        <NavLink
+                                            to="/reportTopSalesPerson"
+                                            className={location.pathname.includes('reportTopSalesPerson') ? 'active' : ''}
+                                        >
+                                            <div className="flex items-center">
+                                                <UserCheck />
+                                                <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Top Sales Person</span>
                                             </div>
                                         </NavLink>
                                     </li>

@@ -69,6 +69,8 @@ import ReportReturn from "./pages/report/ReportReturn";
 import ReportExpense from "./pages/report/ReportExpense";
 import ReportIncome from "./pages/report/ReportIncome";
 import ProfitReport from "./pages/report/ProfitReport";
+import ReportTopSellingProducts from "./pages/report/ReportTopSellingProducts";
+import ReportTopSalesPerson from "./pages/report/ReportTopSalesPerson";
 import PurchaseAuthorizeAmount from "./pages/setting/PurchaseAuthorizeAmount";
 import ExchangeRate from "./pages/setting/ExchangeRate";
 import CompanySettings from "./pages/setting/CompanySettings";
@@ -207,6 +209,8 @@ const App: React.FC = () => {
                         <Route path="/reportExpense" element={<PrivateRoute element={<Layout><ReportExpense /></Layout>} />} />
                         <Route path="/reportIncome" element={<PrivateRoute element={<Layout><ReportIncome /></Layout>} />} />
                         <Route path="/profitreport" element={<PrivateRoute element={<Layout><ProfitReport /></Layout>} />} />
+                        <Route path="/reportTopSellingProducts" element={<PrivateRoute element={<Layout><ReportTopSellingProducts /></Layout>} />} />
+                        <Route path="/reportTopSalesPerson" element={<PrivateRoute element={<Layout><ReportTopSalesPerson /></Layout>} />} />
 
                         {/* setting */}
                         <Route path="/authorizeamount" element={<PrivateRoute element={<Layout><PurchaseAuthorizeAmount /></Layout>} />} />

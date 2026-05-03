@@ -15,21 +15,15 @@ export const upsertModule = async (req: Request, res: Response): Promise<void> =
         // Parse id to integer if present
         const moduleId = id ? (Array.isArray(id) ? id[0] : id) : 0;
 
-        // Step 1: Fetch the current module if updating
+        // Step 1: Fetch current permissions for duplicate-name checking (only when updating)
         let currentModulePermissions: string[] = [];
         if (moduleId) {
-            const currentModule = await prisma.module.findUnique({
+            const existing = await prisma.module.findUnique({
                 where: { id: Number(moduleId) },
-                include: { permissions: true } // Include associated permissions
+                include: { permissions: true },
             });
-
-            if (!currentModule) {
-                res.status(404).json({ message: 'Module not found' });
-                return;
-            }
-
-            // Extract existing permissions for this module
-            currentModulePermissions = currentModule.permissions.map((p: any) => p.name);
+            if (!existing) { res.status(404).json({ message: 'Module not found' }); return; }
+            currentModulePermissions = existing.permissions.map((p: any) => p.name);
         }
 
         // Step 2: Check if the module name is unique (excluding the current module if updating)
@@ -82,15 +76,29 @@ export const upsertModule = async (req: Request, res: Response): Promise<void> =
         // Step 3: Create or Update the module based on whether an id exists
         let module;
         if (moduleId) {
-            // Update existing module
+            // Diff-based update — NEVER delete permissions that still exist in the new list.
+            // Deleting a Permission triggers onDelete:Cascade on PermissionOnRole, wiping role assignments.
+            const currentModule = await prisma.module.findUnique({
+                where: { id: Number(moduleId) },
+                include: { permissions: true },
+            });
+
+            const existingNames = new Set(currentModule?.permissions.map((p: any) => p.name) ?? []);
+            const newNames      = new Set(permissionsData.map((p: { name: string }) => p.name));
+
+            // Names to remove (in DB but not in new list)
+            const toDelete = [...existingNames].filter(n => !newNames.has(n));
+            // Names to add (in new list but not in DB)
+            const toCreate = permissionsData.filter((p: { name: string }) => !existingNames.has(p.name));
+
             module = await prisma.module.update({
                 where: { id: Number(moduleId) },
                 data: {
                     name,
                     updatedAt: utcNow.toJSDate(),
                     permissions: {
-                        deleteMany: {}, // Remove existing permissions
-                        create: permissionsData // Add new permissions
+                        deleteMany: toDelete.length > 0 ? { name: { in: toDelete } } : undefined,
+                        create: toCreate,
                     }
                 }
             });

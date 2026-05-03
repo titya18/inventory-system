@@ -39100,3 +39100,113 @@ HINT: No operator matches the given name and argument types. You might need to a
     at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:249:31)
     at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
     at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:210:20)
+2026-05-02 09:02:32 error: Login error 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `db:5432`
+
+Please make sure your database server is running at `db:5432`. PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `db:5432`
+
+Please make sure your database server is running at `db:5432`.
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async signIn (D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:22)
+2026-05-02 09:03:28 error: Error in getTopSalesPersonReport: 
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `42703`. Message: `column u.name does not exist` PrismaClientKnownRequestError: 
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `42703`. Message: `column u.name does not exist`
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async getTopSalesPersonReport (D:\Citylink-Inventory-claude\backend\src\controllers\reportController.ts:4092:27)
+2026-05-02 09:03:28 error: Error in getTopSalesPersonReport: 
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `42703`. Message: `column u.name does not exist` PrismaClientKnownRequestError: 
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `42703`. Message: `column u.name does not exist`
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async getTopSalesPersonReport (D:\Citylink-Inventory-claude\backend\src\controllers\reportController.ts:4092:27)
+2026-05-02 09:03:35 error: Error in getTopSalesPersonReport: 
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `42703`. Message: `column u.name does not exist` PrismaClientKnownRequestError: 
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `42703`. Message: `column u.name does not exist`
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async getTopSalesPersonReport (D:\Citylink-Inventory-claude\backend\src\controllers\reportController.ts:4092:27)
+2026-05-02 09:03:44 error: Error in getTopSalesPersonReport: 
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `42703`. Message: `column u.name does not exist` PrismaClientKnownRequestError: 
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `42703`. Message: `column u.name does not exist`
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async getTopSalesPersonReport (D:\Citylink-Inventory-claude\backend\src\controllers\reportController.ts:4092:27)
+2026-05-02 09:03:49 error: Error in getTopSalesPersonReport: 
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `42703`. Message: `column u.name does not exist` PrismaClientKnownRequestError: 
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `42703`. Message: `column u.name does not exist`
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async getTopSalesPersonReport (D:\Citylink-Inventory-claude\backend\src\controllers\reportController.ts:4092:27)
+2026-05-02 09:03:53 error: Error in getTopSalesPersonReport: 
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `42703`. Message: `column u.name does not exist` PrismaClientKnownRequestError: 
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `42703`. Message: `column u.name does not exist`
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async getTopSalesPersonReport (D:\Citylink-Inventory-claude\backend\src\controllers\reportController.ts:4092:27)

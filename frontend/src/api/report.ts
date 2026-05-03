@@ -1013,3 +1013,41 @@ export const getCashSessionReport = async (
     }
     return res.json();
 };
+
+// ─── Top Selling Products Report ─────────────────────────────────────────────
+export const getTopSellingProductsReport = async (params: {
+    startDate?: string; endDate?: string; branchId?: number; categoryId?: number;
+    search?: string; page?: number; pageSize?: number; sortField?: string; sortOrder?: string;
+}): Promise<{ data: any[]; total: number; summary: any }> => {
+    const q = new URLSearchParams();
+    if (params.startDate)  q.set("startDate",  params.startDate);
+    if (params.endDate)    q.set("endDate",    params.endDate);
+    if (params.branchId)   q.set("branchId",   String(params.branchId));
+    if (params.categoryId) q.set("categoryId", String(params.categoryId));
+    if (params.search)     q.set("search",     params.search);
+    q.set("pageNumber", String(params.page   ?? 1));
+    q.set("pageSize",   String(params.pageSize ?? 20));
+    if (params.sortField) q.set("sortField", params.sortField);
+    if (params.sortOrder) q.set("sortOrder", params.sortOrder);
+    const res = await fetch(`${API_BASE_URL}/api/report/topSellingProducts?${q}`, { credentials: "include" });
+    if (!res.ok) throw new Error("Failed to fetch top selling products report");
+    return res.json();
+};
+
+// ─── Top Sales Person Report ──────────────────────────────────────────────────
+export const getTopSalesPersonReport = async (params: {
+    startDate?: string; endDate?: string; branchId?: number;
+    page?: number; pageSize?: number; sortField?: string; sortOrder?: string;
+}): Promise<{ data: any[]; total: number; summary: any }> => {
+    const q = new URLSearchParams();
+    if (params.startDate) q.set("startDate", params.startDate);
+    if (params.endDate)   q.set("endDate",   params.endDate);
+    if (params.branchId)  q.set("branchId",  String(params.branchId));
+    q.set("pageNumber", String(params.page   ?? 1));
+    q.set("pageSize",   String(params.pageSize ?? 20));
+    if (params.sortField) q.set("sortField", params.sortField);
+    if (params.sortOrder) q.set("sortOrder", params.sortOrder);
+    const res = await fetch(`${API_BASE_URL}/api/report/topSalesPerson?${q}`, { credentials: "include" });
+    if (!res.ok) throw new Error("Failed to fetch top sales person report");
+    return res.json();
+};

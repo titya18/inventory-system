@@ -3908,3 +3908,251 @@ export const getCashSessionReport = async (req: Request, res: Response): Promise
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
+// ─── Top Selling Products Report ────────────────────────────────────────────
+export const getTopSellingProductsReport = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const loggedInUser = req.user;
+        if (!loggedInUser) { res.status(401).json({ message: "Unauthenticated." }); return; }
+
+        const startDate  = req.query.startDate  as string | undefined;
+        const endDate    = req.query.endDate    as string | undefined;
+        const branchId   = req.query.branchId   ? parseInt(req.query.branchId as string, 10)   : null;
+        const categoryId = req.query.categoryId ? parseInt(req.query.categoryId as string, 10) : null;
+        const search     = req.query.search     as string | undefined;
+        const pageSize   = req.query.pageSize   ? parseInt(req.query.pageSize as string, 10)   : 20;
+        const pageNumber = req.query.pageNumber ? parseInt(req.query.pageNumber as string, 10) : 1;
+        const sortField  = req.query.sortField  as string | undefined;
+        const sortOrder  = (req.query.sortOrder as string ?? "DESC").toUpperCase() === "ASC" ? "ASC" : "DESC";
+
+        const offset = (pageNumber - 1) * pageSize;
+
+        let branchFilter = "";
+        if (loggedInUser.roleType === "ADMIN") {
+            if (branchId) branchFilter = `AND o."branchId" = ${branchId}`;
+        } else {
+            if (!loggedInUser.branchId) { res.status(403).json({ message: "Branch not assigned." }); return; }
+            branchFilter = `AND o."branchId" = ${loggedInUser.branchId}`;
+        }
+
+        const dateFilter     = startDate && endDate ? `AND o."orderDate"::date BETWEEN '${startDate}' AND '${endDate}'` : "";
+        const categoryFilter = categoryId ? `AND cat.id = ${categoryId}` : "";
+        const rawSortField   = sortField ?? "totalQty";
+        const sortCol        = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(rawSortField) ? rawSortField : "totalQty";
+        const safeSrch       = (search ?? "").replace(/'/g, "''");
+        const searchFilter   = search ? `AND (p.name ILIKE '%${safeSrch}%' OR pv.sku ILIKE '%${safeSrch}%')` : "";
+
+        const orderByMap: Record<string, string> = {
+            totalQty:     `SUM(COALESCE(oi."baseQty", oi.quantity, 0))`,
+            totalRevenue: "SUM(oi.total)",
+            totalCogs:    "SUM(COALESCE(oi.cogs, 0))",
+            totalProfit:  "SUM(oi.total) - SUM(COALESCE(oi.cogs, 0))",
+            orderCount:   "COUNT(DISTINCT o.id)",
+        };
+        const orderByExpr = orderByMap[sortCol] ?? orderByMap["totalQty"];
+
+        const coreWhere = `
+            WHERE oi."ItemType" = 'PRODUCT'
+              AND o.status IN ('APPROVED', 'COMPLETED')
+              ${branchFilter}
+              ${dateFilter}
+              ${categoryFilter}
+              ${searchFilter}
+        `;
+
+        const data: any = await prisma.$queryRawUnsafe(`
+            SELECT
+                pv.id                                                               AS "productVariantId",
+                p.id                                                                AS "productId",
+                p.name                                                              AS "productName",
+                pv.sku                                                              AS "sku",
+                pv."productType"                                                    AS "productType",
+                cat.name                                                            AS "categoryName",
+                COALESCE(SUM(COALESCE(oi."baseQty", oi.quantity, 0)), 0)           AS "totalQty",
+                COALESCE(SUM(oi.total), 0)                                          AS "totalRevenue",
+                COALESCE(SUM(COALESCE(oi.cogs, 0)), 0)                             AS "totalCogs",
+                COALESCE(SUM(oi.total) - SUM(COALESCE(oi.cogs, 0)), 0)             AS "totalProfit",
+                COUNT(DISTINCT o.id)                                                AS "orderCount"
+            FROM "OrderItem" oi
+            INNER JOIN "Order" o            ON oi."orderId" = o.id
+            INNER JOIN "ProductVariants" pv ON oi."productVariantId" = pv.id
+            INNER JOIN "Products" p         ON pv."productId" = p.id
+            LEFT  JOIN "Categories" cat     ON p."categoryId" = cat.id
+            ${coreWhere}
+            GROUP BY pv.id, p.id, p.name, pv.sku, pv."productType", cat.name
+            ORDER BY ${orderByExpr} ${sortOrder}
+            LIMIT ${pageSize} OFFSET ${offset}
+        `);
+
+        const totalRows: any = await prisma.$queryRawUnsafe(`
+            SELECT COUNT(*) AS cnt FROM (
+                SELECT pv.id
+                FROM "OrderItem" oi
+                INNER JOIN "Order" o            ON oi."orderId" = o.id
+                INNER JOIN "ProductVariants" pv ON oi."productVariantId" = pv.id
+                INNER JOIN "Products" p         ON pv."productId" = p.id
+                LEFT  JOIN "Categories" cat     ON p."categoryId" = cat.id
+                ${coreWhere}
+                GROUP BY pv.id
+            ) sub
+        `);
+
+        const summaryRows: any = await prisma.$queryRawUnsafe(`
+            SELECT
+                COALESCE(SUM(COALESCE(oi."baseQty", oi.quantity, 0)), 0) AS "totalQty",
+                COALESCE(SUM(oi.total), 0)                                AS "totalRevenue",
+                COALESCE(SUM(COALESCE(oi.cogs, 0)), 0)                   AS "totalCogs"
+            FROM "OrderItem" oi
+            INNER JOIN "Order" o            ON oi."orderId" = o.id
+            INNER JOIN "ProductVariants" pv ON oi."productVariantId" = pv.id
+            INNER JOIN "Products" p         ON pv."productId" = p.id
+            LEFT  JOIN "Categories" cat     ON p."categoryId" = cat.id
+            ${coreWhere}
+        `);
+
+        const safeData = data.map((row: any, idx: number) => ({
+            rank:             offset + idx + 1,
+            productVariantId: Number(row.productVariantId),
+            productId:        Number(row.productId),
+            productName:      row.productName,
+            sku:              row.sku,
+            productType:      row.productType,
+            categoryName:     row.categoryName ?? "—",
+            totalQty:         Number(row.totalQty   ?? 0),
+            totalRevenue:     Number(row.totalRevenue ?? 0),
+            totalCogs:        Number(row.totalCogs   ?? 0),
+            totalProfit:      Number(row.totalProfit  ?? 0),
+            orderCount:       Number(row.orderCount   ?? 0),
+        }));
+
+        res.status(200).json({
+            data: safeData,
+            total: Number(totalRows[0]?.cnt ?? 0),
+            summary: {
+                totalQty:     Number(summaryRows[0]?.totalQty     ?? 0),
+                totalRevenue: Number(summaryRows[0]?.totalRevenue  ?? 0),
+                totalCogs:    Number(summaryRows[0]?.totalCogs     ?? 0),
+                totalProfit:  Number(summaryRows[0]?.totalRevenue  ?? 0) - Number(summaryRows[0]?.totalCogs ?? 0),
+            },
+        });
+    } catch (error) {
+        logger.error("Error in getTopSellingProductsReport:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// ─── Top Sales Person Report ─────────────────────────────────────────────────
+export const getTopSalesPersonReport = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const loggedInUser = req.user;
+        if (!loggedInUser) { res.status(401).json({ message: "Unauthenticated." }); return; }
+
+        const startDate  = req.query.startDate  as string | undefined;
+        const endDate    = req.query.endDate    as string | undefined;
+        const branchId   = req.query.branchId   ? parseInt(req.query.branchId as string, 10) : null;
+        const pageSize   = req.query.pageSize   ? parseInt(req.query.pageSize as string, 10) : 20;
+        const pageNumber = req.query.pageNumber ? parseInt(req.query.pageNumber as string, 10) : 1;
+        const sortField  = req.query.sortField  as string | undefined;
+        const sortOrder  = (req.query.sortOrder as string ?? "DESC").toUpperCase() === "ASC" ? "ASC" : "DESC";
+
+        const offset = (pageNumber - 1) * pageSize;
+
+        let branchFilter = "";
+        if (loggedInUser.roleType === "ADMIN") {
+            if (branchId) branchFilter = `AND o."branchId" = ${branchId}`;
+        } else {
+            if (!loggedInUser.branchId) { res.status(403).json({ message: "Branch not assigned." }); return; }
+            branchFilter = `AND o."branchId" = ${loggedInUser.branchId} AND o."createdBy" = ${loggedInUser.id}`;
+        }
+
+        const dateFilter   = startDate && endDate ? `AND o."orderDate"::date BETWEEN '${startDate}' AND '${endDate}'` : "";
+        const rawSortField = sortField ?? "totalSales";
+        const sortCol      = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(rawSortField) ? rawSortField : "totalSales";
+
+        const orderByMap: Record<string, string> = {
+            totalSales: `SUM(o."totalAmount")`,
+            orderCount: "COUNT(o.id)",
+            avgOrder:   `AVG(o."totalAmount")`,
+        };
+        const orderByExpr = orderByMap[sortCol] ?? orderByMap["totalSales"];
+
+        const coreWhere = `
+            WHERE o.status IN ('APPROVED', 'COMPLETED')
+              AND o."createdBy" IS NOT NULL
+              ${branchFilter}
+              ${dateFilter}
+        `;
+
+        const data: any = await prisma.$queryRawUnsafe(`
+            SELECT
+                u.id                                            AS "userId",
+                u."firstName"                                   AS "firstName",
+                u."lastName"                                    AS "lastName",
+                b.name                                          AS "branchName",
+                COUNT(o.id)                                     AS "orderCount",
+                COALESCE(SUM(o."totalAmount"), 0)               AS "totalSales",
+                COALESCE(AVG(o."totalAmount"), 0)               AS "avgOrder",
+                COALESCE(MIN(o."orderDate"), NOW())              AS "firstSaleDate",
+                COALESCE(MAX(o."orderDate"), NOW())              AS "lastSaleDate"
+            FROM "Order" o
+            INNER JOIN "User" u   ON o."createdBy" = u.id
+            LEFT  JOIN "Branch" b ON o."branchId"  = b.id
+            ${coreWhere}
+            GROUP BY u.id, u."firstName", u."lastName", b.name
+            ORDER BY ${orderByExpr} ${sortOrder}
+            LIMIT ${pageSize} OFFSET ${offset}
+        `);
+
+        const totalRows: any = await prisma.$queryRawUnsafe(`
+            SELECT COUNT(*) AS cnt FROM (
+                SELECT o."createdBy"
+                FROM "Order" o
+                ${coreWhere}
+                GROUP BY o."createdBy"
+            ) sub
+        `);
+
+        const summaryRows: any = await prisma.$queryRawUnsafe(`
+            SELECT
+                COUNT(DISTINCT o."createdBy")    AS "personCount",
+                COUNT(o.id)                      AS "totalOrders",
+                COALESCE(SUM(o."totalAmount"),0) AS "totalSales"
+            FROM "Order" o
+            ${coreWhere}
+        `);
+
+        const safeData = data.map((row: any, idx: number) => ({
+            rank:          offset + idx + 1,
+            userId:        Number(row.userId),
+            firstName:     row.firstName ?? "",
+            lastName:      row.lastName  ?? "",
+            fullName:      `${row.firstName ?? ""} ${row.lastName ?? ""}`.trim() || "Unknown",
+            branchName:    row.branchName ?? "—",
+            orderCount:    Number(row.orderCount ?? 0),
+            totalSales:    Number(row.totalSales ?? 0),
+            avgOrder:      Number(row.avgOrder   ?? 0),
+            firstSaleDate: row.firstSaleDate,
+            lastSaleDate:  row.lastSaleDate,
+        }));
+
+        res.status(200).json({
+            data: safeData,
+            total:   Number(totalRows[0]?.cnt ?? 0),
+            summary: {
+                personCount: Number(summaryRows[0]?.personCount ?? 0),
+                totalOrders: Number(summaryRows[0]?.totalOrders ?? 0),
+                totalSales:  Number(summaryRows[0]?.totalSales  ?? 0),
+            },
+        });
+    } catch (error) {
+        logger.error("Error in getTopSalesPersonReport:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+

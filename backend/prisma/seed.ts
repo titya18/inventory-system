@@ -188,6 +188,8 @@ async function main() {
       { name: "Expense-Report", moduleId: 25 },
       { name: "Income-Report", moduleId: 25 },
       { name: "Profit-Report", moduleId: 25 },
+      { name: "Top-Selling-Products-Report", moduleId: 25 },
+      { name: "Top-Sales-Person-Report", moduleId: 25 },
       { name: "Amount-Purchase-View", moduleId: 26 },
       { name: "Amount-Purchase-Edit", moduleId: 26 },
       { name: "Exchange-Rate-View", moduleId: 26 },
