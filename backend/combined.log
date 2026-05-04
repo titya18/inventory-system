@@ -39369,3 +39369,6 @@ Raw query failed. Code: `42703`. Message: `column u.name does not exist`
 2026-05-02 10:54:01 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
 2026-05-02 10:54:32 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
 2026-05-02 11:08:22 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-03 20:05:46 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-04 08:00:49 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-04 09:00:23 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 

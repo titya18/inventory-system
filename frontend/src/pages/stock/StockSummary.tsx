@@ -242,7 +242,7 @@ const StockSummary: React.FC = () => {
           <div className="relative">
             <div className="dataTable-wrapper dataTable-loading no-footer sortable searchable">
               <div className="dataTable-top flex gap-2 flex-wrap">
-                {user?.roleType === "ADMIN" && (
+                {/* {user?.roleType === "ADMIN" && ( */}
                   <select
                     value={selectedBranch}
                     onChange={(e) => {
@@ -259,7 +259,7 @@ const StockSummary: React.FC = () => {
                       </option>
                     ))}
                   </select>
-                )}
+                {/* )} */}
 
                 <select
                   value={selectedStatus}
