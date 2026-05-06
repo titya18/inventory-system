@@ -40,6 +40,10 @@ export const ProductCard = ({ product }: { product: POSProduct }) => {
         serialSelectionMode: "AUTO",
         selectedTrackedItemIds: [],
         selectedTrackedItems: [],
+        taxType: "Include",
+        orderTax: 0,
+        discountType: "Fixed",
+        discount: 0,
       });
     }
   };

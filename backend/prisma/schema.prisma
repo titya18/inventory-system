@@ -1045,7 +1045,8 @@ model Order {
   orderOnPayments OrderOnPayments[] @relation("OrderPayments")
 
   saleReturn         SaleReturns[]
-  customerEquipments CustomerEquipment[]  // header-level relation
+  customerEquipments CustomerEquipment[]
+  stockRequests      StockRequests[]
 
   @@unique([sourceSystem, sourceOrderId])
   @@index([sourceSystem])
@@ -1327,15 +1328,18 @@ model StockRequests {
   updatedAt   DateTime?
   approvedAt  DateTime?
   approvedBy  Int?
+  orderId     Int?        // optional link to invoice — when set, no stock cut on approval
 
   creator   User? @relation("RequestCreatedBy", fields: [createdBy], references: [id])
   updater   User? @relation("RequestUpdatedBy", fields: [updatedBy], references: [id])
   deleter   User? @relation("RequestDeletedBy", fields: [deletedBy], references: [id])
   approver  User? @relation("RequestApprovedBy", fields: [approvedBy], references: [id])
   requester User? @relation("RequestBy", fields: [requestBy], references: [id])
+  order     Order? @relation(fields: [orderId], references: [id])
 
-  branch         Branch           @relation(fields: [branchId], references: [id])
-  requestDetails RequestDetails[]
+  branch              Branch              @relation(fields: [branchId], references: [id])
+  requestDetails      RequestDetails[]
+  customerEquipments  CustomerEquipment[]
 }
 
 // Request ITEM DETAILS
@@ -1545,21 +1549,23 @@ model CustomerEquipment {
   customerId Int
   branchId   Int
   assignType AssignType
-  assignedAt DateTime
-  returnedAt DateTime?
-  note       String?    @db.VarChar(500)
-  orderId    Int?
+  assignedAt       DateTime
+  returnedAt       DateTime?
+  note             String?    @db.Text
+  orderId          Int?
+  stockRequestId   Int?       // optional link to stock request — when set, no stock cut
   createdAt  DateTime   @default(now())
   createdBy  Int?
   updatedAt  DateTime?
   updatedBy  Int?
 
-  customer Customer  @relation(fields: [customerId], references: [id])
-  branch   Branch    @relation(fields: [branchId], references: [id])
-  order    Order?    @relation(fields: [orderId], references: [id])
-  creator  User?     @relation("CEQCreatedBy", fields: [createdBy], references: [id])
-  updater  User?     @relation("CEQUpdatedBy", fields: [updatedBy], references: [id])
-  items    CustomerEquipmentItem[]
+  customer       Customer       @relation(fields: [customerId], references: [id])
+  branch         Branch         @relation(fields: [branchId], references: [id])
+  order          Order?         @relation(fields: [orderId], references: [id])
+  stockRequest   StockRequests? @relation(fields: [stockRequestId], references: [id])
+  creator        User?          @relation("CEQCreatedBy", fields: [createdBy], references: [id])
+  updater        User?          @relation("CEQUpdatedBy", fields: [updatedBy], references: [id])
+  items          CustomerEquipmentItem[]
 }
 
 model CustomerEquipmentItem {

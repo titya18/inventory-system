@@ -31,7 +31,9 @@ interface Props {
     adjustmentTrackedMode?: "NEW" | "REACTIVATE";
     newSerials?: NewSerial[];
     reactivateIds?: number[];
+    reactivateItems?: ProductTrackedItemType[];
     selectedToRemoveIds?: number[];
+    selectedToRemoveItems?: ProductTrackedItemType[];
     onSave: (data: AdjustmentTrackedSaveData) => void;
 }
 
@@ -104,18 +106,23 @@ const StockAdjustmentTrackedModal: React.FC<Props> = ({
     adjustmentTrackedMode: initMode,
     newSerials: initNewSerials,
     reactivateIds: initReactivateIds,
+    reactivateItems: initReactivateItems,
     selectedToRemoveIds: initSelectedIds,
+    selectedToRemoveItems: initSelectedToRemoveItems,
     onSave,
 }) => {
     const [tab, setTab] = useState<"NEW" | "REACTIVATE">(initMode ?? "NEW");
     const [newSerials, setNewSerials] = useState<NewSerial[]>(
         initNewSerials?.length ? initNewSerials : [{ serialNumber: "" }]
     );
-    const [reactivateItems, setReactivateItems] = useState<ProductTrackedItemType[]>([]);
+    const [reactivateItems, setReactivateItems] = useState<ProductTrackedItemType[]>(initReactivateItems ?? []);
     const [reactivateIds, setReactivateIds] = useState<number[]>(initReactivateIds ?? []);
     const [availableItems, setAvailableItems] = useState<ProductTrackedItemType[]>([]);
     const [selectedToRemoveIds, setSelectedToRemoveIds] = useState<number[]>(initSelectedIds ?? []);
     const [isLoading, setIsLoading] = useState(false);
+    // True when we have stored history — show read-only, skip live fetch
+    const hasStoredHistory  = (initReactivateItems?.length ?? 0) > 0;
+    const hasRemovedHistory = (initSelectedToRemoveItems?.length ?? 0) > 0;
 
     const needsAsset = trackingType === "ASSET_ONLY" || trackingType === "ASSET_AND_MAC";
     const needsMac = trackingType === "MAC_ONLY" || trackingType === "ASSET_AND_MAC";
@@ -126,11 +133,15 @@ const StockAdjustmentTrackedModal: React.FC<Props> = ({
         setTab(initMode ?? "NEW");
         setNewSerials(initNewSerials?.length ? initNewSerials : [{ serialNumber: "" }]);
         setReactivateIds(initReactivateIds ?? []);
+        setReactivateItems(initReactivateItems ?? []);
         setSelectedToRemoveIds(initSelectedIds ?? []);
+        if (initSelectedToRemoveItems?.length) setAvailableItems(initSelectedToRemoveItems);
     }, [isOpen]);
 
     useEffect(() => {
         if (!isOpen || adjustmentType !== "POSITIVE" || !variantId || !branchId) return;
+        // Skip live fetch when we already have stored history items
+        if (hasStoredHistory) return;
         setIsLoading(true);
         getReactivatableItems(variantId, branchId)
             .then(setReactivateItems)
@@ -140,6 +151,7 @@ const StockAdjustmentTrackedModal: React.FC<Props> = ({
 
     useEffect(() => {
         if (!isOpen || adjustmentType !== "NEGATIVE" || !variantId || !branchId) return;
+        if (hasRemovedHistory) return;
         setIsLoading(true);
         getAvailableTrackedItems(variantId, branchId, null)
             .then(setAvailableItems)
@@ -185,7 +197,6 @@ const StockAdjustmentTrackedModal: React.FC<Props> = ({
 
     /* ── shared input style ── */
     const inputCls = "w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:border-transparent placeholder-gray-400 transition";
-    const inputStyle = { focusRingColor: c.progressFill };
 
     return (
         <div
@@ -376,7 +387,45 @@ const StockAdjustmentTrackedModal: React.FC<Props> = ({
                     {/* ── POSITIVE / REACTIVATE tab ── */}
                     {isPositive(adjustmentType) && tab === "REACTIVATE" && (
                         <div>
-                            {isLoading ? (
+                            {/* Read-only history view (approved adjustment) */}
+                            {hasStoredHistory ? (
+                                <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Reactivated Serials</p>
+                                        <span className="text-xs font-bold px-2.5 py-1 rounded-full"
+                                            style={{ background: "#dcfce7", color: "#15803d" }}>
+                                            {reactivateItems.length} reactivated
+                                        </span>
+                                    </div>
+                                    <div className="max-h-60 overflow-y-auto space-y-2 pr-0.5">
+                                        {reactivateItems.map((item) => (
+                                            <div key={item.id}
+                                                className="flex items-center gap-3 p-3 rounded-xl border"
+                                                style={{ background: "#f0fdf4", borderColor: "#86efac" }}>
+                                                <div className="w-5 h-5 rounded flex-shrink-0 flex items-center justify-center"
+                                                    style={{ background: "#22c55e" }}>
+                                                    <CheckIcon />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className="text-sm font-semibold text-gray-700">{item.serialNumber}</span>
+                                                        <span className="text-xs px-1.5 py-0.5 rounded font-medium"
+                                                            style={{ background: "#dcfce7", color: "#15803d" }}>
+                                                            IN_STOCK (reactivated)
+                                                        </span>
+                                                    </div>
+                                                    {(item.assetCode || item.macAddress) && (
+                                                        <div className="flex gap-3 mt-0.5">
+                                                            {item.assetCode && <span className="text-xs text-gray-400">Asset: <span className="text-gray-600">{item.assetCode}</span></span>}
+                                                            {item.macAddress && <span className="text-xs text-gray-400">MAC: <span className="text-gray-600">{item.macAddress}</span></span>}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : isLoading ? (
                                 <div className="flex flex-col items-center justify-center py-10 gap-3">
                                     <SpinnerIcon color="#f59e0b" />
                                     <p className="text-sm text-gray-400">Loading items…</p>
@@ -441,7 +490,44 @@ const StockAdjustmentTrackedModal: React.FC<Props> = ({
                     {/* ── NEGATIVE ── */}
                     {!isPositive(adjustmentType) && (
                         <div>
-                            {isLoading ? (
+                            {hasRemovedHistory ? (
+                                <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Removed Serials</p>
+                                        <span className="text-xs font-bold px-2.5 py-1 rounded-full"
+                                            style={{ background: "#fee2e2", color: "#b91c1c" }}>
+                                            {availableItems.length} removed
+                                        </span>
+                                    </div>
+                                    <div className="max-h-60 overflow-y-auto space-y-2 pr-0.5">
+                                        {availableItems.map((item) => (
+                                            <div key={item.id}
+                                                className="flex items-center gap-3 p-3 rounded-xl border"
+                                                style={{ background: "#fff5f5", borderColor: "#fca5a5" }}>
+                                                <div className="w-5 h-5 rounded flex-shrink-0 flex items-center justify-center"
+                                                    style={{ background: "#ef4444" }}>
+                                                    <CheckIcon />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className="text-sm font-semibold text-gray-700">{item.serialNumber}</span>
+                                                        <span className="text-xs px-1.5 py-0.5 rounded font-medium"
+                                                            style={{ background: "#fee2e2", color: "#b91c1c" }}>
+                                                            {item.status}
+                                                        </span>
+                                                    </div>
+                                                    {(item.assetCode || item.macAddress) && (
+                                                        <div className="flex gap-3 mt-0.5">
+                                                            {item.assetCode && <span className="text-xs text-gray-400">Asset: <span className="text-gray-600">{item.assetCode}</span></span>}
+                                                            {item.macAddress && <span className="text-xs text-gray-400">MAC: <span className="text-gray-600">{item.macAddress}</span></span>}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : isLoading ? (
                                 <div className="flex flex-col items-center justify-center py-10 gap-3">
                                     <SpinnerIcon color="#ef4444" />
                                     <p className="text-sm text-gray-400">Loading items…</p>

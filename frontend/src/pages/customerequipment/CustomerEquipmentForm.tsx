@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faSave } from "@fortawesome/free-solid-svg-icons";
-import { FilePenLine, Plus, Trash2, ChevronDown, ChevronUp, History, X, MonitorSmartphone } from "lucide-react";
+import { FilePenLine, Plus, Trash2, ChevronDown, ChevronUp, History, X, MonitorSmartphone, ArrowLeftRight, Loader2 } from "lucide-react";
 import dayjs from "dayjs";
 import { useAppContext } from "@/hooks/useAppContext";
 import {
@@ -13,7 +13,9 @@ import {
     getAvailableAssetItems,
     getVariantUnits,
     searchOrders,
+    searchStockRequests,
     getSerialHistory,
+    swapSerial,
 } from "@/api/customerEquipment";
 
 type CEQItemPayload =
@@ -117,11 +119,16 @@ const CustomerEquipmentForm: React.FC = () => {
     const [branchId, setBranchId]     = useState<number | "">(user?.branchId ?? "");
     const [assignType, setAssignType] = useState<AssignType>("INSTALLED");
     const [assignedAt, setAssignedAt] = useState(dayjs().format("YYYY-MM-DD"));
-    const [orderId, setOrderId]         = useState<number | "">("");
-    const [orderRef, setOrderRef]       = useState("");
-    const [orderSearch, setOrderSearch] = useState("");
-    const [orderResults, setOrderResults] = useState<{ id: number; ref: string; customer?: { name: string } | null }[]>([]);
+    const [orderId, setOrderId]           = useState<number | "">("");
+    const [orderRef, setOrderRef]         = useState("");
+    const [orderSearch, setOrderSearch]   = useState("");
+    const [orderResults, setOrderResults] = useState<{ id: number; ref: string; customer?: { name: string } | null; linkedStockRequest?: { ref: string } | null; linkedCeq?: { ref: string } | null }[]>([]);
     const [showOrderSuggestions, setShowOrderSuggestions] = useState(false);
+    const [stockRequestId, setStockRequestId]   = useState<number | "">("");
+    const [stockRequestRef, setStockRequestRef] = useState("");
+    const [srSearch, setSrSearch]               = useState("");
+    const [srResults, setSrResults]             = useState<{ id: number; ref: string; requestDate: string; linkedCeq?: { ref: string } | null }[]>([]);
+    const [showSrSuggestions, setShowSrSuggestions] = useState(false);
     const [note, setNote]               = useState("");
 
     // Equipment lines (create mode only)
@@ -130,6 +137,117 @@ const CustomerEquipmentForm: React.FC = () => {
     // Serial history modal
     const [serialHistory, setSerialHistory] = useState<{ serialNumber: string; records: any[] } | null>(null);
     const [historyLoading, setHistoryLoading] = useState(false);
+
+    // Swap serial modal (view mode — for existing saved CEQ records)
+    const [swapTarget, setSwapTarget]           = useState<{ ceqItemId: number; oldSerial: any; variantId: number } | null>(null);
+    const [swapAvailable, setSwapAvailable]     = useState<any[]>([]);
+    const [swapSelectedId, setSwapSelectedId]   = useState<number | null>(null);
+    const [swapReason, setSwapReason]           = useState("");
+    const [swapLoading, setSwapLoading]         = useState(false);
+    const [swapFetching, setSwapFetching]       = useState(false);
+
+    // Pending swaps (create/edit mode — replace before saving)
+    // maps oldSerialId → { newSerial, reason }
+    const [pendingSwaps, setPendingSwaps] = useState<Record<number, { newSerial: AssetItem; reason: string }>>({});
+    const [createSwapPicker, setCreateSwapPicker] = useState<{ lineKey: string; oldSerial: AssetItem; variantId: number } | null>(null);
+    const [createSwapItems, setCreateSwapItems]   = useState<AssetItem[]>([]);
+    const [createSwapFetching, setCreateSwapFetching] = useState(false);
+    const [createSwapSelectedId, setCreateSwapSelectedId] = useState<number | null>(null);
+    const [createSwapReason, setCreateSwapReason]         = useState("");
+
+    const openCreateSwapPicker = async (lineKey: string, oldSerial: AssetItem, variantId: number) => {
+        setCreateSwapPicker({ lineKey, oldSerial, variantId });
+        setCreateSwapSelectedId(null);
+        setCreateSwapReason("");
+        setCreateSwapFetching(true);
+        try {
+            const all = await getAvailableAssetItems(variantId, Number(branchId), id ? Number(id) : undefined);
+            const currentLine = lines.find(l => l.key === lineKey);
+            const alreadySelected = new Set(currentLine?.selectedIds ?? []);
+            setCreateSwapItems(
+                all.filter((s: AssetItem) => s.status === "IN_STOCK" && s.id !== oldSerial.id && !alreadySelected.has(s.id))
+            );
+        } catch {
+            toast.error("Failed to load replacement serials");
+            setCreateSwapPicker(null);
+        } finally {
+            setCreateSwapFetching(false);
+        }
+    };
+
+    const confirmCreateSwap = () => {
+        if (!createSwapPicker || !createSwapSelectedId) return;
+        const newSerial = createSwapItems.find(s => s.id === createSwapSelectedId);
+        if (!newSerial) return;
+        const { lineKey, oldSerial } = createSwapPicker;
+
+        setLines(prev => prev.map(line => {
+            if (line.key !== lineKey) return line;
+            const newSelectedIds   = line.selectedIds.filter(id => id !== oldSerial.id);
+            const newSelectedItems = line.selectedItems.filter(i => i.id !== oldSerial.id);
+            const inAvailable = line.availableItems.some(i => i.id === newSerial.id);
+            return {
+                ...line,
+                availableItems: inAvailable ? line.availableItems : [...line.availableItems, newSerial],
+                selectedIds:    [...newSelectedIds, newSerial.id],
+                selectedItems:  [...newSelectedItems, newSerial],
+            };
+        }));
+
+        // Always record swap for audit trail in note; backend skips invoice-specific
+        // steps (OrderItemAssetItem, extra stock) when no orderId is linked.
+        setPendingSwaps(prev => ({ ...prev, [oldSerial.id]: { newSerial, reason: createSwapReason.trim() } }));
+        setCreateSwapPicker(null);
+        setCreateSwapSelectedId(null);
+        setCreateSwapReason("");
+    };
+
+    const undoCreateSwap = (lineKey: string, oldSerial: AssetItem) => {
+        const swap = pendingSwaps[oldSerial.id];
+        if (!swap) return;
+        setLines(prev => prev.map(line => {
+            if (line.key !== lineKey) return line;
+            return {
+                ...line,
+                selectedIds:    [...line.selectedIds.filter(id => id !== swap.newSerial.id), oldSerial.id],
+                selectedItems:  [...line.selectedItems.filter(i => i.id !== swap.newSerial.id), oldSerial],
+            };
+        }));
+        setPendingSwaps(prev => { const n = { ...prev }; delete n[oldSerial.id]; return n; });
+    };
+
+    const openSwapModal = async (ceqItemId: number, oldSerial: any, variantId: number, branchId: number) => {
+        setSwapTarget({ ceqItemId, oldSerial, variantId });
+        setSwapSelectedId(null);
+        setSwapReason("");
+        setSwapFetching(true);
+        try {
+            const all = await getAvailableAssetItems(variantId, branchId, undefined);
+            // Only show IN_STOCK serials that are not the current one
+            setSwapAvailable(all.filter((s: any) => s.status === "IN_STOCK" && s.id !== oldSerial.id));
+        } catch {
+            toast.error("Failed to load available serials");
+        } finally {
+            setSwapFetching(false);
+        }
+    };
+
+    const handleSwapConfirm = async () => {
+        if (!swapTarget || !swapSelectedId || !swapReason.trim() || !viewData) return;
+        setSwapLoading(true);
+        try {
+            await swapSerial(viewData.id, swapTarget.oldSerial.id, swapSelectedId, swapReason.trim());
+            toast.success("Serial swapped successfully.");
+            setSwapTarget(null);
+            // Reload the record to show updated serials
+            const updated = await getCustomerEquipmentById(viewData.id);
+            setViewData(updated);
+        } catch (err: any) {
+            toast.error(err?.message || "Failed to swap serial.");
+        } finally {
+            setSwapLoading(false);
+        }
+    };
 
     const openSerialHistory = async (item: AssetItem) => {
         setHistoryLoading(true);
@@ -180,6 +298,11 @@ const CustomerEquipmentForm: React.FC = () => {
                     setOrderRef(record.order.ref);
                     setOrderSearch(record.order.ref);
                 }
+                if (record.stockRequest) {
+                    setStockRequestId(record.stockRequest.id);
+                    setStockRequestRef(record.stockRequest.ref);
+                    setSrSearch(record.stockRequest.ref);
+                }
 
                 // Pre-fill equipment lines from existing items
                 // Group tracked items by variant so multiple serials share one line
@@ -216,7 +339,7 @@ const CustomerEquipmentForm: React.FC = () => {
                     Object.values(trackedMap).map(async ({ variant, items: existingItems }) => {
                         const label = `${variant.products?.name} (${variant.productType}) — ${variant.barcode}`;
                         let available: AssetItem[] = [];
-                        try { available = await getAvailableAssetItems(variant.id, record.branchId, record.id); } catch { /* ok */ }
+                        try { available = await getAvailableAssetItems(variant.id, record.branchId, record.id, (record as any).stockRequestId ?? undefined); } catch { /* ok */ }
                         // Include any existing items not in available list (edge case)
                         const availIds = new Set(available.map((a: AssetItem) => a.id));
                         for (const ei of existingItems) {
@@ -290,7 +413,7 @@ const CustomerEquipmentForm: React.FC = () => {
 
         if (tracked && branchId) {
             try {
-                const items = await getAvailableAssetItems(variant.id, Number(branchId), id ? Number(id) : undefined);
+                const items = await getAvailableAssetItems(variant.id, Number(branchId), id ? Number(id) : undefined, stockRequestId ? Number(stockRequestId) : undefined);
                 updateLine(key, { availableItems: items, showSerialPanel: true });
             } catch {
                 updateLine(key, { availableItems: [] });
@@ -365,9 +488,33 @@ const CustomerEquipmentForm: React.FC = () => {
         setOrderId(""); setOrderRef(""); setOrderSearch(""); setOrderResults([]);
     };
 
+    const handleSrSearch = async (term: string) => {
+        setSrSearch(term); setStockRequestRef(""); setStockRequestId("");
+        if (!term.trim() || !branchId) { setSrResults([]); setShowSrSuggestions(false); return; }
+        try {
+            const results = await searchStockRequests(Number(branchId), term);
+            setSrResults(results);
+            setShowSrSuggestions(true);
+        } catch { setSrResults([]); }
+    };
+
+    const selectSr = (sr: { id: number; ref: string }) => {
+        setStockRequestId(sr.id);
+        setStockRequestRef(sr.ref);
+        setSrSearch(sr.ref);
+        setShowSrSuggestions(false);
+        // Reload serial panels so they include TRANSFERRED serials from this request
+        setLines(prev => prev.map(l => ({ ...l, availableItems: [], showSerialPanel: false })));
+    };
+
+    const clearSr = () => {
+        setStockRequestId(""); setStockRequestRef(""); setSrSearch(""); setSrResults([]);
+        setLines(prev => prev.map(l => ({ ...l, availableItems: [], showSerialPanel: false })));
+    };
+
     // ── Build & validate payload ──────────────────────────────────────────────
 
-    const buildPayload = (): CEQItemPayload[] | null => {
+    const buildPayload = (): { items: CEQItemPayload[]; swaps: { oldSerialId: number; newSerialId: number; reason: string }[] } | null => {
         const payload: CEQItemPayload[] = [];
         const seenAssetIds = new Set<number>();
 
@@ -401,7 +548,14 @@ const CustomerEquipmentForm: React.FC = () => {
             toast.error("Please add at least one product");
             return null;
         }
-        return payload;
+
+        const swaps = Object.entries(pendingSwaps).map(([oldId, { newSerial, reason }]) => ({
+            oldSerialId: Number(oldId),
+            newSerialId: newSerial.id,
+            reason,
+        }));
+
+        return { items: payload, swaps };
     };
 
     // ── Submit ────────────────────────────────────────────────────────────────
@@ -410,19 +564,31 @@ const CustomerEquipmentForm: React.FC = () => {
         e.preventDefault();
         if (!customerId) { toast.error("Please select a customer"); return; }
 
+        // Guard: typed in invoice/SR field but never selected from dropdown
+        if (orderSearch.trim() && !orderId) {
+            toast.error("Invoice not linked — please select from the dropdown or clear the Invoice / Order field.");
+            return;
+        }
+        if (srSearch.trim() && !stockRequestId) {
+            toast.error("Stock Request not linked — please select from the dropdown or clear the Stock Request field.");
+            return;
+        }
+
         setIsLoading(true);
         try {
             if (isEdit && id) {
-                const payload = buildPayload();
-                if (!payload) { setIsLoading(false); return; }
+                const result = buildPayload();
+                if (!result) { setIsLoading(false); return; }
 
                 await updateCustomerEquipment(parseInt(id, 10), {
-                    customerId: Number(customerId),
+                    customerId:    Number(customerId),
                     assignType,
                     assignedAt,
-                    orderId:    orderId ? Number(orderId) : null,
-                    note:       note || undefined,
-                    items:      payload,
+                    orderId:       orderId        ? Number(orderId)        : null,
+                    stockRequestId: stockRequestId ? Number(stockRequestId) : null,
+                    note:          note || undefined,
+                    items:         result.items,
+                    swaps:         result.swaps.length > 0 ? result.swaps : undefined,
                 });
                 toast.success("Updated successfully", { position: "top-right", autoClose: 2000 });
                 navigate(`/customerequipment/${id}`);
@@ -430,17 +596,19 @@ const CustomerEquipmentForm: React.FC = () => {
                 // CREATE: require branch + items
                 if (!branchId) { toast.error("Please select a branch"); setIsLoading(false); return; }
 
-                const payload = buildPayload();
-                if (!payload) { setIsLoading(false); return; }
+                const result = buildPayload();
+                if (!result) { setIsLoading(false); return; }
 
                 await createCustomerEquipment({
-                    customerId: Number(customerId),
-                    branchId:   Number(branchId),
+                    customerId:    Number(customerId),
+                    branchId:      Number(branchId),
                     assignType,
                     assignedAt,
-                    items:      payload,
-                    orderId:    orderId ? Number(orderId) : null,
-                    note:       note || undefined,
+                    items:         result.items,
+                    orderId:       orderId        ? Number(orderId)        : null,
+                    stockRequestId: stockRequestId ? Number(stockRequestId) : null,
+                    note:          note || undefined,
+                    swaps:         result.swaps.length > 0 ? result.swaps : undefined,
                 });
                 toast.success("Equipment assigned successfully", { position: "top-right", autoClose: 2000 });
                 navigate("/customerequipment");
@@ -496,6 +664,7 @@ const CustomerEquipmentForm: React.FC = () => {
         });
 
         return (
+            <>
             <div className="panel">
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
@@ -539,6 +708,9 @@ const CustomerEquipmentForm: React.FC = () => {
                         <div><label className="text-xs text-gray-400 uppercase">Invoice / Order</label>
                             <p>{d.order?.ref || "—"}</p>
                         </div>
+                        <div><label className="text-xs text-gray-400 uppercase">Stock Request</label>
+                            <p>{(d as any).stockRequest?.ref || "—"}</p>
+                        </div>
                     </div>
                     <div className="space-y-3">
                         <div><label className="text-xs text-gray-400 uppercase">Assigned Date</label>
@@ -577,7 +749,22 @@ const CustomerEquipmentForm: React.FC = () => {
                                                 {item.productAssetItem.assetCode && (
                                                     <span className="text-gray-400">Asset: {item.productAssetItem.assetCode}</span>
                                                 )}
-                                                <span className="text-xs text-gray-400 ml-auto">[{item.productAssetItem.status}]</span>
+                                                <span className="text-xs text-gray-400">[{item.productAssetItem.status}]</span>
+                                                {/* Swap button — available on any active tracked record */}
+                                                {!d.returnedAt && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openSwapModal(item.id, item.productAssetItem, item.productAssetItem.productVariantId ?? item.productAssetItem.productVariant?.id, d.branchId)}
+                                                        className="ml-auto flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg transition-colors"
+                                                        style={{ backgroundColor: "#eff6ff", color: "#2563eb" }}
+                                                        onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#dbeafe")}
+                                                        onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#eff6ff")}
+                                                        title="Swap this serial number"
+                                                    >
+                                                        <ArrowLeftRight className="w-3 h-3" />
+                                                        Swap
+                                                    </button>
+                                                )}
                                             </>
                                         ) : (
                                             <span className="text-gray-600 flex items-center gap-2">
@@ -597,14 +784,135 @@ const CustomerEquipmentForm: React.FC = () => {
                     ))}
                 </div>
 
-                {d.note && (
-                    <div className="mb-5">
-                        <label className="text-xs text-gray-400 uppercase">Note</label>
-                        <p className="mt-1 p-3 bg-gray-50 dark:bg-[#1c2e4a] rounded">{d.note}</p>
-                    </div>
-                )}
+                {d.note && (() => {
+                    const lines = d.note.split("\n");
+                    const swapLines: { date: string; from: string; to: string; reason: string }[] = [];
+                    const noteLines: string[] = [];
+                    for (const line of lines) {
+                        // Format A (current): [SWAP date] OLD → NEW. Reason: text
+                        // Format B (legacy):  [SWAP date] OLD → NEW (reason text)
+                        const mA = line.match(/^\[SWAP ([^\]]+)\]\s*(.+?)\s*→\s*(.+?)\.\s*Reason:\s*(.*)$/);
+                        const mB = !mA ? line.match(/^\[SWAP ([^\]]+)\]\s*(.+?)\s*→\s*(.+?)\s*\(([^)]*)\)\s*$/) : null;
+                        const m = mA || mB;
+                        if (m) swapLines.push({ date: m[1], from: m[2].trim(), to: m[3].trim(), reason: m[4].trim() });
+                        else if (line.trim()) noteLines.push(line.trim());
+                    }
+                    return (
+                        <div className="mb-5 space-y-3">
+                            {noteLines.length > 0 && (
+                                <div>
+                                    <label className="text-xs text-gray-400 uppercase">Note</label>
+                                    <p className="mt-1 p-3 bg-gray-50 dark:bg-[#1c2e4a] rounded text-sm">{noteLines.join(" ")}</p>
+                                </div>
+                            )}
+                            {swapLines.length > 0 && (
+                                <div>
+                                    <label className="text-xs text-gray-400 uppercase flex items-center gap-1.5">
+                                        <ArrowLeftRight className="w-3 h-3" /> Swap History
+                                    </label>
+                                    <div className="mt-1 rounded-lg border border-gray-200 overflow-hidden">
+                                        <table className="w-full text-xs">
+                                            <thead>
+                                                <tr className="bg-gray-50 text-gray-500 uppercase tracking-wide">
+                                                    <th className="text-left px-3 py-2 font-medium">Date</th>
+                                                    <th className="text-left px-3 py-2 font-medium">From</th>
+                                                    <th className="text-left px-3 py-2 font-medium">To</th>
+                                                    <th className="text-left px-3 py-2 font-medium">Reason</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100">
+                                                {swapLines.map((s, i) => (
+                                                    <tr key={i} className="hover:bg-gray-50">
+                                                        <td className="px-3 py-2 text-gray-400 whitespace-nowrap">{s.date}</td>
+                                                        <td className="px-3 py-2 font-mono text-red-500">{s.from}</td>
+                                                        <td className="px-3 py-2 font-mono text-green-600">{s.to}</td>
+                                                        <td className="px-3 py-2 text-gray-600">{s.reason}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
 
             </div>
+
+            {/* ── Swap Serial Modal (View mode) ── */}
+            {swapTarget && (
+                <div className="fixed inset-0 bg-black/60 z-[1001] flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-[#1c2e4a] rounded-xl shadow-2xl w-full max-w-md flex flex-col" style={{ maxHeight: "90vh" }}>
+                        <div className="flex items-center justify-between px-5 py-4 border-b flex-shrink-0">
+                            <div className="flex items-center gap-2">
+                                <ArrowLeftRight className="w-5 h-5 text-blue-500" />
+                                <div>
+                                    <h5 className="font-bold text-gray-800 dark:text-white">Swap Serial Number</h5>
+                                    <p className="text-xs text-gray-400 mt-0.5">Replace the assigned serial with another IN_STOCK unit</p>
+                                </div>
+                            </div>
+                            <button type="button" onClick={() => setSwapTarget(null)} className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Current Serial</p>
+                                <div className="rounded-xl px-4 py-3 flex items-center gap-3" style={{ backgroundColor: "#fef3c7", border: "1px solid #fcd34d" }}>
+                                    <ArrowLeftRight className="w-4 h-4 flex-shrink-0" style={{ color: "#b45309" }} />
+                                    <div>
+                                        <p className="font-mono font-bold" style={{ color: "#92400e" }}>{swapTarget.oldSerial.serialNumber}</p>
+                                        {swapTarget.oldSerial.assetCode && <p className="text-xs" style={{ color: "#b45309" }}>Asset: {swapTarget.oldSerial.assetCode}</p>}
+                                    </div>
+                                    <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: "#fde68a", color: "#92400e" }}>
+                                        {swapTarget.oldSerial.status}
+                                    </span>
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Select New Serial</p>
+                                {swapFetching ? (
+                                    <div className="flex items-center justify-center py-8 gap-2 text-gray-400">
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        <span className="text-sm">Loading available serials...</span>
+                                    </div>
+                                ) : swapAvailable.length === 0 ? (
+                                    <div className="text-center py-8 text-sm text-gray-400">No IN_STOCK serials available for this product in this branch.</div>
+                                ) : (
+                                    <div className="space-y-2 max-h-48 overflow-y-auto rounded-xl border border-gray-200">
+                                        {swapAvailable.map((s: any) => (
+                                            <label key={s.id} className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${swapSelectedId === s.id ? "bg-blue-50" : "hover:bg-gray-50"}`}>
+                                                <input type="radio" name="swapSerial" value={s.id} checked={swapSelectedId === s.id} onChange={() => setSwapSelectedId(s.id)} className="form-radio text-blue-600" />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-mono font-semibold text-blue-700 text-sm">{s.serialNumber}</p>
+                                                    {s.assetCode && <p className="text-xs text-gray-400">Asset: {s.assetCode}</p>}
+                                                    {s.macAddress && <p className="text-xs text-gray-400">MAC: {s.macAddress}</p>}
+                                                </div>
+                                                <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold flex-shrink-0">IN_STOCK</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Reason <span className="text-red-500">*</span></label>
+                                <textarea rows={3} placeholder="e.g. Customer reported malfunction, replacing with spare unit..." value={swapReason} onChange={e => setSwapReason(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-blue-400 resize-none bg-gray-50" />
+                                <p className="text-xs text-gray-400 mt-1">This reason will be saved in the equipment note for audit trail.</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-2 px-5 py-4 border-t flex-shrink-0">
+                            <button type="button" onClick={() => setSwapTarget(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50">Cancel</button>
+                            <button type="button" onClick={handleSwapConfirm} disabled={!swapSelectedId || !swapReason.trim() || swapLoading}
+                                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+                                style={{ background: !swapSelectedId || !swapReason.trim() || swapLoading ? "#e5e7eb" : "linear-gradient(to right,#2563eb,#1d4ed8)", color: !swapSelectedId || !swapReason.trim() || swapLoading ? "#9ca3af" : "#fff", boxShadow: !swapSelectedId || !swapReason.trim() || swapLoading ? "none" : "0 4px 14px rgba(37,99,235,0.35)" }}>
+                                {swapLoading ? <><Loader2 className="w-4 h-4 animate-spin" />Swapping...</> : <><ArrowLeftRight className="w-4 h-4" />Confirm Swap</>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
         );
     }
 
@@ -623,6 +931,7 @@ const CustomerEquipmentForm: React.FC = () => {
         const d = viewData;
 
         return (
+            <>
             <div className="panel">
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
@@ -759,8 +1068,25 @@ const CustomerEquipmentForm: React.FC = () => {
                                                             const isUnlockedBySoldInvoice = isSold && !!orderId && soldOrderId === Number(orderId);
                                                             const isBlocked       = usedElse || isCeqAssigned || (isSold && !isUnlockedBySoldInvoice) || (isReserved && !isUnlockedBySoldInvoice) || (item.status !== "IN_STOCK" && !checked && !isUnlockedBySoldInvoice);
                                                             const soldOrder       = isSold ? item.orderItemLinks?.[0]?.orderItem?.order : null;
+                                                            const pendingSwap     = pendingSwaps[item.id];
+
+                                                            // Show replaced state for invoice-linked serials that have a pending swap
+                                                            if (isUnlockedBySoldInvoice && pendingSwap) {
+                                                                return (
+                                                                    <div key={item.id} className="flex items-center gap-2 px-4 py-2 border-b text-sm bg-orange-50">
+                                                                        <span className="font-mono text-gray-400 line-through">{item.serialNumber}</span>
+                                                                        <ArrowLeftRight size={11} className="text-orange-400 flex-shrink-0" />
+                                                                        <span className="font-mono font-bold text-green-600">{pendingSwap.newSerial.serialNumber}</span>
+                                                                        <span className="ml-auto text-xs text-orange-500 font-medium whitespace-nowrap">Replaces on save</span>
+                                                                        <button type="button" onClick={() => undoCreateSwap(line.key, item)} className="shrink-0 flex items-center gap-0.5 text-xs text-red-400 hover:text-red-600">
+                                                                            <X size={11} /> Undo
+                                                                        </button>
+                                                                    </div>
+                                                                );
+                                                            }
+
                                                             return (
-                                                                <div key={item.id} className={`flex items-center gap-3 px-4 py-2 border-b text-sm ${isBlocked ? "opacity-50" : "hover:bg-blue-50"} ${checked ? "bg-blue-50" : ""}`}>
+                                                                <div key={item.id} className={`flex items-center gap-2 px-4 py-2 border-b text-sm ${isBlocked ? "opacity-50" : "hover:bg-blue-50"} ${checked ? "bg-blue-50" : ""}`}>
                                                                     <label className={`flex items-center gap-3 flex-1 min-w-0 ${isBlocked ? "cursor-not-allowed" : "cursor-pointer"}`}>
                                                                         <input type="checkbox" className="form-checkbox shrink-0" checked={checked} disabled={isBlocked} onChange={() => toggleSerial(line.key, item)} />
                                                                         <span className="font-mono font-medium text-blue-700">{item.serialNumber}</span>
@@ -784,7 +1110,14 @@ const CustomerEquipmentForm: React.FC = () => {
                                                                             }
                                                                         </span>
                                                                     </label>
-                                                                    <button type="button" title="View assignment history" className="shrink-0 text-gray-400 hover:text-indigo-600 ml-1" onClick={() => openSerialHistory(item)}>
+                                                                    {(isUnlockedBySoldInvoice || (checked && !orderId && !isUnlockedBySoldInvoice)) && (
+                                                                        <button type="button" onClick={() => openCreateSwapPicker(line.key, item, line.variantId!)}
+                                                                            className="shrink-0 flex items-center gap-0.5 text-xs text-blue-500 hover:text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 hover:border-blue-400 whitespace-nowrap"
+                                                                            title="Replace this serial with an IN_STOCK unit">
+                                                                            <ArrowLeftRight size={10} /> Replace
+                                                                        </button>
+                                                                    )}
+                                                                    <button type="button" title="View assignment history" className="shrink-0 text-gray-400 hover:text-indigo-600" onClick={() => openSerialHistory(item)}>
                                                                         <History size={14} />
                                                                     </button>
                                                                 </div>
@@ -827,7 +1160,7 @@ const CustomerEquipmentForm: React.FC = () => {
                         <div className="relative mt-1">
                             <input
                                 type="text"
-                                className="form-input w-full pr-8"
+                                className={`form-input w-full pr-8 ${orderSearch.trim() && !orderId ? "border-orange-400 ring-1 ring-orange-300" : ""}`}
                                 placeholder="Search by invoice ref (e.g. ZM2026-00001)..."
                                 value={orderSearch}
                                 onChange={(e) => handleOrderSearch(e.target.value)}
@@ -837,18 +1170,61 @@ const CustomerEquipmentForm: React.FC = () => {
                             {orderId && <button type="button" onClick={clearOrder} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 text-lg leading-none">×</button>}
                         </div>
                         {orderId && <p className="text-xs text-green-600 mt-1">✓ Linked to invoice <span className="font-mono font-bold">{orderRef}</span></p>}
+                        {orderSearch.trim() && !orderId && <p className="text-xs text-orange-500 mt-1">⚠ Not linked — select from the list or clear this field.</p>}
                         {showOrderSuggestions && orderResults.length > 0 && !orderId && (
                             <ul className="absolute mt-1 bg-white dark:bg-[#1b2e4b] border border-gray-200 dark:border-gray-600 w-full max-h-52 overflow-y-auto rounded-lg shadow-2xl" style={{ zIndex: 9999 }}>
-                                {orderResults.map((o) => (
-                                    <li key={o.id} className="px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-0 flex items-center gap-3" onClick={() => selectOrder(o)}>
-                                        <span className="font-mono font-semibold text-blue-600 dark:text-blue-400 text-sm">{o.ref}</span>
-                                        {o.customer?.name && <span className="text-gray-400 text-xs">{o.customer.name}</span>}
-                                    </li>
-                                ))}
+                                {orderResults.map((o) => {
+                                    const alreadyLinked = !!(o.linkedCeq);
+                                    return (
+                                        <li key={o.id}
+                                            className={`px-4 py-2.5 border-b border-gray-100 dark:border-gray-700 last:border-0 flex items-center gap-3 ${alreadyLinked ? "opacity-60 cursor-not-allowed bg-red-50" : "hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer"}`}
+                                            onClick={() => !alreadyLinked && selectOrder(o)}>
+                                            <span className={`font-mono font-semibold text-sm ${alreadyLinked ? "text-gray-400" : "text-blue-600 dark:text-blue-400"}`}>{o.ref}</span>
+                                            {o.customer?.name && <span className="text-gray-400 text-xs">{o.customer.name}</span>}
+                                            {alreadyLinked && <span className="ml-auto text-xs text-red-500 font-medium">Already linked to {o.linkedCeq!.ref}</span>}
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         )}
                         {showOrderSuggestions && orderResults.length === 0 && orderSearch.trim() && !orderId && (
                             <p className="text-xs text-orange-500 mt-1">No invoices found matching "{orderSearch}"</p>
+                        )}
+                    </div>
+
+                    {/* Stock Request */}
+                    <div className="mb-5 relative" style={{ maxWidth: 400 }}>
+                        <label>Stock Request <span className="text-xs text-gray-400 font-normal ml-2">(optional — if support picked up via request)</span></label>
+                        <div className="relative mt-1">
+                            <input type="text" className="form-input w-full pr-8"
+                                placeholder="Search by request ref (e.g. SR-00015)..."
+                                value={srSearch}
+                                onChange={(e) => handleSrSearch(e.target.value)}
+                                onFocus={() => srResults.length > 0 && !stockRequestId && setShowSrSuggestions(true)}
+                                onBlur={() => setTimeout(() => setShowSrSuggestions(false), 150)}
+                            />
+                            {stockRequestId && <button type="button" onClick={clearSr} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 text-lg leading-none">×</button>}
+                        </div>
+                        {stockRequestId && <p className="text-xs text-indigo-600 mt-1">✓ Linked to stock request <span className="font-mono font-bold">{stockRequestRef}</span></p>}
+                        {srSearch.trim() && !stockRequestId && <p className="text-xs text-orange-500 mt-1">⚠ Not linked — select from the list or clear this field.</p>}
+                        {showSrSuggestions && srResults.length > 0 && !stockRequestId && (
+                            <ul className="absolute mt-1 bg-white dark:bg-[#1b2e4b] border border-gray-200 dark:border-gray-600 w-full max-h-52 overflow-y-auto rounded-lg shadow-2xl" style={{ zIndex: 9999 }}>
+                                {srResults.map((sr) => {
+                                    const alreadyLinked = !!(sr.linkedCeq);
+                                    return (
+                                        <li key={sr.id}
+                                            className={`px-4 py-2.5 border-b border-gray-100 dark:border-gray-700 last:border-0 flex items-center gap-3 ${alreadyLinked ? "opacity-60 cursor-not-allowed bg-red-50" : "hover:bg-indigo-50 dark:hover:bg-indigo-900/30 cursor-pointer"}`}
+                                            onClick={() => !alreadyLinked && selectSr(sr)}>
+                                            <span className={`font-mono font-semibold text-sm ${alreadyLinked ? "text-gray-400" : "text-indigo-600 dark:text-indigo-400"}`}>{sr.ref}</span>
+                                            <span className="text-gray-400 text-xs">{dayjs(sr.requestDate).format("DD/MM/YYYY")}</span>
+                                            {alreadyLinked && <span className="ml-auto text-xs text-red-500 font-medium">Already linked to {sr.linkedCeq!.ref}</span>}
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        )}
+                        {showSrSuggestions && srResults.length === 0 && srSearch.trim() && !stockRequestId && (
+                            <p className="text-xs text-orange-500 mt-1">No approved stock requests found matching "{srSearch}"</p>
                         )}
                     </div>
 
@@ -920,6 +1296,181 @@ const CustomerEquipmentForm: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* ── Swap Serial Modal ── */}
+            {swapTarget && (
+                <div className="fixed inset-0 bg-black/60 z-[1001] flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-[#1c2e4a] rounded-xl shadow-2xl w-full max-w-md flex flex-col" style={{ maxHeight: "90vh" }}>
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-5 py-4 border-b flex-shrink-0">
+                            <div className="flex items-center gap-2">
+                                <ArrowLeftRight className="w-5 h-5 text-blue-500" />
+                                <div>
+                                    <h5 className="font-bold text-gray-800 dark:text-white">Swap Serial Number</h5>
+                                    <p className="text-xs text-gray-400 mt-0.5">Replace the assigned serial with another IN_STOCK unit</p>
+                                </div>
+                            </div>
+                            <button type="button" onClick={() => setSwapTarget(null)} className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+                            {/* Current serial */}
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Current Serial</p>
+                                <div className="rounded-xl px-4 py-3 flex items-center gap-3" style={{ backgroundColor: "#fef3c7", border: "1px solid #fcd34d" }}>
+                                    <ArrowLeftRight className="w-4 h-4 flex-shrink-0" style={{ color: "#b45309" }} />
+                                    <div>
+                                        <p className="font-mono font-bold" style={{ color: "#92400e" }}>{swapTarget.oldSerial.serialNumber}</p>
+                                        {swapTarget.oldSerial.assetCode && <p className="text-xs" style={{ color: "#b45309" }}>Asset: {swapTarget.oldSerial.assetCode}</p>}
+                                    </div>
+                                    <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: "#fde68a", color: "#92400e" }}>
+                                        {swapTarget.oldSerial.status}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* New serial selection */}
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Select New Serial</p>
+                                {swapFetching ? (
+                                    <div className="flex items-center justify-center py-8 gap-2 text-gray-400">
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        <span className="text-sm">Loading available serials...</span>
+                                    </div>
+                                ) : swapAvailable.length === 0 ? (
+                                    <div className="text-center py-8 text-sm text-gray-400">No IN_STOCK serials available for this product in this branch.</div>
+                                ) : (
+                                    <div className="space-y-2 max-h-48 overflow-y-auto rounded-xl border border-gray-200">
+                                        {swapAvailable.map((s: any) => (
+                                            <label key={s.id} className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${swapSelectedId === s.id ? "bg-blue-50" : "hover:bg-gray-50"}`}>
+                                                <input
+                                                    type="radio"
+                                                    name="swapSerial"
+                                                    value={s.id}
+                                                    checked={swapSelectedId === s.id}
+                                                    onChange={() => setSwapSelectedId(s.id)}
+                                                    className="form-radio text-blue-600"
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-mono font-semibold text-blue-700 text-sm">{s.serialNumber}</p>
+                                                    {s.assetCode && <p className="text-xs text-gray-400">Asset: {s.assetCode}</p>}
+                                                    {s.macAddress && <p className="text-xs text-gray-400">MAC: {s.macAddress}</p>}
+                                                </div>
+                                                <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold flex-shrink-0">IN_STOCK</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Reason */}
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
+                                    Reason <span className="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    rows={3}
+                                    placeholder="e.g. Customer reported malfunction, replacing with spare unit..."
+                                    value={swapReason}
+                                    onChange={e => setSwapReason(e.target.value)}
+                                    className="w-full rounded-xl px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-blue-400 resize-none bg-gray-50"
+                                />
+                                <p className="text-xs text-gray-400 mt-1">This reason will be saved in the equipment note for audit trail.</p>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex gap-2 px-5 py-4 border-t flex-shrink-0">
+                            <button type="button" onClick={() => setSwapTarget(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50">
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleSwapConfirm}
+                                disabled={!swapSelectedId || !swapReason.trim() || swapLoading}
+                                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+                                style={{
+                                    background: !swapSelectedId || !swapReason.trim() || swapLoading ? "#e5e7eb" : "linear-gradient(to right,#2563eb,#1d4ed8)",
+                                    color: !swapSelectedId || !swapReason.trim() || swapLoading ? "#9ca3af" : "#fff",
+                                    boxShadow: !swapSelectedId || !swapReason.trim() || swapLoading ? "none" : "0 4px 14px rgba(37,99,235,0.35)",
+                                }}
+                            >
+                                {swapLoading ? <><Loader2 className="w-4 h-4 animate-spin" />Swapping...</> : <><ArrowLeftRight className="w-4 h-4" />Confirm Swap</>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Create-mode Replace Picker Modal (also used in EDIT mode) ── */}
+            {createSwapPicker && (
+                <div className="fixed inset-0 bg-black/60 z-[1002] flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-[#1c2e4a] rounded-xl shadow-2xl w-full max-w-md flex flex-col" style={{ maxHeight: "90vh" }}>
+                        <div className="flex items-center justify-between px-5 py-4 border-b flex-shrink-0">
+                            <div className="flex items-center gap-2">
+                                <ArrowLeftRight className="w-5 h-5 text-blue-500" />
+                                <div>
+                                    <h5 className="font-bold text-gray-800 dark:text-white">Replace Serial</h5>
+                                    <p className="text-xs text-gray-400 mt-0.5">Choose an IN_STOCK unit to replace the invoice serial</p>
+                                </div>
+                            </div>
+                            <button type="button" onClick={() => setCreateSwapPicker(null)} className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Invoice Serial (being replaced)</p>
+                                <div className="rounded-xl px-4 py-3 flex items-center gap-3" style={{ backgroundColor: "#fef3c7", border: "1px solid #fcd34d" }}>
+                                    <ArrowLeftRight className="w-4 h-4 flex-shrink-0" style={{ color: "#b45309" }} />
+                                    <p className="font-mono font-bold" style={{ color: "#92400e" }}>{createSwapPicker.oldSerial.serialNumber}</p>
+                                    {createSwapPicker.oldSerial.assetCode && <p className="text-xs" style={{ color: "#b45309" }}>Asset: {createSwapPicker.oldSerial.assetCode}</p>}
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Select Replacement Serial</p>
+                                {createSwapFetching ? (
+                                    <div className="flex items-center justify-center py-8 gap-2 text-gray-400">
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        <span className="text-sm">Loading available serials...</span>
+                                    </div>
+                                ) : createSwapItems.length === 0 ? (
+                                    <div className="text-center py-8 text-sm text-gray-400">No IN_STOCK serials available for this product in this branch.</div>
+                                ) : (
+                                    <div className="space-y-1 max-h-48 overflow-y-auto rounded-xl border border-gray-200">
+                                        {createSwapItems.map((s) => (
+                                            <label key={s.id} className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${createSwapSelectedId === s.id ? "bg-blue-50" : "hover:bg-gray-50"}`}>
+                                                <input type="radio" name="createSwapSerialEdit" value={s.id} checked={createSwapSelectedId === s.id} onChange={() => setCreateSwapSelectedId(s.id)} className="form-radio text-blue-600" />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-mono font-semibold text-blue-700 text-sm">{s.serialNumber}</p>
+                                                    {s.assetCode && <p className="text-xs text-gray-400">Asset: {s.assetCode}</p>}
+                                                    {s.macAddress && <p className="text-xs text-gray-400">MAC: {s.macAddress}</p>}
+                                                </div>
+                                                <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold flex-shrink-0">IN_STOCK</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Reason <span className="text-gray-400 font-normal">(optional)</span></label>
+                                <textarea rows={2} placeholder="e.g. Defective unit swapped before delivery..." value={createSwapReason} onChange={e => setCreateSwapReason(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-blue-400 resize-none bg-gray-50" />
+                            </div>
+                        </div>
+                        <div className="flex gap-2 px-5 py-4 border-t flex-shrink-0">
+                            <button type="button" onClick={() => setCreateSwapPicker(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50">Cancel</button>
+                            <button type="button" onClick={confirmCreateSwap} disabled={!createSwapSelectedId}
+                                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all"
+                                style={{ background: !createSwapSelectedId ? "#e5e7eb" : "linear-gradient(to right,#2563eb,#1d4ed8)", color: !createSwapSelectedId ? "#9ca3af" : "#fff" }}>
+                                <ArrowLeftRight className="w-4 h-4" /> Confirm Replacement
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            </>
         );
     }
 
@@ -1100,8 +1651,24 @@ const CustomerEquipmentForm: React.FC = () => {
                                                         const isUnlockedBySoldInvoice = isSold && !!orderId && soldOrderId === Number(orderId);
                                                         const isBlocked     = usedElse || isCeqAssigned || (isSold && !isUnlockedBySoldInvoice) || (isReserved && !isUnlockedBySoldInvoice) || (item.status !== "IN_STOCK" && !checked && !isUnlockedBySoldInvoice);
                                                         const soldOrder     = isSold ? item.orderItemLinks?.[0]?.orderItem?.order : null;
+                                                        const pendingSwap   = pendingSwaps[item.id];
+
+                                                        if (isUnlockedBySoldInvoice && pendingSwap) {
+                                                            return (
+                                                                <div key={item.id} className="flex items-center gap-2 px-4 py-2 border-b text-sm bg-orange-50">
+                                                                    <span className="font-mono text-gray-400 line-through">{item.serialNumber}</span>
+                                                                    <ArrowLeftRight size={11} className="text-orange-400 flex-shrink-0" />
+                                                                    <span className="font-mono font-bold text-green-600">{pendingSwap.newSerial.serialNumber}</span>
+                                                                    <span className="ml-auto text-xs text-orange-500 font-medium whitespace-nowrap">Replaces on save</span>
+                                                                    <button type="button" onClick={() => undoCreateSwap(line.key, item)} className="shrink-0 flex items-center gap-0.5 text-xs text-red-400 hover:text-red-600">
+                                                                        <X size={11} /> Undo
+                                                                    </button>
+                                                                </div>
+                                                            );
+                                                        }
+
                                                         return (
-                                                            <div key={item.id} className={`flex items-center gap-3 px-4 py-2 border-b text-sm ${isBlocked ? "opacity-50" : "hover:bg-blue-50"} ${checked ? "bg-blue-50" : ""}`}>
+                                                            <div key={item.id} className={`flex items-center gap-2 px-4 py-2 border-b text-sm ${isBlocked ? "opacity-50" : "hover:bg-blue-50"} ${checked ? "bg-blue-50" : ""}`}>
                                                                 <label className={`flex items-center gap-3 flex-1 min-w-0 ${isBlocked ? "cursor-not-allowed" : "cursor-pointer"}`}>
                                                                     <input type="checkbox" className="form-checkbox shrink-0" checked={checked} disabled={isBlocked} onChange={() => toggleSerial(line.key, item)} />
                                                                     <span className="font-mono font-medium text-blue-700">{item.serialNumber}</span>
@@ -1125,7 +1692,14 @@ const CustomerEquipmentForm: React.FC = () => {
                                                                         }
                                                                     </span>
                                                                 </label>
-                                                                <button type="button" title="View assignment history" className="shrink-0 text-gray-400 hover:text-indigo-600 ml-1" onClick={() => openSerialHistory(item)}>
+                                                                {isUnlockedBySoldInvoice && (
+                                                                    <button type="button" onClick={() => openCreateSwapPicker(line.key, item, line.variantId!)}
+                                                                        className="shrink-0 flex items-center gap-0.5 text-xs text-blue-500 hover:text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 hover:border-blue-400 whitespace-nowrap"
+                                                                        title="Replace this serial with an IN_STOCK unit">
+                                                                        <ArrowLeftRight size={10} /> Replace
+                                                                    </button>
+                                                                )}
+                                                                <button type="button" title="View assignment history" className="shrink-0 text-gray-400 hover:text-indigo-600" onClick={() => openSerialHistory(item)}>
                                                                     <History size={14} />
                                                                 </button>
                                                             </div>
@@ -1241,6 +1815,35 @@ const CustomerEquipmentForm: React.FC = () => {
                     )}
                 </div>
 
+                {/* Stock Request link */}
+                <div className="mb-5 relative" style={{ maxWidth: 400 }}>
+                    <label>Stock Request <span className="text-xs text-gray-400 font-normal ml-2">(optional — if support picked up via request)</span></label>
+                    <div className="relative mt-1">
+                        <input type="text" className="form-input w-full pr-8"
+                            placeholder="Search by request ref (e.g. SR-00015)..."
+                            value={srSearch}
+                            onChange={(e) => handleSrSearch(e.target.value)}
+                            onFocus={() => srResults.length > 0 && !stockRequestId && setShowSrSuggestions(true)}
+                            onBlur={() => setTimeout(() => setShowSrSuggestions(false), 150)}
+                        />
+                        {stockRequestId && <button type="button" onClick={clearSr} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 text-lg leading-none">×</button>}
+                    </div>
+                    {stockRequestId && <p className="text-xs text-indigo-600 mt-1">✓ Linked to stock request <span className="font-mono font-bold">{stockRequestRef}</span></p>}
+                    {showSrSuggestions && srResults.length > 0 && !stockRequestId && (
+                        <ul className="absolute mt-1 bg-white dark:bg-[#1b2e4b] border border-gray-200 dark:border-gray-600 w-full max-h-52 overflow-y-auto rounded-lg shadow-2xl" style={{ zIndex: 9999 }}>
+                            {srResults.map((sr) => (
+                                <li key={sr.id} className="px-4 py-2.5 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-0 flex items-center gap-3" onClick={() => selectSr(sr)}>
+                                    <span className="font-mono font-semibold text-indigo-600 dark:text-indigo-400 text-sm">{sr.ref}</span>
+                                    <span className="text-gray-400 text-xs">{dayjs(sr.requestDate).format("DD/MM/YYYY")}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                    {showSrSuggestions && srResults.length === 0 && srSearch.trim() && !stockRequestId && (
+                        <p className="text-xs text-orange-500 mt-1">No approved stock requests found matching "{srSearch}"</p>
+                    )}
+                </div>
+
                 {/* Note */}
                 <div className="mb-5">
                     <label>Note</label>
@@ -1304,6 +1907,73 @@ const CustomerEquipmentForm: React.FC = () => {
                                     ))}
                                 </div>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Create-mode Swap Picker Modal ── */}
+            {createSwapPicker && (
+                <div className="fixed inset-0 bg-black/60 z-[1002] flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-[#1c2e4a] rounded-xl shadow-2xl w-full max-w-md flex flex-col" style={{ maxHeight: "90vh" }}>
+                        <div className="flex items-center justify-between px-5 py-4 border-b flex-shrink-0">
+                            <div className="flex items-center gap-2">
+                                <ArrowLeftRight className="w-5 h-5 text-blue-500" />
+                                <div>
+                                    <h5 className="font-bold text-gray-800 dark:text-white">Replace Serial</h5>
+                                    <p className="text-xs text-gray-400 mt-0.5">Choose an IN_STOCK unit to replace the invoice serial</p>
+                                </div>
+                            </div>
+                            <button type="button" onClick={() => setCreateSwapPicker(null)} className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Invoice Serial (being replaced)</p>
+                                <div className="rounded-xl px-4 py-3 flex items-center gap-3" style={{ backgroundColor: "#fef3c7", border: "1px solid #fcd34d" }}>
+                                    <ArrowLeftRight className="w-4 h-4 flex-shrink-0" style={{ color: "#b45309" }} />
+                                    <p className="font-mono font-bold" style={{ color: "#92400e" }}>{createSwapPicker.oldSerial.serialNumber}</p>
+                                    {createSwapPicker.oldSerial.assetCode && <p className="text-xs" style={{ color: "#b45309" }}>Asset: {createSwapPicker.oldSerial.assetCode}</p>}
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Select Replacement Serial</p>
+                                {createSwapFetching ? (
+                                    <div className="flex items-center justify-center py-8 gap-2 text-gray-400">
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        <span className="text-sm">Loading available serials...</span>
+                                    </div>
+                                ) : createSwapItems.length === 0 ? (
+                                    <div className="text-center py-8 text-sm text-gray-400">No IN_STOCK serials available for this product in this branch.</div>
+                                ) : (
+                                    <div className="space-y-1 max-h-48 overflow-y-auto rounded-xl border border-gray-200">
+                                        {createSwapItems.map((s) => (
+                                            <label key={s.id} className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${createSwapSelectedId === s.id ? "bg-blue-50" : "hover:bg-gray-50"}`}>
+                                                <input type="radio" name="createSwapSerial" value={s.id} checked={createSwapSelectedId === s.id} onChange={() => setCreateSwapSelectedId(s.id)} className="form-radio text-blue-600" />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-mono font-semibold text-blue-700 text-sm">{s.serialNumber}</p>
+                                                    {s.assetCode && <p className="text-xs text-gray-400">Asset: {s.assetCode}</p>}
+                                                    {s.macAddress && <p className="text-xs text-gray-400">MAC: {s.macAddress}</p>}
+                                                </div>
+                                                <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold flex-shrink-0">IN_STOCK</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Reason <span className="text-gray-400 font-normal">(optional)</span></label>
+                                <textarea rows={2} placeholder="e.g. Defective unit swapped before delivery..." value={createSwapReason} onChange={e => setCreateSwapReason(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-blue-400 resize-none bg-gray-50" />
+                            </div>
+                        </div>
+                        <div className="flex gap-2 px-5 py-4 border-t flex-shrink-0">
+                            <button type="button" onClick={() => setCreateSwapPicker(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50">Cancel</button>
+                            <button type="button" onClick={confirmCreateSwap} disabled={!createSwapSelectedId}
+                                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all"
+                                style={{ background: !createSwapSelectedId ? "#e5e7eb" : "linear-gradient(to right,#2563eb,#1d4ed8)", color: !createSwapSelectedId ? "#9ca3af" : "#fff" }}>
+                                <ArrowLeftRight className="w-4 h-4" /> Confirm Replacement
+                            </button>
                         </div>
                     </div>
                 </div>

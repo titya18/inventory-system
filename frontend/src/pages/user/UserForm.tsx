@@ -12,9 +12,8 @@ import { useAppContext } from "../../hooks/useAppContext";
 import { BranchType, RoleType, UserType } from "../../data_types/types";
 import { ModulePermissionData, PermissionData } from "../role/RoleForm";
 
-interface RoleWithPermissions extends RoleType {
-    permissions?: Array<{ permissionId: number }>;
-}
+// API returns permissions as objects; we normalise to RoleType (number[]) for the form
+type RoleWithPermissions = Omit<RoleType, "permissions"> & { permissions?: any[] };
 
 // Indeterminate checkbox helper
 const IndeterminateCheckbox: React.FC<{
@@ -104,7 +103,7 @@ const UserForm: React.FC = () => {
     const handleRoleChange = (roleId: number, isChecked: boolean) => {
         const updated = isChecked ? [...selectRoles, roleId] : selectRoles.filter(r => r !== roleId);
         setSelectRoles(updated);
-        setValue("roles", roleData.filter(r => updated.includes(Number(r.id))), { shouldValidate: true });
+        setValue("roles", roleData.filter(r => updated.includes(Number(r.id))) as unknown as RoleType[], { shouldValidate: true });
     };
 
     // Direct permission helpers
@@ -136,7 +135,6 @@ const UserForm: React.FC = () => {
     const isModuleSomeSelected = (m: ModulePermissionData) =>
         m.permissions.some(p => selectPermissions.includes(p.id!)) && !isModuleAllSelected(m);
 
-    const totalPermissions = modules.reduce((acc, m) => acc + m.permissions.length, 0);
     const allIds = modules.flatMap(m => m.permissions.map(p => p.id!));
     const allGlobalSelected = allIds.length > 0 && allIds.every(id => selectPermissions.includes(id));
 

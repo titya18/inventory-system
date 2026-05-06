@@ -268,9 +268,9 @@ const StockAdjustmentForm: React.FC = () => {
                             if (payload.type === "NEW") {
                                 tracked = { adjustmentTrackedMode: "NEW", newSerials: payload.newSerials ?? [] };
                             } else if (payload.type === "REACTIVATE") {
-                                tracked = { adjustmentTrackedMode: "REACTIVATE", reactivateIds: payload.reactivateIds ?? [] };
+                                tracked = { adjustmentTrackedMode: "REACTIVATE", reactivateIds: payload.reactivateIds ?? [], reactivateItems: payload.reactivateItems ?? [] };
                             } else if (payload.type === "SELECT") {
-                                tracked = { selectedToRemoveIds: payload.selectedIds ?? [] };
+                                tracked = { selectedToRemoveIds: payload.selectedIds ?? [], selectedToRemoveItems: payload.selectedItems ?? [] };
                             }
                         } catch (_e) { /* ignore parse error */ }
                     }
@@ -674,14 +674,14 @@ const StockAdjustmentForm: React.FC = () => {
                     if (!detail.trackingType || detail.trackingType === "NONE") return undefined;
                     if (formData.AdjustMentType === "POSITIVE") {
                         if (detail.adjustmentTrackedMode === "REACTIVATE") {
-                            return { type: "REACTIVATE" as const, reactivateIds: detail.reactivateIds ?? [] };
+                            return { type: "REACTIVATE" as const, reactivateIds: detail.reactivateIds ?? [], reactivateItems: detail.reactivateItems ?? [] };
                         }
                         return {
                             type: "NEW" as const,
                             newSerials: (detail.newSerials ?? []).filter((s) => s.serialNumber?.trim()),
                         };
                     }
-                    return { type: "SELECT" as const, selectedIds: detail.selectedToRemoveIds ?? [] };
+                    return { type: "SELECT" as const, selectedIds: detail.selectedToRemoveIds ?? [], selectedItems: detail.selectedToRemoveItems ?? [] };
                 })(),
             }));
 
@@ -1246,7 +1246,9 @@ const StockAdjustmentForm: React.FC = () => {
                         adjustmentTrackedMode={detail.adjustmentTrackedMode}
                         newSerials={detail.newSerials}
                         reactivateIds={detail.reactivateIds}
+                        reactivateItems={detail.reactivateItems}
                         selectedToRemoveIds={detail.selectedToRemoveIds}
+                        selectedToRemoveItems={detail.selectedToRemoveItems}
                         onSave={(data) => {
                             setAdjustmentDetails((prev) =>
                                 prev.map((d, i) =>

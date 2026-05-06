@@ -157,7 +157,7 @@ const PrintLabelModal: React.FC<Props> = ({ isOpen, onClose, products }) => {
         stage.appendChild(clone);
 
         // Capture once, reuse N times
-        const canvas = await html2canvas(stage, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+        const canvas = await html2canvas(stage, { useCORS: true, backgroundColor: "#ffffff" } as any);
         const imgData = canvas.toDataURL("image/png");
         const cardHmm = (canvas.height / canvas.width) * cardWmm;
 

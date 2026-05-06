@@ -156,10 +156,9 @@ export const getNextInvoiceRef = async (
         const year = new Date().getFullYear(); // 2026, 2027, etc
         const prefix = `ZM${year}-`;
 
-        // Find last invoice of THIS YEAR only
+        // Find last invoice of THIS YEAR only — global across all branches
         const lastInvoice = await prisma.order.findFirst({
             where: {
-                branchId: Number(branchIdNumber),
                 ref: {
                     startsWith: prefix, // ZM2026-
                 },
@@ -232,7 +231,6 @@ export const upsertInvoice = async (req: Request, res: Response): Promise<void> 
 
       const checkRef = await tx.order.findFirst({
         where: {
-          branchId: Number(branchId),
           ref,
           ...(invoiceId ? { id: { not: invoiceId } } : {}),
         },

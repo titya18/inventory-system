@@ -3243,3 +3243,28 @@ D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:1098:2
     at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
     at Readable.push (node:internal/streams/readable:390:5)
     at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+2026-05-05 15:04:16 error: uncaughtException: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\stockRequestController.ts:400:12: ERROR: Expected ")" but found "return"
+Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\stockRequestController.ts:400:12: ERROR: Expected ")" but found "return"
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) Error: Transform failed with 1 error:
+D:\Citylink-Inventory-claude\backend\src\controllers\stockRequestController.ts:400:12: ERROR: Expected ")" but found "return"
+    at failureErrorWithLog (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:756:50
+    at responseCallbacks.<computed> (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Citylink-Inventory-claude\backend\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)

@@ -39372,3 +39372,1782 @@ Raw query failed. Code: `42703`. Message: `column u.name does not exist`
 2026-05-03 20:05:46 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
 2026-05-04 08:00:49 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
 2026-05-04 09:00:23 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-04 14:35:39 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=65 variantId=23 branchId=1 delta=-1 
+2026-05-04 16:45:11 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-04 16:51:17 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-04 16:52:51 error: Error swapping serial: 
+Invalid `tx.customerEquipment.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:1247:40
+
+  1244 const swapNote = `[SWAP ${dayjs().tz(tz).format("YYYY-MM-DD HH:mm")}] ${oldSN} → ${newSN}. Reason: ${reason.trim()}`;
+  1245 const currentNote = record.note ?? "";
+  1246 const updatedNote = currentNote ? `${currentNote}\n${swapNote}` : swapNote;
+→ 1247 await tx.customerEquipment.update(
+The provided value for the column is too long for the column's type. Column: (not available) PrismaClientKnownRequestError: 
+Invalid `tx.customerEquipment.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:1247:40
+
+  1244 const swapNote = `[SWAP ${dayjs().tz(tz).format("YYYY-MM-DD HH:mm")}] ${oldSN} → ${newSN}. Reason: ${reason.trim()}`;
+  1245 const currentNote = record.note ?? "";
+  1246 const updatedNote = currentNote ? `${currentNote}\n${swapNote}` : swapNote;
+→ 1247 await tx.customerEquipment.update(
+The provided value for the column is too long for the column's type. Column: (not available)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:1247:13)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async swapSerialInCustomerEquipment (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:1209:9)
+2026-05-04 16:53:06 error: Error swapping serial: 
+Invalid `tx.customerEquipment.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:1247:40
+
+  1244 const swapNote = `[SWAP ${dayjs().tz(tz).format("YYYY-MM-DD HH:mm")}] ${oldSN} → ${newSN}. Reason: ${reason.trim()}`;
+  1245 const currentNote = record.note ?? "";
+  1246 const updatedNote = currentNote ? `${currentNote}\n${swapNote}` : swapNote;
+→ 1247 await tx.customerEquipment.update(
+The provided value for the column is too long for the column's type. Column: (not available) PrismaClientKnownRequestError: 
+Invalid `tx.customerEquipment.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:1247:40
+
+  1244 const swapNote = `[SWAP ${dayjs().tz(tz).format("YYYY-MM-DD HH:mm")}] ${oldSN} → ${newSN}. Reason: ${reason.trim()}`;
+  1245 const currentNote = record.note ?? "";
+  1246 const updatedNote = currentNote ? `${currentNote}\n${swapNote}` : swapNote;
+→ 1247 await tx.customerEquipment.update(
+The provided value for the column is too long for the column's type. Column: (not available)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:1247:13)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async swapSerialInCustomerEquipment (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:1209:9)
+2026-05-04 16:53:39 error: Error swapping serial: 
+Invalid `tx.customerEquipment.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:1247:40
+
+  1244 const swapNote = `[SWAP ${dayjs().tz(tz).format("YYYY-MM-DD HH:mm")}] ${oldSN} → ${newSN}. Reason: ${reason.trim()}`;
+  1245 const currentNote = record.note ?? "";
+  1246 const updatedNote = currentNote ? `${currentNote}\n${swapNote}` : swapNote;
+→ 1247 await tx.customerEquipment.update(
+The provided value for the column is too long for the column's type. Column: (not available) PrismaClientKnownRequestError: 
+Invalid `tx.customerEquipment.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:1247:40
+
+  1244 const swapNote = `[SWAP ${dayjs().tz(tz).format("YYYY-MM-DD HH:mm")}] ${oldSN} → ${newSN}. Reason: ${reason.trim()}`;
+  1245 const currentNote = record.note ?? "";
+  1246 const updatedNote = currentNote ? `${currentNote}\n${swapNote}` : swapNote;
+→ 1247 await tx.customerEquipment.update(
+The provided value for the column is too long for the column's type. Column: (not available)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:1247:13)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async swapSerialInCustomerEquipment (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:1209:9)
+2026-05-04 16:53:52 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-04 16:53:53 error: Error swapping serial: 
+Invalid `tx.customerEquipment.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:1247:40
+
+  1244 const swapNote = `[SWAP ${dayjs().tz(tz).format("YYYY-MM-DD HH:mm")}] ${oldSN} → ${newSN}. Reason: ${reason.trim()}`;
+  1245 const currentNote = record.note ?? "";
+  1246 const updatedNote = currentNote ? `${currentNote}\n${swapNote}` : swapNote;
+→ 1247 await tx.customerEquipment.update(
+The provided value for the column is too long for the column's type. Column: (not available) PrismaClientKnownRequestError: 
+Invalid `tx.customerEquipment.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:1247:40
+
+  1244 const swapNote = `[SWAP ${dayjs().tz(tz).format("YYYY-MM-DD HH:mm")}] ${oldSN} → ${newSN}. Reason: ${reason.trim()}`;
+  1245 const currentNote = record.note ?? "";
+  1246 const updatedNote = currentNote ? `${currentNote}\n${swapNote}` : swapNote;
+→ 1247 await tx.customerEquipment.update(
+The provided value for the column is too long for the column's type. Column: (not available)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:1247:13)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async swapSerialInCustomerEquipment (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:1209:9)
+2026-05-04 16:55:43 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-04 17:12:24 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-04 19:44:48 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-04 19:47:46 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-04 19:48:07 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-04 20:38:54 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-04 20:39:19 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-04 20:44:28 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-04 20:44:55 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-04 20:45:14 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-04 20:45:26 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-04 20:51:36 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=75 variantId=30 branchId=1 delta=-1 
+2026-05-04 20:51:36 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=76 variantId=30 branchId=1 delta=-1 
+2026-05-04 20:52:52 info: CEQ applyDbItemEffects TRACKED [REVERSE] assetId=75 variantId=30 branchId=1 delta=1 
+2026-05-04 20:52:52 info: CEQ applyDbItemEffects TRACKED [REVERSE] assetId=76 variantId=30 branchId=1 delta=1 
+2026-05-04 20:52:52 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=75 variantId=30 branchId=1 delta=-1 
+2026-05-04 20:52:52 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=76 variantId=30 branchId=1 delta=-1 
+2026-05-04 20:53:19 info: CEQ applyDbItemEffects TRACKED [REVERSE] assetId=75 variantId=30 branchId=1 delta=1 
+2026-05-04 20:53:19 info: CEQ applyDbItemEffects TRACKED [REVERSE] assetId=76 variantId=30 branchId=1 delta=1 
+2026-05-04 20:53:19 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=75 variantId=30 branchId=1 delta=-1 
+2026-05-04 20:53:19 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=76 variantId=30 branchId=1 delta=-1 
+2026-05-04 20:56:30 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-04 21:05:19 info: CEQ applyDbItemEffects TRACKED [REVERSE] assetId=76 variantId=30 branchId=1 delta=1 
+2026-05-04 21:05:19 info: CEQ applyDbItemEffects TRACKED [REVERSE] assetId=73 variantId=30 branchId=1 delta=1 
+2026-05-04 21:05:19 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=76 variantId=30 branchId=1 delta=-1 
+2026-05-04 21:05:19 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=75 variantId=30 branchId=1 delta=-1 
+2026-05-04 21:06:24 info: CEQ applyDbItemEffects TRACKED [REVERSE] assetId=76 variantId=30 branchId=1 delta=1 
+2026-05-04 21:06:24 info: CEQ applyDbItemEffects TRACKED [REVERSE] assetId=75 variantId=30 branchId=1 delta=1 
+2026-05-04 21:06:24 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=75 variantId=30 branchId=1 delta=-1 
+2026-05-04 21:06:24 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=74 variantId=30 branchId=1 delta=-1 
+2026-05-04 21:16:40 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 08:34:27 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 08:37:09 info: CEQ applyDbItemEffects TRACKED [REVERSE] assetId=71 variantId=30 branchId=1 delta=1 
+2026-05-05 08:37:09 info: CEQ applyDbItemEffects TRACKED [REVERSE] assetId=74 variantId=30 branchId=1 delta=1 
+2026-05-05 08:37:09 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=71 variantId=30 branchId=1 delta=-1 
+2026-05-05 08:37:09 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=75 variantId=30 branchId=1 delta=-1 
+2026-05-05 09:53:37 info: CEQ applyPayloadEffects NON_TRACKED [APPLY] variantId=1 branchId=1 delta=-610 
+2026-05-05 11:30:27 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 15:03:15 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 15:03:21 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 15:05:06 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 15:06:42 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 15:08:02 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 15:09:04 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 15:09:42 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 15:10:45 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 15:11:49 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 15:12:26 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 15:12:48 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 15:13:32 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 15:14:00 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 15:14:12 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 15:27:29 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 16:32:20 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-05 21:14:22 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 08:17:58 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 08:22:06 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 08:33:28 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 08:33:47 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 09:01:56 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 09:02:11 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 09:02:24 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 09:02:46 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 09:05:41 error: Error searching orders: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "z",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "z",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async searchOrders (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:24)
+2026-05-06 09:06:03 error: Error searching orders: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "ZM2026-00068",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "ZM2026-00068",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async searchOrders (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:24)
+2026-05-06 09:06:05 error: Error searching orders: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "ZM2026-0006",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "ZM2026-0006",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async searchOrders (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:24)
+2026-05-06 09:06:05 error: Error searching orders: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "ZM2026-000",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "ZM2026-000",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async searchOrders (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:24)
+2026-05-06 09:06:06 error: Error searching orders: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "ZM2026-00",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "ZM2026-00",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async searchOrders (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:24)
+2026-05-06 09:06:06 error: Error searching orders: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "ZM2026-0",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "ZM2026-0",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async searchOrders (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:24)
+2026-05-06 09:06:06 error: Error searching orders: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "ZM2026-",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "ZM2026-",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async searchOrders (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:24)
+2026-05-06 09:06:06 error: Error searching orders: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "ZM2026",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "ZM2026",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async searchOrders (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:24)
+2026-05-06 09:06:14 error: Error searching orders: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "z",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "z",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async searchOrders (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:24)
+2026-05-06 09:06:18 error: Error searching orders: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "zm",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `prisma.order.findMany()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:43
+
+  316 // Sanitise search term — only alphanumeric + hyphen allowed (ref format: ZM2026-00001)
+  317 const searchRef = /^[a-zA-Z0-9\-]*$/.test(rawSearch) ? rawSearch : "";
+  318 
+→ 319 const orders = await prisma.order.findMany({
+        where: {
+          branchId: 1,
+          ref: {
+            contains: "zm",
+            mode: "insensitive"
+          }
+        },
+        orderBy: {
+          id: "desc"
+        },
+        take: 20,
+        select: {
+          id: true,
+          ref: true,
+          createdAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          stockRequests: {
+            where: {
+              deletedAt: null
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          },
+          customerEquipments: {
+            where: {
+              deletedAt: null,
+              ~~~~~~~~~
+      ?       AND?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       OR?: CustomerEquipmentWhereInput[],
+      ?       NOT?: CustomerEquipmentWhereInput | CustomerEquipmentWhereInput[],
+      ?       id?: IntFilter | Int,
+      ?       ref?: StringFilter | String,
+      ?       customerId?: IntFilter | Int,
+      ?       branchId?: IntFilter | Int,
+      ?       assignType?: EnumAssignTypeFilter | AssignType,
+      ?       assignedAt?: DateTimeFilter | DateTime,
+      ?       returnedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       note?: StringNullableFilter | String | Null,
+      ?       orderId?: IntNullableFilter | Int | Null,
+      ?       stockRequestId?: IntNullableFilter | Int | Null,
+      ?       createdAt?: DateTimeFilter | DateTime,
+      ?       createdBy?: IntNullableFilter | Int | Null,
+      ?       updatedAt?: DateTimeNullableFilter | DateTime | Null,
+      ?       updatedBy?: IntNullableFilter | Int | Null,
+      ?       customer?: CustomerRelationFilter | CustomerWhereInput,
+      ?       branch?: BranchRelationFilter | BranchWhereInput,
+      ?       order?: OrderNullableRelationFilter | OrderWhereInput | Null,
+      ?       stockRequest?: StockRequestsNullableRelationFilter | StockRequestsWhereInput | Null,
+      ?       creator?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       updater?: UserNullableRelationFilter | UserWhereInput | Null,
+      ?       items?: CustomerEquipmentItemListRelationFilter
+            },
+            select: {
+              id: true,
+              ref: true
+            },
+            take: 1
+          }
+        }
+      })
+
+Unknown argument `deletedAt`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async searchOrders (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:24)
+2026-05-06 09:16:08 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 09:16:23 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 09:16:35 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 09:25:35 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 09:34:00 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 09:34:15 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 

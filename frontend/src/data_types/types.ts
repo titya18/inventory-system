@@ -878,6 +878,7 @@ export interface StockRequestType {
     StatusType: string;
     note: string;
     delReason: string;
+    orderId?: number | null;
     createdAt?: Date;
     updatedAt?: Date;
     deletedAt?: Date;
@@ -888,6 +889,7 @@ export interface StockRequestType {
     deleter?: UserType | null;
     approver?: UserType | null;
     requester?: UserType | null;
+    order?: { id: number; ref: string } | null;
 
     branch: BranchType | null;
     requestDetails: StockRequestDetailType[];

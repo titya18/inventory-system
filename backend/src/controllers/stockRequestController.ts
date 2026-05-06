@@ -127,7 +127,7 @@ export const getAllStockRequests = async (req: Request, res: Response): Promise<
 
 export const upsertRequest = async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
-    const { branchId, StatusType, note, requestDetails, requestDate } = req.body;
+    const { branchId, StatusType, note, requestDetails, requestDate, orderId } = req.body;
 
     try {
         const result = await prisma.$transaction(async (tx) => {
@@ -202,12 +202,32 @@ export const upsertRequest = async (req: Request, res: Response): Promise<void> 
                 }
             }
 
+            // Validate orderId if provided
+            if (orderId) {
+                const order = await tx.order.findUnique({ where: { id: Number(orderId) }, select: { id: true } });
+                if (!order) throw new Error(`Invoice/Order ID ${orderId} does not exist.`);
+
+                // Each invoice can only be linked to one Stock Request
+                const existing = await tx.stockRequests.findFirst({
+                    where: {
+                        orderId: Number(orderId),
+                        deletedAt: null,
+                        ...(requestId ? { id: { not: requestId } } : {}),
+                    },
+                    select: { id: true, ref: true },
+                });
+                if (existing) {
+                    throw new Error(`Invoice is already linked to Stock Request ${existing.ref}. Each invoice can only be linked once.`);
+                }
+            }
+
             const requestPayload = {
                 branchId: Number(branchId),
                 requestBy: req.user ? req.user.id : 0,
                 requestDate: new Date(dayjs(requestDate).format("YYYY-MM-DD")),
                 StatusType,
                 note,
+                orderId: orderId ? Number(orderId) : null,
                 updatedAt: currentDate,
                 updatedBy: req.user ? req.user.id : null,
                 requestDetails: {
@@ -246,138 +266,138 @@ export const upsertRequest = async (req: Request, res: Response): Promise<void> 
                 });
 
             if (StatusType === "APPROVED") {
-                for (const detail of requestData.requestDetails) {
-                    const baseQty = Number(detail.baseQty ?? 0);
+                // If invoice is linked, stock was already cut — skip all stock/serial effects.
+                // The request just records the physical picking for audit purposes.
+                const linkedOrderId = (requestData as any).orderId ?? orderId ?? null;
 
-                    if (baseQty <= 0) {
-                        throw new Error("baseQty must be greater than 0");
-                    }
+                if (!linkedOrderId) {
+                    // No invoice linked: normal stock cut flow
+                    for (const detail of requestData.requestDetails) {
+                        const baseQty = Number(detail.baseQty ?? 0);
 
-                    // check stock availability first
-                    const currentStock = await tx.stocks.findUnique({
-                        where: {
-                            productVariantId_branchId: {
-                                productVariantId: Number(detail.productVariantId),
-                                branchId: Number(branchId),
-                            },
-                        },
-                    });
-
-                    const availableQty = Number(currentStock?.quantity ?? 0);
-
-                    if (availableQty < baseQty) {
-                        throw new Error(
-                            `Insufficient stock for variant ID ${detail.productVariantId}. Available: ${availableQty}, Requested: ${baseQty}`
-                        );
-                    }
-
-                    const signedBaseQty = -baseQty;
-
-                    await tx.stocks.upsert({
-                        where: {
-                            productVariantId_branchId: {
-                                productVariantId: Number(detail.productVariantId),
-                                branchId: Number(branchId),
-                            },
-                        },
-                        update: {
-                            quantity: { increment: signedBaseQty },
-                            updatedBy: loggedInUser.id,
-                            updatedAt: currentDate,
-                        },
-                        create: {
-                            productVariantId: Number(detail.productVariantId),
-                            branchId: Number(branchId),
-                            quantity: signedBaseQty,
-                            createdBy: loggedInUser.id,
-                            createdAt: currentDate,
-                            updatedBy: loggedInUser.id,
-                            updatedAt: currentDate,
-                        },
-                    });
-
-                    await tx.stockMovements.create({
-                        data: {
-                            productVariantId: Number(detail.productVariantId),
-                            branchId: Number(branchId),
-                            type: "REQUEST",
-                            status: "APPROVED",
-                            quantity: new Decimal(signedBaseQty),
-                            unitCost: null,
-                            requestDetailId: detail.id,
-                            note,
-                            createdBy: req.user ? req.user.id : null,
-                            createdAt: currentDate,
-                            approvedAt: currentDate,
-                            approvedBy: loggedInUser.id,
-                        },
-                    });
-
-                    // Handle tracked serial items
-                    const variant = await tx.productVariants.findUnique({
-                        where: { id: Number(detail.productVariantId) },
-                        select: { trackingType: true },
-                    });
-
-                    if (variant?.trackingType && variant.trackingType !== "NONE") {
-                        const transferQty = Math.abs(Math.round(Number(detail.baseQty ?? 0)));
-                        const rawPayload = (detail as any).trackedPayload as string | null;
-                        const payload = rawPayload ? JSON.parse(rawPayload) : null;
-                        const serialMode: "AUTO" | "MANUAL" = payload?.mode ?? "AUTO";
-                        const selectedIds: number[] = payload?.selectedIds ?? [];
-
-                        let idsToProcess: number[];
-
-                        if (serialMode === "MANUAL" && selectedIds.length > 0) {
-                            const items = await tx.productAssetItem.findMany({
-                                where: {
-                                    id: { in: selectedIds },
-                                    productVariantId: Number(detail.productVariantId),
-                                    branchId: Number(branchId),
-                                    status: "IN_STOCK",
-                                },
-                                select: { id: true },
-                            });
-
-                            if (items.length !== selectedIds.length) {
-                                throw new Error(`Some selected serials are no longer available. Please re-select.`);
-                            }
-                            if (items.length !== transferQty) {
-                                throw new Error(`Selected ${items.length} serial(s) but request quantity is ${transferQty}. They must match.`);
-                            }
-                            idsToProcess = items.map((i) => i.id);
-                        } else {
-                            // AUTO: pick oldest available IN_STOCK serials from branch
-                            const items = await tx.productAssetItem.findMany({
-                                where: {
-                                    productVariantId: Number(detail.productVariantId),
-                                    branchId: Number(branchId),
-                                    status: "IN_STOCK",
-                                },
-                                orderBy: [{ id: "asc" }],
-                                take: transferQty,
-                                select: { id: true },
-                            });
-
-                            if (items.length < transferQty) {
-                                throw new Error(
-                                    `Insufficient tracked serials in branch. Available: ${items.length}, Required: ${transferQty}`
-                                );
-                            }
-                            idsToProcess = items.map((i) => i.id);
+                        if (baseQty <= 0) {
+                            throw new Error("baseQty must be greater than 0");
                         }
 
-                        // Mark serial items as transferred out of this branch
-                        await tx.productAssetItem.updateMany({
-                            where: { id: { in: idsToProcess } },
-                            data: {
-                                status: "TRANSFERRED",
-                                updatedAt: currentDate,
-                                updatedBy: loggedInUser.id,
+                        const currentStock = await tx.stocks.findUnique({
+                            where: {
+                                productVariantId_branchId: {
+                                    productVariantId: Number(detail.productVariantId),
+                                    branchId: Number(branchId),
+                                },
                             },
                         });
+
+                        const availableQty = Number(currentStock?.quantity ?? 0);
+                        if (availableQty < baseQty) {
+                            throw new Error(
+                                `Insufficient stock for variant ID ${detail.productVariantId}. Available: ${availableQty}, Requested: ${baseQty}`
+                            );
+                        }
+
+                        const signedBaseQty = -baseQty;
+
+                        await tx.stocks.upsert({
+                            where: {
+                                productVariantId_branchId: {
+                                    productVariantId: Number(detail.productVariantId),
+                                    branchId: Number(branchId),
+                                },
+                            },
+                            update: { quantity: { increment: signedBaseQty }, updatedBy: loggedInUser.id, updatedAt: currentDate },
+                            create: {
+                                productVariantId: Number(detail.productVariantId),
+                                branchId: Number(branchId),
+                                quantity: signedBaseQty,
+                                createdBy: loggedInUser.id,
+                                createdAt: currentDate,
+                                updatedBy: loggedInUser.id,
+                                updatedAt: currentDate,
+                            },
+                        });
+
+                        await tx.stockMovements.create({
+                            data: {
+                                productVariantId: Number(detail.productVariantId),
+                                branchId: Number(branchId),
+                                type: "REQUEST",
+                                status: "APPROVED",
+                                quantity: new Decimal(signedBaseQty),
+                                unitCost: null,
+                                requestDetailId: detail.id,
+                                note,
+                                createdBy: req.user ? req.user.id : null,
+                                createdAt: currentDate,
+                                approvedAt: currentDate,
+                                approvedBy: loggedInUser.id,
+                            },
+                        });
+
+                        // Handle tracked serial items
+                        const variant = await tx.productVariants.findUnique({
+                            where: { id: Number(detail.productVariantId) },
+                            select: { trackingType: true },
+                        });
+
+                        if (variant?.trackingType && variant.trackingType !== "NONE") {
+                            const transferQty = Math.abs(Math.round(Number(detail.baseQty ?? 0)));
+                            const rawPayload = (detail as any).trackedPayload as string | null;
+                            const payload = rawPayload ? JSON.parse(rawPayload) : null;
+                            const serialMode: "AUTO" | "MANUAL" = payload?.mode ?? "AUTO";
+                            const selectedIds: number[] = payload?.selectedIds ?? [];
+
+                            let idsToProcess: number[];
+
+                            if (serialMode === "MANUAL" && selectedIds.length > 0) {
+                                const items = await tx.productAssetItem.findMany({
+                                    where: {
+                                        id: { in: selectedIds },
+                                        productVariantId: Number(detail.productVariantId),
+                                        branchId: Number(branchId),
+                                        status: "IN_STOCK",
+                                    },
+                                    select: { id: true },
+                                });
+                                if (items.length !== selectedIds.length) {
+                                    throw new Error(`Some selected serials are no longer available. Please re-select.`);
+                                }
+                                if (items.length !== transferQty) {
+                                    throw new Error(`Selected ${items.length} serial(s) but request quantity is ${transferQty}. They must match.`);
+                                }
+                                idsToProcess = items.map((i) => i.id);
+                            } else {
+                                const items = await tx.productAssetItem.findMany({
+                                    where: {
+                                        productVariantId: Number(detail.productVariantId),
+                                        branchId: Number(branchId),
+                                        status: "IN_STOCK",
+                                    },
+                                    orderBy: [{ id: "asc" }],
+                                    take: transferQty,
+                                    select: { id: true },
+                                });
+                                if (items.length < transferQty) {
+                                    throw new Error(`Insufficient tracked serials in branch. Available: ${items.length}, Required: ${transferQty}`);
+                                }
+                                idsToProcess = items.map((i) => i.id);
+                            }
+
+                            // Mark serials as TRANSFERRED and store processedIds for CEQ lookup
+                            await tx.productAssetItem.updateMany({
+                                where: { id: { in: idsToProcess } },
+                                data: { status: "TRANSFERRED", updatedAt: currentDate, updatedBy: loggedInUser.id },
+                            });
+
+                            // Store processed serial IDs back into trackedPayload so CEQ can find them
+                            const updatedPayload = JSON.stringify({ ...(payload ?? {}), processedIds: idsToProcess });
+                            await tx.requestDetails.update({
+                                where: { id: detail.id },
+                                data: { trackedPayload: updatedPayload },
+                            });
+                        }
                     }
                 }
+                // If invoice is linked: no stock cut, no serial changes — just mark approved below
 
                 await tx.stockRequests.update({
                     where: { id: requestData.id },
@@ -411,9 +431,11 @@ export const getStockRequestById = async (
         const purchase = await prisma.stockRequests.findUnique({
             where: { id: Number(stockRequestId) },
             include: {
-                branch: true,
-                creator: true,
-                updater: true,
+                branch:    true,
+                creator:   true,
+                updater:   true,
+                requester: { select: { id: true, firstName: true, lastName: true } },
+                order:     { select: { id: true, ref: true } },
                 requestDetails: {
                     include: {
                         unit: true,

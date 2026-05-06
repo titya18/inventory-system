@@ -68,8 +68,8 @@ export const OpenCashModal = ({ onClose, exchangeRate, branchId }: Props) => {
       khrAmount: khr,
       note: note.trim(),
       shift: effectiveShift,
-      openedById: existing?.openedById ?? (user?.id ?? null),
-      openedByName: existing?.openedByName ?? (user ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() : ""),
+      openedById: existing?.openedById ?? (user?.id ? Number(user.id) : null),
+      openedByName: existing?.openedByName ?? (user?.name ?? ""),
     };
     localStorage.setItem(OPEN_CASH_KEY, JSON.stringify(session));
     onClose();
@@ -241,11 +241,11 @@ export const OpenCashModal = ({ onClose, exchangeRate, branchId }: Props) => {
               {user && (
                 <div className="rounded-xl px-3 py-2.5 flex items-center gap-2" style={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
                   <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ backgroundColor: "#6366f1", color: "#fff" }}>
-                    {(user.firstName ?? user.name ?? "?").charAt(0).toUpperCase()}
+                    {(user.name ?? "?").charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <p className="text-xs font-semibold" style={{ color: "#1e293b" }}>
-                      {`${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || user.name || "Unknown"}
+                      {user.name || "Unknown"}
                     </p>
                     <p className="text-[10px]" style={{ color: "#94a3b8" }}>Opening cashier</p>
                   </div>

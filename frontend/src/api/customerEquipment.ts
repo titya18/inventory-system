@@ -39,10 +39,20 @@ export const getSerialHistory = async (assetItemId: number) => {
     return res.json();
 };
 
-export const getAvailableAssetItems = async (variantId: number, branchId: number, excludeCeqId?: number) => {
+export const getAvailableAssetItems = async (variantId: number, branchId: number, excludeCeqId?: number, stockRequestId?: number) => {
     const params = new URLSearchParams({ variantId: String(variantId), branchId: String(branchId) });
-    if (excludeCeqId) params.set("excludeCeqId", String(excludeCeqId));
+    if (excludeCeqId)   params.set("excludeCeqId",   String(excludeCeqId));
+    if (stockRequestId) params.set("stockRequestId", String(stockRequestId));
     const res = await fetch(`${API_BASE_URL}/api/customerequipment/asset-items?${params}`, {
+        credentials: "include",
+    });
+    if (!res.ok) throw new Error((await res.json()).message || "Failed to fetch");
+    return res.json();
+};
+
+export const searchStockRequests = async (branchId: number, ref = ""): Promise<{ id: number; ref: string; requestDate: string }[]> => {
+    const params = new URLSearchParams({ branchId: String(branchId), ref });
+    const res = await fetch(`${API_BASE_URL}/api/customerequipment/search-stock-requests?${params}`, {
         credentials: "include",
     });
     if (!res.ok) throw new Error((await res.json()).message || "Failed to fetch");
@@ -77,7 +87,9 @@ export const createCustomerEquipment = async (data: {
     assignedAt: string;
     items: CEQItemPayload[];
     orderId?: number | null;
+    stockRequestId?: number | null;
     note?: string;
+    swaps?: { oldSerialId: number; newSerialId: number; reason: string }[];
 }) => {
     const res = await fetch(`${API_BASE_URL}/api/customerequipment`, {
         method: "POST",
@@ -94,8 +106,10 @@ export const updateCustomerEquipment = async (id: number, data: {
     assignType?: string;
     assignedAt?: string;
     orderId?: number | null;
+    stockRequestId?: number | null;
     note?: string;
     items?: CEQItemPayload[];
+    swaps?: { oldSerialId: number; newSerialId: number; reason: string }[];
 }) => {
     const res = await fetch(`${API_BASE_URL}/api/customerequipment/${id}`, {
         method: "PUT",
@@ -132,5 +146,21 @@ export const deleteCustomerEquipment = async (id: number) => {
         credentials: "include",
     });
     if (!res.ok) throw new Error((await res.json()).message || "Failed to delete");
+    return res.json();
+};
+
+export const swapSerial = async (
+    ceqId: number,
+    oldSerialId: number,
+    newSerialId: number,
+    reason: string
+) => {
+    const res = await fetch(`${API_BASE_URL}/api/customerequipment/${ceqId}/swap-serial`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ oldSerialId, newSerialId, reason }),
+    });
+    if (!res.ok) throw new Error((await res.json()).message || "Failed to swap serial");
     return res.json();
 };

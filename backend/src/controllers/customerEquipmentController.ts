@@ -130,11 +130,12 @@ export const getCustomerEquipmentById = async (req: Request, res: Response): Pro
         const record = await prisma.customerEquipment.findUnique({
             where: { id },
             include: {
-                customer: { select: { id: true, name: true, phone: true, email: true, address: true } },
-                branch:   { select: { id: true, name: true } },
-                order:    { select: { id: true, ref: true } },
-                creator:  { select: { id: true, firstName: true, lastName: true } },
-                updater:  { select: { id: true, firstName: true, lastName: true } },
+                customer:     { select: { id: true, name: true, phone: true, email: true, address: true } },
+                branch:       { select: { id: true, name: true } },
+                order:        { select: { id: true, ref: true } },
+                stockRequest: { select: { id: true, ref: true, StatusType: true } },
+                creator:      { select: { id: true, firstName: true, lastName: true } },
+                updater:      { select: { id: true, firstName: true, lastName: true } },
                 ...itemInclude,
             },
         });
@@ -220,17 +221,37 @@ export const getSerialHistory = async (req: Request, res: Response): Promise<voi
 // ── GET AVAILABLE ASSET ITEMS ────────────────────────────────────────────────
 export const getAvailableAssetItems = async (req: Request, res: Response): Promise<void> => {
     try {
-        const variantId   = getQueryNumber(req.query.variantId,   0)!;
-        const branchId    = getQueryNumber(req.query.branchId,     0)!;
-        const excludeCeqId = getQueryNumber(req.query.excludeCeqId, 0) ?? 0;
+        const variantId      = getQueryNumber(req.query.variantId,      0)!;
+        const branchId       = getQueryNumber(req.query.branchId,       0)!;
+        const excludeCeqId   = getQueryNumber(req.query.excludeCeqId,   0) ?? 0;
+        const stockRequestId = getQueryNumber(req.query.stockRequestId, 0) ?? 0;
 
         if (!variantId || !branchId) {
             res.status(400).json({ message: "variantId and branchId are required." });
             return;
         }
 
+        // When a stock request is linked, collect the processed serial IDs from that request
+        // so we can include TRANSFERRED serials (already cut by the request) in the results.
+        let requestSerialIds: number[] = [];
+        if (stockRequestId) {
+            const details = await prisma.requestDetails.findMany({
+                where: { requestId: stockRequestId, productVariantId: variantId },
+                select: { trackedPayload: true },
+            });
+            for (const d of details) {
+                if (d.trackedPayload) {
+                    try {
+                        const p = JSON.parse(d.trackedPayload);
+                        if (Array.isArray(p.processedIds)) {
+                            requestSerialIds.push(...p.processedIds.map(Number));
+                        }
+                    } catch { /* ignore */ }
+                }
+            }
+        }
+
         // Find IDs of serials already actively assigned to another CEQ (not returned).
-        // When editing, exclude the current CEQ's own items so they remain selectable.
         const activelyAssigned = await prisma.customerEquipmentItem.findMany({
             where: {
                 productAssetItemId: { not: null },
@@ -245,22 +266,23 @@ export const getAvailableAssetItems = async (req: Request, res: Response): Promi
             .map((r) => r.productAssetItemId)
             .filter((id): id is number => id !== null);
 
-        // Return all serials so the frontend can warn about SOLD/RESERVED ones.
-        // Frontend controls selectability; actively-CEQ-assigned serials are flagged.
+        // Include TRANSFERRED serials from the linked stock request alongside normal serials
         const items = await prisma.productAssetItem.findMany({
-            where: { productVariantId: variantId, branchId },
+            where: {
+                productVariantId: variantId,
+                branchId,
+                // Include TRANSFERRED serials that belong to this stock request
+                ...(requestSerialIds.length > 0
+                    ? { OR: [{ id: { in: requestSerialIds } }, { status: { not: "TRANSFERRED" } }] }
+                    : {}),
+            },
             orderBy: { id: "asc" },
             select: {
                 id: true, serialNumber: true, assetCode: true, macAddress: true, status: true,
-                // For SOLD serials: include the invoice ref so frontend can tell the user which invoice to link
                 orderItemLinks: {
                     select: {
                         orderItem: {
-                            select: {
-                                order: {
-                                    select: { id: true, ref: true, customer: { select: { name: true } } },
-                                },
-                            },
+                            select: { order: { select: { id: true, ref: true, customer: { select: { name: true } } } } },
                         },
                     },
                     orderBy: { id: "desc" },
@@ -269,10 +291,10 @@ export const getAvailableAssetItems = async (req: Request, res: Response): Promi
             },
         });
 
-        // Attach an `activeCeqAssigned` flag so the frontend can block selection
         const result = items.map((item) => ({
             ...item,
             activeCeqAssigned: assignedIds.includes(item.id),
+            fromStockRequest: requestSerialIds.includes(item.id),
         }));
 
         res.status(200).json(result);
@@ -306,10 +328,28 @@ export const searchOrders = async (req: Request, res: Response): Promise<void> =
                 ref: true,
                 createdAt: true,
                 customer: { select: { id: true, name: true } },
+                stockRequests: {
+                    where: { deletedAt: null },
+                    select: { id: true, ref: true },
+                    take: 1,
+                },
+                customerEquipments: {
+                    select: { id: true, ref: true },
+                    take: 1,
+                },
             },
         });
 
-        res.status(200).json(orders);
+        const result = orders.map((o) => ({
+            id: o.id,
+            ref: o.ref,
+            createdAt: o.createdAt,
+            customer: o.customer,
+            linkedStockRequest: o.stockRequests[0] ?? null,
+            linkedCeq: o.customerEquipments[0] ?? null,
+        }));
+
+        res.status(200).json(result);
     } catch (error) {
         logger.error("Error searching orders:", error);
         res.status(500).json({ message: "Internal server error" });
@@ -351,6 +391,45 @@ export const getVariantUnits = async (req: Request, res: Response): Promise<void
         res.status(200).json(Object.values(unitMap));
     } catch (error) {
         logger.error("Error fetching variant units:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// ── SEARCH STOCK REQUESTS BY REF + BRANCH ───────────────────────────────────
+export const searchStockRequests = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const branchId  = getQueryNumber(req.query.branchId, 0)!;
+        const rawSearch = getQueryString(req.query.ref, "")!.trim();
+        if (!branchId) { res.status(400).json({ message: "branchId is required." }); return; }
+
+        const requests = await prisma.stockRequests.findMany({
+            where: {
+                branchId,
+                StatusType: "APPROVED",
+                deletedAt:  null,
+                ...(rawSearch ? { ref: { contains: rawSearch, mode: "insensitive" } } : {}),
+            },
+            orderBy: { id: "desc" },
+            take: 10,
+            select: {
+                id: true,
+                ref: true,
+                requestDate: true,
+                customerEquipments: {
+                    select: { id: true, ref: true },
+                    take: 1,
+                },
+            },
+        });
+        const result = requests.map((r) => ({
+            id: r.id,
+            ref: r.ref,
+            requestDate: r.requestDate,
+            linkedCeq: r.customerEquipments[0] ?? null,
+        }));
+        res.status(200).json(result);
+    } catch (error) {
+        logger.error("Error searching stock requests:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 };
@@ -544,7 +623,7 @@ export const createCustomerEquipment = async (req: Request, res: Response): Prom
         const loggedInUser = req.user;
         if (!loggedInUser) { res.status(401).json({ message: "Unauthenticated." }); return; }
 
-        const { customerId, branchId, assignType, assignedAt, orderId, note, items } = req.body;
+        const { customerId, branchId, assignType, assignedAt, orderId, stockRequestId, note, items, swaps } = req.body;
 
         if (!customerId) { res.status(400).json({ message: "customerId is required." }); return; }
         if (!branchId)   { res.status(400).json({ message: "branchId is required." }); return; }
@@ -573,10 +652,25 @@ export const createCustomerEquipment = async (req: Request, res: Response): Prom
             }
         }
 
-        // Validate orderId
+        // Validate orderId / stockRequestId
         if (orderId) {
             const order = await prisma.order.findUnique({ where: { id: Number(orderId) }, select: { id: true } });
             if (!order) { res.status(400).json({ message: `Invoice/Order ID ${orderId} does not exist.` }); return; }
+            const existingCeq = await prisma.customerEquipment.findFirst({
+                where: { orderId: Number(orderId) },
+                select: { id: true, ref: true },
+            });
+            if (existingCeq) { res.status(400).json({ message: `Invoice is already linked to Customer Equipment ${existingCeq.ref}. Each invoice can only be linked once.` }); return; }
+        }
+        if (stockRequestId) {
+            const req2 = await prisma.stockRequests.findUnique({ where: { id: Number(stockRequestId) }, select: { id: true, StatusType: true } });
+            if (!req2) { res.status(400).json({ message: `Stock Request ID ${stockRequestId} does not exist.` }); return; }
+            if (req2.StatusType !== "APPROVED") { res.status(400).json({ message: "Stock Request must be APPROVED before linking to equipment." }); return; }
+            const existingCeq = await prisma.customerEquipment.findFirst({
+                where: { stockRequestId: Number(stockRequestId) },
+                select: { id: true, ref: true },
+            });
+            if (existingCeq) { res.status(400).json({ message: `Stock Request is already linked to Customer Equipment ${existingCeq.ref}. Each stock request can only be linked once.` }); return; }
         }
 
         // Generate ref
@@ -653,16 +747,17 @@ export const createCustomerEquipment = async (req: Request, res: Response): Prom
             const created = await tx.customerEquipment.create({
                 data: {
                     ref,
-                    customerId: Number(customerId),
-                    branchId:   Number(branchId),
-                    assignType: assignType as any,
-                    assignedAt: dayjs(assignedAt).startOf("day").toDate(),
-                    orderId:    orderId ? Number(orderId) : null,
-                    note:       note ?? null,
-                    createdAt:  currentDate,
-                    createdBy:  loggedInUser.id,
-                    updatedAt:  currentDate,
-                    updatedBy:  loggedInUser.id,
+                    customerId:    Number(customerId),
+                    branchId:      Number(branchId),
+                    assignType:    assignType as any,
+                    assignedAt:    dayjs(assignedAt).startOf("day").toDate(),
+                    orderId:       orderId       ? Number(orderId)       : null,
+                    stockRequestId: stockRequestId ? Number(stockRequestId) : null,
+                    note:          note ?? null,
+                    createdAt:     currentDate,
+                    createdBy:     loggedInUser.id,
+                    updatedAt:     currentDate,
+                    updatedBy:     loggedInUser.id,
                     items: { create: itemCreates },
                 },
                 include: {
@@ -672,9 +767,70 @@ export const createCustomerEquipment = async (req: Request, res: Response): Prom
                 },
             });
 
-            // Apply stock effects only when there is no linked invoice/order
-            if (!orderId) {
+            // Skip stock effects when invoice OR stock request is already linked (both pre-cut stock)
+            if (!orderId && !stockRequestId) {
                 await applyPayloadEffects(tx, items, Number(branchId), assignType, "APPLY", loggedInUser.id, currentDate);
+            }
+            // For stock request linked: update TRANSFERRED serials to SOLD/RESERVED to reflect customer assignment
+            if (stockRequestId && !orderId) {
+                const newStatus = serialStatusForAssign(assignType as any);
+                for (const item of items) {
+                    if (item.type === "TRACKED") {
+                        await tx.productAssetItem.update({
+                            where: { id: Number(item.productAssetItemId) },
+                            data: { status: newStatus as any },
+                        });
+                    }
+                }
+            }
+
+            // Process serial swaps (replacement serials chosen at assignment time)
+            if (orderId && Array.isArray(swaps) && swaps.length > 0) {
+                const newStatus = serialStatusForAssign(assignType as any);
+                const swapNotes: string[] = [];
+
+                for (const { oldSerialId, newSerialId, reason } of swaps) {
+                    const oldSerial = await tx.productAssetItem.findUnique({
+                        where: { id: Number(oldSerialId) },
+                        select: { productVariantId: true, branchId: true, serialNumber: true },
+                    });
+                    const newSerial = await tx.productAssetItem.findUnique({
+                        where: { id: Number(newSerialId) },
+                        select: { productVariantId: true, serialNumber: true },
+                    });
+                    if (!oldSerial || !newSerial) continue;
+
+                    // Swap OrderItemAssetItem so the invoice shows the new serial
+                    const oldLink = await tx.orderItemAssetItem.findFirst({
+                        where: { productAssetItemId: Number(oldSerialId), orderItem: { orderId: Number(orderId) } },
+                        select: { id: true, orderItemId: true },
+                    });
+                    if (oldLink) {
+                        await tx.orderItemAssetItem.delete({ where: { id: oldLink.id } });
+                        await tx.orderItemAssetItem.create({
+                            data: { orderItemId: oldLink.orderItemId, productAssetItemId: Number(newSerialId) },
+                        });
+                        await tx.productAssetItem.update({ where: { id: Number(oldSerialId) }, data: { soldOrderItemId: null } });
+                        await tx.productAssetItem.update({ where: { id: Number(newSerialId) }, data: { soldOrderItemId: oldLink.orderItemId } });
+                    }
+
+                    // Old serial → IN_STOCK and restore stock
+                    await tx.productAssetItem.update({ where: { id: Number(oldSerialId) }, data: { status: "IN_STOCK" } });
+                    await adjustStocks(tx, oldSerial.productVariantId!, oldSerial.branchId!, 1, loggedInUser.id, currentDate);
+
+                    // New serial → SOLD/RESERVED and deduct stock
+                    await tx.productAssetItem.update({ where: { id: Number(newSerialId) }, data: { status: newStatus as any } });
+                    await adjustStocks(tx, newSerial.productVariantId!, Number(branchId), -1, loggedInUser.id, currentDate);
+
+                    const reasonText = reason?.trim() ? reason.trim() : "Replaced at assignment";
+                    swapNotes.push(`[SWAP ${dayjs().tz(tz).format("YYYY-MM-DD HH:mm")}] ${oldSerial.serialNumber} → ${newSerial.serialNumber}. Reason: ${reasonText}`);
+                }
+
+                if (swapNotes.length > 0) {
+                    const existingNote = created.note ?? "";
+                    const updatedNote = existingNote ? `${existingNote}\n${swapNotes.join("\n")}` : swapNotes.join("\n");
+                    await tx.customerEquipment.update({ where: { id: created.id }, data: { note: updatedNote } });
+                }
             }
 
             return created;
@@ -870,16 +1026,31 @@ export const updateCustomerEquipment = async (req: Request, res: Response): Prom
         if (!loggedInUser) { res.status(401).json({ message: "Unauthenticated." }); return; }
 
         const id = Number(req.params.id);
-        const { customerId, assignType, assignedAt, orderId, note, items } = req.body;
+        const { customerId, assignType, assignedAt, orderId, stockRequestId, note, items, swaps } = req.body;
 
         const record = await prisma.customerEquipment.findUnique({ where: { id } });
         if (!record)           { res.status(404).json({ message: "Record not found." }); return; }
         if (record.returnedAt) { res.status(400).json({ message: "Cannot edit a returned record." }); return; }
 
-        // Validate orderId
+        // Validate orderId / stockRequestId
         if (orderId) {
             const order = await prisma.order.findUnique({ where: { id: Number(orderId) }, select: { id: true } });
             if (!order) { res.status(400).json({ message: `Invoice/Order ID ${orderId} does not exist.` }); return; }
+            const existingCeq = await prisma.customerEquipment.findFirst({
+                where: { orderId: Number(orderId), id: { not: id } },
+                select: { id: true, ref: true },
+            });
+            if (existingCeq) { res.status(400).json({ message: `Invoice is already linked to Customer Equipment ${existingCeq.ref}. Each invoice can only be linked once.` }); return; }
+        }
+        if (stockRequestId) {
+            const sr = await prisma.stockRequests.findUnique({ where: { id: Number(stockRequestId) }, select: { id: true, StatusType: true } });
+            if (!sr) { res.status(400).json({ message: `Stock Request ID ${stockRequestId} does not exist.` }); return; }
+            if (sr.StatusType !== "APPROVED") { res.status(400).json({ message: "Stock Request must be APPROVED before linking." }); return; }
+            const existingCeq = await prisma.customerEquipment.findFirst({
+                where: { stockRequestId: Number(stockRequestId), id: { not: id } },
+                select: { id: true, ref: true },
+            });
+            if (existingCeq) { res.status(400).json({ message: `Stock Request is already linked to Customer Equipment ${existingCeq.ref}. Each stock request can only be linked once.` }); return; }
         }
 
         // Validate items if provided
@@ -904,9 +1075,12 @@ export const updateCustomerEquipment = async (req: Request, res: Response): Prom
             select: { productAssetItemId: true, productVariantId: true, quantity: true, unitId: true },
         });
 
-        const oldOrderId   = record.orderId;
-        const newOrderId   = orderId !== undefined ? (orderId ? Number(orderId) : null) : oldOrderId;
-        const newAssignType = assignType !== undefined ? assignType : record.assignType;
+        const oldOrderId          = record.orderId;
+        const oldStockRequestId   = (record as any).stockRequestId ?? null;
+        const newOrderId          = orderId          !== undefined ? (orderId          ? Number(orderId)          : null) : oldOrderId;
+        const newStockRequestId   = stockRequestId   !== undefined ? (stockRequestId   ? Number(stockRequestId)   : null) : oldStockRequestId;
+        const newAssignType       = assignType !== undefined ? assignType : record.assignType;
+        const hasPreCutLink       = !!(newOrderId || newStockRequestId);
 
         const itemsWrite = Array.isArray(items)
             ? {
@@ -973,8 +1147,8 @@ export const updateCustomerEquipment = async (req: Request, res: Response): Prom
                 }
             }
 
-            // Reverse old stock effects only when items are being replaced AND old record had no linked invoice
-            if (!oldOrderId && Array.isArray(items)) {
+            // Reverse old stock effects only when items are being replaced AND old record had no pre-cut link
+            if (!oldOrderId && !oldStockRequestId && Array.isArray(items)) {
                 await applyDbItemEffects(tx, oldItems, record.branchId, record.assignType, "REVERSE", loggedInUser.id, currentDate);
             }
 
@@ -984,23 +1158,87 @@ export const updateCustomerEquipment = async (req: Request, res: Response): Prom
                     ...(customerId !== undefined && { customerId: Number(customerId) }),
                     ...(assignType !== undefined && { assignType: assignType as any }),
                     ...(assignedAt !== undefined && { assignedAt: dayjs(assignedAt).startOf("day").toDate() }),
-                    orderId:   orderId !== undefined ? (orderId ? Number(orderId) : null) : undefined,
-                    note:      note    !== undefined ? note : undefined,
+                    orderId:         orderId         !== undefined ? (orderId         ? Number(orderId)         : null) : undefined,
+                    stockRequestId:  stockRequestId  !== undefined ? (stockRequestId  ? Number(stockRequestId)  : null) : undefined,
+                    note:            note            !== undefined ? note : undefined,
                     updatedAt: currentDate,
                     updatedBy: loggedInUser.id,
                     ...itemsWrite,
                 },
                 include: {
-                    customer: { select: { id: true, name: true, phone: true } },
-                    branch:   { select: { id: true, name: true } },
-                    order:    { select: { id: true, ref: true } },
+                    customer:     { select: { id: true, name: true, phone: true } },
+                    branch:       { select: { id: true, name: true } },
+                    order:        { select: { id: true, ref: true } },
+                    stockRequest: { select: { id: true, ref: true, StatusType: true } },
                     ...itemInclude,
                 },
             });
 
-            // Apply new stock effects if new record has no linked invoice/order
-            if (!newOrderId && Array.isArray(items)) {
+            // Apply new stock effects only when no pre-existing link cuts stock
+            if (!hasPreCutLink && Array.isArray(items)) {
                 await applyPayloadEffects(tx, items, record.branchId, newAssignType, "APPLY", loggedInUser.id, currentDate);
+            }
+            // For stock request linked: update TRANSFERRED serials to SOLD/RESERVED
+            if (newStockRequestId && !newOrderId && Array.isArray(items)) {
+                const newStatus = serialStatusForAssign(newAssignType as any);
+                for (const item of items) {
+                    if (item.type === "TRACKED") {
+                        await tx.productAssetItem.update({
+                            where: { id: Number(item.productAssetItemId) },
+                            data: { status: newStatus as any },
+                        });
+                    }
+                }
+            }
+
+            // Process serial swaps — always write swap note; only do invoice/stock
+            // changes when an invoice is linked (non-invoice CEQ stock is already
+            // handled by applyDbItemEffects/applyPayloadEffects above).
+            if (Array.isArray(swaps) && swaps.length > 0) {
+                const newStatus = serialStatusForAssign(newAssignType as any);
+                const swapNotes: string[] = [];
+
+                for (const { oldSerialId, newSerialId, reason } of swaps) {
+                    const oldSerial = await tx.productAssetItem.findUnique({
+                        where: { id: Number(oldSerialId) },
+                        select: { productVariantId: true, branchId: true, serialNumber: true },
+                    });
+                    const newSerial = await tx.productAssetItem.findUnique({
+                        where: { id: Number(newSerialId) },
+                        select: { productVariantId: true, serialNumber: true },
+                    });
+                    if (!oldSerial || !newSerial) continue;
+
+                    if (newOrderId) {
+                        // Invoice-linked: update OrderItemAssetItem + handle stock/status
+                        // (regular update flow does NOT touch these when orderId is set)
+                        const oldLink = await tx.orderItemAssetItem.findFirst({
+                            where: { productAssetItemId: Number(oldSerialId), orderItem: { orderId: newOrderId } },
+                            select: { id: true, orderItemId: true },
+                        });
+                        if (oldLink) {
+                            await tx.orderItemAssetItem.delete({ where: { id: oldLink.id } });
+                            await tx.orderItemAssetItem.create({
+                                data: { orderItemId: oldLink.orderItemId, productAssetItemId: Number(newSerialId) },
+                            });
+                            await tx.productAssetItem.update({ where: { id: Number(oldSerialId) }, data: { soldOrderItemId: null } });
+                            await tx.productAssetItem.update({ where: { id: Number(newSerialId) }, data: { soldOrderItemId: oldLink.orderItemId } });
+                        }
+                        await tx.productAssetItem.update({ where: { id: Number(oldSerialId) }, data: { status: "IN_STOCK" } });
+                        await adjustStocks(tx, oldSerial.productVariantId!, oldSerial.branchId!, 1, loggedInUser.id, currentDate);
+                        await tx.productAssetItem.update({ where: { id: Number(newSerialId) }, data: { status: newStatus as any } });
+                        await adjustStocks(tx, newSerial.productVariantId!, record.branchId, -1, loggedInUser.id, currentDate);
+                    }
+                    // Always record swap history in note
+                    const reasonText = reason?.trim() ? reason.trim() : "Replaced on edit";
+                    swapNotes.push(`[SWAP ${dayjs().tz(tz).format("YYYY-MM-DD HH:mm")}] ${oldSerial.serialNumber} → ${newSerial.serialNumber}. Reason: ${reasonText}`);
+                }
+
+                if (swapNotes.length > 0) {
+                    const existingNote = result.note ?? "";
+                    const updatedNote = existingNote ? `${existingNote}\n${swapNotes.join("\n")}` : swapNotes.join("\n");
+                    await tx.customerEquipment.update({ where: { id }, data: { note: updatedNote } });
+                }
             }
 
             return result;
@@ -1129,5 +1367,145 @@ export const deleteCustomerEquipment = async (req: Request, res: Response): Prom
         logger.error("Error deleting customer equipment:", error);
         const typedError = error as Error;
         res.status(500).json({ message: typedError.message });
+    }
+};
+
+// ─── Swap Serial Number ───────────────────────────────────────────────────────
+export const swapSerialInCustomerEquipment = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const ceqId = parseInt(id, 10);
+        const { oldSerialId, newSerialId, reason } = req.body as {
+            oldSerialId: number;
+            newSerialId: number;
+            reason: string;
+        };
+        const userId = req.user?.id ?? 0;
+        const currentDate = nowDate();
+
+        if (!oldSerialId || !newSerialId) {
+            res.status(400).json({ message: "oldSerialId and newSerialId are required." });
+            return;
+        }
+        if (!reason?.trim()) {
+            res.status(400).json({ message: "A reason is required for serial swap." });
+            return;
+        }
+        if (oldSerialId === newSerialId) {
+            res.status(400).json({ message: "Old and new serial are the same." });
+            return;
+        }
+
+        const record = await prisma.customerEquipment.findUnique({
+            where: { id: ceqId },
+            include: { items: { include: { productAssetItem: true } } },
+        });
+
+        if (!record) { res.status(404).json({ message: "Customer Equipment not found." }); return; }
+        if (record.returnedAt) { res.status(400).json({ message: "Cannot swap serials on a returned record." }); return; }
+
+        // Find the CEQ item holding the old serial
+        const ceqItem = record.items.find(i => i.productAssetItemId === oldSerialId);
+        if (!ceqItem) {
+            res.status(400).json({ message: "Old serial not found in this equipment record." });
+            return;
+        }
+
+        // Validate new serial: must be IN_STOCK, same branch, same variant
+        const newSerial = await prisma.productAssetItem.findUnique({ where: { id: newSerialId } });
+        if (!newSerial) { res.status(404).json({ message: "New serial not found." }); return; }
+        if (newSerial.status !== "IN_STOCK") {
+            res.status(400).json({ message: `Serial is not available (status: ${newSerial.status}).` });
+            return;
+        }
+        if (newSerial.branchId !== record.branchId) {
+            res.status(400).json({ message: "New serial must be from the same branch." });
+            return;
+        }
+        if (newSerial.productVariantId !== ceqItem.productAssetItem?.productVariantId) {
+            res.status(400).json({ message: "New serial must be for the same product variant." });
+            return;
+        }
+
+        const variantId = newSerial.productVariantId;
+        const branchId  = record.branchId;
+        const newStatus = serialStatusForAssign(record.assignType);
+
+        // Only look up invoice link when an order is actually linked
+        const oldOrderItemAssetItem = record.orderId
+            ? await prisma.orderItemAssetItem.findFirst({
+                where: {
+                    productAssetItemId: oldSerialId,
+                    orderItem: { orderId: record.orderId },
+                },
+                select: { id: true, orderItemId: true },
+              })
+            : null;
+
+        await prisma.$transaction(async (tx) => {
+            // 1. Restore old serial → IN_STOCK, clear invoice link
+            await tx.productAssetItem.update({
+                where: { id: oldSerialId },
+                data: { status: "IN_STOCK", soldOrderItemId: null },
+            });
+            await adjustStocks(tx, variantId, branchId, 1, userId, currentDate);
+
+            // 2. Assign new serial → SOLD/RESERVED, set invoice link
+            await tx.productAssetItem.update({
+                where: { id: newSerialId },
+                data: { status: newStatus as any, soldOrderItemId: oldOrderItemAssetItem?.orderItemId ?? null },
+            });
+            await adjustStocks(tx, variantId, branchId, -1, userId, currentDate);
+
+            // 3. Swap OrderItemAssetItem so the invoice shows the new serial
+            if (oldOrderItemAssetItem) {
+                await tx.orderItemAssetItem.delete({ where: { id: oldOrderItemAssetItem.id } });
+                await tx.orderItemAssetItem.create({
+                    data: {
+                        orderItemId:        oldOrderItemAssetItem.orderItemId,
+                        productAssetItemId: newSerialId,
+                    },
+                });
+            }
+
+            // 4. Update CEQ item to reference new serial
+            await tx.customerEquipmentItem.update({
+                where: { id: ceqItem.id },
+                data: { productAssetItemId: newSerialId },
+            });
+
+            // 5. Append swap record to note for audit trail
+            const oldSN = ceqItem.productAssetItem?.serialNumber ?? String(oldSerialId);
+            const newSN = newSerial.serialNumber ?? String(newSerialId);
+            const swapNote = `[SWAP ${dayjs().tz(tz).format("YYYY-MM-DD HH:mm")}] ${oldSN} → ${newSN}. Reason: ${reason.trim()}`;
+            const currentNote = record.note ?? "";
+            const updatedNote = currentNote ? `${currentNote}\n${swapNote}` : swapNote;
+            await tx.customerEquipment.update({
+                where: { id: ceqId },
+                data: { note: updatedNote, updatedAt: currentDate, updatedBy: userId },
+            });
+        });
+
+        // Return the updated record
+        const updated = await prisma.customerEquipment.findUnique({
+            where: { id: ceqId },
+            include: {
+                branch: { select: { name: true } },
+                customer: { select: { name: true, phone: true } },
+                items: {
+                    include: {
+                        productAssetItem: { include: { productVariant: { include: { products: true } } } },
+                    },
+                },
+            },
+        });
+
+        res.status(200).json(updated);
+    } catch (error) {
+        logger.error("Error swapping serial:", error);
+        res.status(500).json({ message: "Internal server error" });
     }
 };
