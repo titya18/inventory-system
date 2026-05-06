@@ -42,9 +42,9 @@ export const stockSummary = async (req: Request, res: Response) => {
     const offset = (pageNumber - 1) * pageSize;
     const likeTerm = `%${searchTerm}%`;
 
-    const branchFilter = buildBranchFilter(req.user, req.query);
-    const branchCondition = branchFilter?.branchId
-      ? `AND s."branchId" = ${branchFilter.branchId}`
+    const branchIdParam = getQueryNumber(req.query.branchId);
+    const branchCondition = branchIdParam
+      ? `AND s."branchId" = ${branchIdParam}`
       : "";
 
     const sortColumn = SORT_FIELD_MAP[sortField] || `p.name`;

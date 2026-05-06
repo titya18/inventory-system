@@ -1136,6 +1136,8 @@ const InvoiceForm: React.FC = () => {
         width: "100%",
     };
 
+    const isApproved = statusValue === "APPROVED";
+
     return (
         <>
             <div className="panel">
@@ -1144,6 +1146,12 @@ const InvoiceForm: React.FC = () => {
                         { id ? <FilePenLine /> : <Plus /> }
                         { id ? " Update Sale" : " Add Sale" }
                     </h5>
+                    {isApproved && (
+                        <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                            <span className="font-semibold shrink-0">⚠ Approved invoice</span>
+                            <span>— you can only edit <b>customer</b>, <b>note</b>, and <b>date</b>. Everything else is locked.</span>
+                        </div>
+                    )}
                 </div>
                 <div className="mb-5">
                     <form onSubmit={handleSubmit(onSubmit)}>
@@ -1154,6 +1162,7 @@ const InvoiceForm: React.FC = () => {
                                         <input
                                             className="form-radio"
                                             type="radio"
+                                            disabled={isApproved}
                                             checked={watch("OrderSaleType") === "RETAIL"}
                                             onChange={() => handleInvoiceSaleTypeChange("RETAIL")}
                                         />
@@ -1164,6 +1173,7 @@ const InvoiceForm: React.FC = () => {
                                         <input
                                             className="form-radio"
                                             type="radio"
+                                            disabled={isApproved}
                                             checked={watch("OrderSaleType") === "WHOLESALE"}
                                             onChange={() => handleInvoiceSaleTypeChange("WHOLESALE")}
                                         />
@@ -1241,7 +1251,7 @@ const InvoiceForm: React.FC = () => {
                                     {errors.customerId && <span className="error_validate">{errors.customerId.message}</span>}
                                 </div>
                             </div>
-                            <div className="mb-5">
+                            {!isApproved && <div className="mb-5">
                                 <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 mb-5`}>
                                     <div>
                                         <label>Product <span className="text-danger text-md">*</span></label>
@@ -1376,7 +1386,7 @@ const InvoiceForm: React.FC = () => {
                                         )}
                                     </div>
                                 </div>
-                            </div>
+                            </div>}
                             <div className="dataTable-container">
                                 <table id="myTable1" className="whitespace-nowrap dataTable-table">
                                     <thead>
@@ -1441,18 +1451,18 @@ const InvoiceForm: React.FC = () => {
                                                 {/* <td>5</td> */}
                                                 <td>
                                                     <div className="inline-flex" style={{width: '40%'}}>
-                                                        <button type="button" onClick={() => decreaseQuantity(index)} className="flex items-center justify-center border border-r-0 border-danger bg-danger px-3 font-semibold text-white ltr:rounded-l-md rtl:rounded-r-md">
+                                                        {!isApproved && <button type="button" onClick={() => decreaseQuantity(index)} className="flex items-center justify-center border border-r-0 border-danger bg-danger px-3 font-semibold text-white ltr:rounded-l-md rtl:rounded-r-md">
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
                                                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                                             </svg>
-                                                        </button>
-                                                            <input type="text" value={detail.quantity} className="form-input rounded-none text-center" min="0" max="25" readOnly />
-                                                        <button type="button" onClick={() => increaseQuantity(index)} className="flex items-center justify-center border border-l-0 border-warning bg-warning px-3 font-semibold text-white ltr:rounded-r-md rtl:rounded-l-md">
+                                                        </button>}
+                                                            <input type="text" value={detail.quantity} className={`form-input text-center ${isApproved ? "rounded-md bg-gray-100" : "rounded-none"}`} min="0" max="25" readOnly />
+                                                        {!isApproved && <button type="button" onClick={() => increaseQuantity(index)} className="flex items-center justify-center border border-l-0 border-warning bg-warning px-3 font-semibold text-white ltr:rounded-r-md rtl:rounded-l-md">
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
                                                                 <line x1="12" y1="5" x2="12" y2="19"></line>
                                                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                                             </svg>
-                                                        </button>
+                                                        </button>}
                                                     </div>
                                                 </td>
                                                 {statusValue == "PENDING" && 
@@ -1501,11 +1511,13 @@ const InvoiceForm: React.FC = () => {
                                                     <span className="text-xs">({detail.taxMethod})</span>
                                                 </td>
                                                 <td>$ { Number(detail.total).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',') }</td>
+                                                {!isApproved && (
                                                 <td>
                                                     <button type="button" onClick={() => removeProductFromCart(index)} className="hover:text-danger" title="Delete">
                                                         <Trash2 color="red" />
                                                     </button>
                                                 </td>
+                                                )}
                                             </tr>
                                         ))}
                                     </tbody>
@@ -1554,11 +1566,12 @@ const InvoiceForm: React.FC = () => {
                                 </div> */}
                                 <div>
                                     <label>Status <span className="text-danger text-md">*</span></label>
-                                    <select 
-                                        id="status" className="form-input" 
-                                        {...register("status", { 
+                                    <select
+                                        id="status" className="form-input"
+                                        disabled={isApproved}
+                                        {...register("status", {
                                             required: "Status is required"
-                                        })} 
+                                        })}
                                     >
                                         <option value="">Select a status...</option>
                                         <option value="PENDING">Pending</option>
@@ -1597,7 +1610,7 @@ const InvoiceForm: React.FC = () => {
                                 <FontAwesomeIcon icon={faArrowLeft} className='mr-1' />
                                 Go Back
                             </NavLink>
-                            {statusValue === 'PENDING' &&
+                            {(statusValue === 'PENDING' || isApproved) &&
                                 (hasPermission('Sale-Create') || hasPermission('Sale-Edit')) && (
                                     <button type="submit" className="btn btn-primary ltr:ml-4 rtl:mr-4" disabled={isLoading}>
                                         <FontAwesomeIcon icon={faSave} className='mr-1' />

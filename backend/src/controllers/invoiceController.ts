@@ -225,8 +225,16 @@ export const upsertInvoice = async (req: Request, res: Response): Promise<void> 
         throw new Error("Invoice not found!");
       }
 
+      // ── APPROVED invoice: restricted update — customer, note, date only ──────
       if (invoiceId && existingInvoice?.status === "APPROVED") {
-        throw new Error("Approved invoice cannot be edited directly.");
+        const updateData: any = {};
+        if (customerId !== undefined) updateData.customerId = customerId ? Number(customerId) : null;
+        if (note       !== undefined) updateData.note       = note;
+        if (orderDate  !== undefined) updateData.orderDate  = orderDate ? new Date(orderDate) : null;
+
+        await tx.order.update({ where: { id: invoiceId }, data: updateData });
+        const updated = await tx.order.findUnique({ where: { id: invoiceId } });
+        return updated;
       }
 
       const checkRef = await tx.order.findFirst({
@@ -1213,12 +1221,18 @@ export const declareInvoiceToVat = async (req: Request, res: Response): Promise<
 };
 
 export const getAvailableTrackedItems = async (req: Request, res: Response): Promise<void> => {
-  const { productVariantId, branchId, orderItemId } = req.query;
+  const { productVariantId, branchId, orderItemId, selectedIds: selectedIdsParam } = req.query;
 
   try {
     const variantId = Number(productVariantId);
     const branchIdNum = Number(branchId);
     const orderItemIdNum = orderItemId ? Number(orderItemId) : 0;
+
+    // Previously-selected serial IDs (passed from stock request / adjustment forms)
+    // Include these regardless of status so users can see if they've become unavailable
+    const extraSelectedIds: number[] = selectedIdsParam
+      ? String(selectedIdsParam).split(",").map(Number).filter((n) => n > 0)
+      : [];
 
     if (!variantId || !branchIdNum) {
       res.status(400).json({ message: "productVariantId and branchId are required" });
@@ -1255,13 +1269,15 @@ export const getAvailableTrackedItems = async (req: Request, res: Response): Pro
     // Serials that are CEQ-assigned but also already on this invoice line stay visible
     const blockedIds = ceqAssignedIds.filter((id) => !selectedIds.includes(id));
 
+    const allIncludeIds = [...new Set([...selectedIds, ...extraSelectedIds])];
+
     const rows = await prisma.productAssetItem.findMany({
       where: {
         productVariantId: variantId,
         branchId: branchIdNum,
         OR: [
           { status: "IN_STOCK" },
-          ...(selectedIds.length > 0 ? [{ id: { in: selectedIds } }] : []),
+          ...(allIncludeIds.length > 0 ? [{ id: { in: allIncludeIds } }] : []),
         ],
         ...(blockedIds.length > 0 ? { NOT: { id: { in: blockedIds } } } : {}),
       },

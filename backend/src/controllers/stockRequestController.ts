@@ -359,7 +359,18 @@ export const upsertRequest = async (req: Request, res: Response): Promise<void> 
                                     select: { id: true },
                                 });
                                 if (items.length !== selectedIds.length) {
-                                    throw new Error(`Some selected serials are no longer available. Please re-select.`);
+                                    const availableIds = new Set(items.map((i) => i.id));
+                                    const staleIds = selectedIds.filter((id) => !availableIds.has(id));
+                                    const staleItems = await tx.productAssetItem.findMany({
+                                        where: { id: { in: staleIds } },
+                                        select: { serialNumber: true, status: true },
+                                    });
+                                    const details = staleItems.map((s) => `${s.serialNumber} (${s.status})`).join(", ");
+                                    const productName = (await tx.productVariants.findUnique({
+                                        where: { id: Number(detail.productVariantId) },
+                                        select: { products: { select: { name: true } } },
+                                    }))?.products?.name ?? `Variant #${detail.productVariantId}`;
+                                    throw new Error(`Cannot approve: serial(s) no longer available for ${productName} — ${details}. Please update your serial selection.`);
                                 }
                                 if (items.length !== transferQty) {
                                     throw new Error(`Selected ${items.length} serial(s) but request quantity is ${transferQty}. They must match.`);

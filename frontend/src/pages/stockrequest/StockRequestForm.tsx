@@ -12,7 +12,7 @@ import { getAllBranches } from "@/api/branch";
 import { searchProduct } from "@/api/searchProduct";
 import { upsertRequest, getStockRequestById } from "@/api/stockRequest";
 import { searchOrders, getAvailableAssetItems } from "@/api/customerEquipment";
-import { getInvoiceByid } from "@/api/invoice";
+import { getInvoiceByid, getAvailableTrackedItems } from "@/api/invoice";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useAppContext } from "@/hooks/useAppContext";
@@ -664,6 +664,23 @@ ${watch("note") ? `<div style="margin-bottom:20px;font-size:13px"><span style="f
                         toast.error(`"${productName}": Selected ${selected} serial(s) but quantity is ${requiredQty}. They must match.`);
                         setIsLoading(false);
                         return;
+                    }
+
+                    // Check if selected serials are still IN_STOCK
+                    if (!linkedOrderId && (row.selectedTrackedItemIds?.length ?? 0) > 0) {
+                        const branchIdVal = Number(row.branchId ?? watch("branchId") ?? 0);
+                        const currentItems = await getAvailableTrackedItems(
+                            row.productVariantId, branchIdVal, null, row.selectedTrackedItemIds
+                        );
+                        const stale = currentItems.filter(
+                            (i: any) => (row.selectedTrackedItemIds ?? []).includes(Number(i.id)) && i.status !== "IN_STOCK"
+                        );
+                        if (stale.length > 0) {
+                            const names = stale.map((i: any) => `${i.serialNumber} (${i.status})`).join(", ");
+                            toast.error(`"${productName}": Serial(s) no longer available — ${names}. Open the serial picker to update your selection.`);
+                            setIsLoading(false);
+                            return;
+                        }
                     }
                 }
             }

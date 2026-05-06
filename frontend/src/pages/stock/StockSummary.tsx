@@ -135,10 +135,7 @@ const StockSummary: React.FC = () => {
   }, [serialModal]);
 
   useEffect(() => {
-    const branchId =
-      user?.roleType === "ADMIN" && selectedBranch !== "all"
-        ? selectedBranch
-        : undefined;
+    const branchId = selectedBranch !== "all" ? selectedBranch : undefined;
 
     const fetchData = async () => {
       setLoading(true);
@@ -172,7 +169,7 @@ const StockSummary: React.FC = () => {
     };
 
     fetchData();
-  }, [search, page, pageSize, sortField, sortOrder, selectedBranch, selectedStatus, user?.roleType]);
+  }, [search, page, pageSize, sortField, sortOrder, selectedBranch, selectedStatus]);
 
   const handleSort = (col: string) => {
     const field = sortFields[col];

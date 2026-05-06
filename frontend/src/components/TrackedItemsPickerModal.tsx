@@ -66,7 +66,8 @@ const TrackedItemsPickerModal: React.FC<TrackedItemsPickerModalProps> = ({
                 .catch(console.error)
                 .finally(() => setIsLoading(false));
         } else {
-            getAvailableTrackedItems(variantId, branchId, existingItemId ?? null)
+            // Pass previously-selected IDs so the backend also returns them even if no longer IN_STOCK
+            getAvailableTrackedItems(variantId, branchId, existingItemId ?? null, initialSelectedIds)
                 .then((rows) => setAvailableItems(rows))
                 .catch(console.error)
                 .finally(() => setIsLoading(false));
@@ -141,25 +142,45 @@ const TrackedItemsPickerModal: React.FC<TrackedItemsPickerModalProps> = ({
                             ) : availableItems.length === 0 ? (
                                 <p className="text-sm text-red-500">No serials available in this branch.</p>
                             ) : (
+                                <>
+                                {/* Warning: previously selected serials that are no longer available */}
+                                {availableItems.some(
+                                    (i) => initialSelectedIds.includes(Number(i.id)) && i.status !== "IN_STOCK" && !(orderId && i.status === "SOLD")
+                                ) && (() => {
+                                    const count = availableItems.filter(
+                                        (i) => initialSelectedIds.includes(Number(i.id)) && i.status !== "IN_STOCK" && !(orderId && i.status === "SOLD")
+                                    ).length;
+                                    return (
+                                        <div className="mb-2 rounded bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+                                            ⚠ <strong>{count}</strong> previously selected serial{count > 1 ? "s are" : " is"} no longer available — please deselect and choose new ones.
+                                        </div>
+                                    );
+                                })()}
                                 <div className="space-y-2">
                                     {availableItems.map((item) => {
                                         const checked = selectedIds.includes(Number(item.id));
                                         const isInvoiceSerial = orderId && item.status === "SOLD";
+                                        const unavailable = !orderId && item.status !== "IN_STOCK";
                                         return (
                                             <label
                                                 key={item.id}
-                                                className={`flex items-start gap-3 p-2 rounded border cursor-pointer ${
+                                                className={`flex items-start gap-3 p-2 rounded border ${unavailable ? "cursor-not-allowed opacity-70" : "cursor-pointer"} ${
                                                     checked
                                                         ? isInvoiceSerial
                                                             ? "bg-green-50 border-green-400"
-                                                            : "bg-indigo-100 border-indigo-400"
-                                                        : "bg-white border-gray-200 hover:bg-gray-50"
+                                                            : unavailable
+                                                                ? "bg-red-50 border-red-300"
+                                                                : "bg-indigo-100 border-indigo-400"
+                                                        : unavailable
+                                                            ? "bg-red-50 border-red-200"
+                                                            : "bg-white border-gray-200 hover:bg-gray-50"
                                                 }`}
                                             >
                                                 <input
                                                     type="checkbox"
                                                     checked={checked}
-                                                    onChange={() => toggle(Number(item.id), false)}
+                                                    disabled={unavailable && !checked}
+                                                    onChange={() => toggle(Number(item.id), unavailable && !checked)}
                                                     className="mt-1"
                                                 />
                                                 <div className="text-sm flex-1 min-w-0">
@@ -171,6 +192,9 @@ const TrackedItemsPickerModal: React.FC<TrackedItemsPickerModalProps> = ({
                                                         {!isInvoiceSerial && item.status === "IN_STOCK" && (
                                                             <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">IN_STOCK</span>
                                                         )}
+                                                        {unavailable && (
+                                                            <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-red-100 text-red-600">⚠ {item.status} — no longer available</span>
+                                                        )}
                                                     </div>
                                                     {item.assetCode && <div><strong>Asset:</strong> {item.assetCode}</div>}
                                                     {item.macAddress && <div><strong>MAC:</strong> {item.macAddress}</div>}
@@ -179,6 +203,7 @@ const TrackedItemsPickerModal: React.FC<TrackedItemsPickerModalProps> = ({
                                         );
                                     })}
                                 </div>
+                                </>
                             )}
                         </div>
                     )}

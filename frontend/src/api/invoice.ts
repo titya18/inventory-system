@@ -185,7 +185,8 @@ export const DeclarationVat = async (id: number): Promise<InvoiceType> => {
 export const getAvailableTrackedItems = async (
   productVariantId: number,
   branchId: number,
-  orderItemId?: number | null
+  orderItemId?: number | null,
+  selectedIds?: number[]
 ): Promise<ProductTrackedItemType[]> => {
   const params = new URLSearchParams({
     productVariantId: String(productVariantId),
@@ -194,6 +195,9 @@ export const getAvailableTrackedItems = async (
 
   if (orderItemId && orderItemId > 0) {
     params.append("orderItemId", String(orderItemId));
+  }
+  if (selectedIds && selectedIds.length > 0) {
+    params.append("selectedIds", selectedIds.join(","));
   }
 
   const response = await fetch(

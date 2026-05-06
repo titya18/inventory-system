@@ -1493,6 +1493,30 @@ export const swapSerialInCustomerEquipment = async (
                 where: { id: ceqId },
                 data: { note: updatedNote, updatedAt: currentDate, updatedBy: userId },
             });
+
+            // 6. Update linked Stock Request trackedPayload — replace old serial ID with new one
+            const srId = (record as any).stockRequestId as number | null;
+            if (srId) {
+                const details = await tx.requestDetails.findMany({
+                    where: { requestId: srId, productVariantId: variantId },
+                    select: { id: true, trackedPayload: true },
+                });
+                for (const detail of details) {
+                    if (!detail.trackedPayload) continue;
+                    try {
+                        const payload = JSON.parse(detail.trackedPayload);
+                        const ids: number[] = payload.selectedIds ?? [];
+                        const idx = ids.indexOf(oldSerialId);
+                        if (idx !== -1) {
+                            ids[idx] = newSerialId;
+                            await tx.requestDetails.update({
+                                where: { id: detail.id },
+                                data: { trackedPayload: JSON.stringify({ ...payload, selectedIds: ids }) },
+                            });
+                        }
+                    } catch (_) { /* malformed payload — skip */ }
+                }
+            }
         });
 
         // Return the updated record
