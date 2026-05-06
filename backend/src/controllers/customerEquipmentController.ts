@@ -1376,8 +1376,8 @@ export const swapSerialInCustomerEquipment = async (
     res: Response
 ): Promise<void> => {
     try {
-        const { id } = req.params;
-        const ceqId = parseInt(id, 10);
+        const rawId = req.params.id;
+        const ceqId = Number(Array.isArray(rawId) ? rawId[0] : rawId);
         const { oldSerialId, newSerialId, reason } = req.body as {
             oldSerialId: number;
             newSerialId: number;
