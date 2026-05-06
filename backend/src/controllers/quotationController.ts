@@ -140,15 +140,8 @@ export const getNextQuotationRef = async (req: Request, res: Response): Promise<
     }
 
     const lastQuotation = await prisma.quotations.findFirst({
-        where: {
-            branchId: Number(branchIdNumber),
-        },
-        orderBy: {
-            id: "desc",
-        },
-        select: {
-            ref: true,
-        },
+        orderBy: { id: "desc" },
+        select: { ref: true },
     });
 
     let nextRef = "QR-00001";
@@ -196,11 +189,14 @@ export const upsertQuotation = async (req: Request, res: Response): Promise<void
                 if (!checkQuotation) {
                     throw new Error("Quotation not found!");
                 }
+
+                if (!["PENDING", "SENT"].includes(checkQuotation.status ?? "")) {
+                    throw new Error("Only PENDING or SENT quotations can be edited.");
+                }
             }
 
             const checkRef = await tx.quotations.findFirst({
                 where: {
-                    branchId: Number(branchId),
                     ref,
                     ...(quotationId ? { id: { not: quotationId } } : {}),
                 },
@@ -266,6 +262,7 @@ export const upsertQuotation = async (req: Request, res: Response): Promise<void
                         total: new Decimal(detail.total ?? 0),
                         quantity: Number(detail.unitQty ?? detail.quantity ?? 0),
                         serialSelectionMode,
+                        trackedPayload: JSON.stringify({ mode: serialSelectionMode, selectedIds: selectedTrackedItemIds }),
                         selectedAssetItems:
                             serialSelectionMode === "MANUAL" && selectedTrackedItemIds.length > 0
                                 ? {
@@ -545,6 +542,12 @@ export const deleteQuotation = async (req: Request, res: Response): Promise<void
             res.status(404).json({ message: "Quotation not found!" });
             return;
         }
+
+        if (!["PENDING", "SENT"].includes(quotation.status ?? "")) {
+            res.status(400).json({ message: "Only PENDING or SENT quotations can be deleted." });
+            return;
+        }
+
         await prisma.quotations.update({
             where: { id: Number(quotationId) },
             data: {

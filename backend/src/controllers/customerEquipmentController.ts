@@ -251,7 +251,7 @@ export const getAvailableAssetItems = async (req: Request, res: Response): Promi
             }
         }
 
-        // Find IDs of serials already actively assigned to another CEQ (not returned).
+        // Find serials already actively assigned to another CEQ (not returned) — include CEQ ref.
         const activelyAssigned = await prisma.customerEquipmentItem.findMany({
             where: {
                 productAssetItemId: { not: null },
@@ -260,18 +260,23 @@ export const getAvailableAssetItems = async (req: Request, res: Response): Promi
                     ...(excludeCeqId ? { id: { not: excludeCeqId } } : {}),
                 },
             },
-            select: { productAssetItemId: true },
+            select: {
+                productAssetItemId: true,
+                customerEquipment: { select: { ref: true } },
+            },
         });
-        const assignedIds = activelyAssigned
-            .map((r) => r.productAssetItemId)
-            .filter((id): id is number => id !== null);
+        const assignedMap = new Map<number, string>(); // serialId → ceqRef
+        for (const r of activelyAssigned) {
+            if (r.productAssetItemId !== null) {
+                assignedMap.set(r.productAssetItemId, r.customerEquipment.ref);
+            }
+        }
 
         // Include TRANSFERRED serials from the linked stock request alongside normal serials
         const items = await prisma.productAssetItem.findMany({
             where: {
                 productVariantId: variantId,
                 branchId,
-                // Include TRANSFERRED serials that belong to this stock request
                 ...(requestSerialIds.length > 0
                     ? { OR: [{ id: { in: requestSerialIds } }, { status: { not: "TRANSFERRED" } }] }
                     : {}),
@@ -291,10 +296,32 @@ export const getAvailableAssetItems = async (req: Request, res: Response): Promi
             },
         });
 
+        // For TRANSFERRED serials, find which stock request processed them
+        const transferredIds = items.filter(i => i.status === "TRANSFERRED").map(i => i.id);
+        const srRefMap = new Map<number, string>(); // serialId → srRef
+        if (transferredIds.length > 0) {
+            const srDetails = await prisma.requestDetails.findMany({
+                where: { productVariantId: variantId, trackedPayload: { not: null } },
+                select: { trackedPayload: true, stockrequests: { select: { ref: true } } },
+            });
+            for (const d of srDetails) {
+                if (!d.trackedPayload) continue;
+                try {
+                    const p = JSON.parse(d.trackedPayload);
+                    const processed: number[] = Array.isArray(p.processedIds) ? p.processedIds.map(Number) : [];
+                    for (const sid of processed) {
+                        if (transferredIds.includes(sid)) srRefMap.set(sid, d.stockrequests?.ref ?? "");
+                    }
+                } catch { /* ignore */ }
+            }
+        }
+
         const result = items.map((item) => ({
             ...item,
-            activeCeqAssigned: assignedIds.includes(item.id),
+            activeCeqAssigned: assignedMap.has(item.id),
+            activeCeqRef: assignedMap.get(item.id) ?? null,
             fromStockRequest: requestSerialIds.includes(item.id),
+            transferredViaSrRef: srRefMap.get(item.id) ?? null,
         }));
 
         res.status(200).json(result);

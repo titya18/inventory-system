@@ -24,6 +24,7 @@ type CEQItemPayload =
 import { getAllBranches } from "@/api/branch";
 import { getAllCustomers } from "@/api/customer";
 import { searchProduct } from "@/api/searchProduct";
+import { getStockRequestById } from "@/api/stockRequest";
 import { BranchType, CustomerType, AssignType } from "@/data_types/types";
 
 type AssetItem = {
@@ -129,6 +130,8 @@ const CustomerEquipmentForm: React.FC = () => {
     const [srSearch, setSrSearch]               = useState("");
     const [srResults, setSrResults]             = useState<{ id: number; ref: string; requestDate: string; linkedCeq?: { ref: string } | null }[]>([]);
     const [showSrSuggestions, setShowSrSuggestions] = useState(false);
+    // Map of variantId → processedIds from the linked SR's trackedPayload
+    const [srSerialMap, setSrSerialMap]         = useState<Record<number, number[]>>({});
     const [note, setNote]               = useState("");
 
     // Equipment lines (create mode only)
@@ -414,7 +417,16 @@ const CustomerEquipmentForm: React.FC = () => {
         if (tracked && branchId) {
             try {
                 const items = await getAvailableAssetItems(variant.id, Number(branchId), id ? Number(id) : undefined, stockRequestId ? Number(stockRequestId) : undefined);
-                updateLine(key, { availableItems: items, showSerialPanel: true });
+                const srIds = srSerialMap[variant.id] ?? [];
+                const preSelected = srIds.length > 0
+                    ? items.filter((i: AssetItem) => srIds.includes(i.id))
+                    : [];
+                updateLine(key, {
+                    availableItems: items,
+                    showSerialPanel: true,
+                    selectedIds:  preSelected.map((i: AssetItem) => i.id),
+                    selectedItems: preSelected,
+                });
             } catch {
                 updateLine(key, { availableItems: [] });
             }
@@ -498,17 +510,33 @@ const CustomerEquipmentForm: React.FC = () => {
         } catch { setSrResults([]); }
     };
 
-    const selectSr = (sr: { id: number; ref: string }) => {
+    const selectSr = async (sr: { id: number; ref: string }) => {
         setStockRequestId(sr.id);
         setStockRequestRef(sr.ref);
         setSrSearch(sr.ref);
         setShowSrSuggestions(false);
-        // Reload serial panels so they include TRANSFERRED serials from this request
         setLines(prev => prev.map(l => ({ ...l, availableItems: [], showSerialPanel: false })));
+
+        // Fetch SR details to extract processedIds per variant
+        try {
+            const srData = await getStockRequestById(sr.id);
+            const map: Record<number, number[]> = {};
+            for (const detail of (srData as any).requestDetails ?? []) {
+                const variantId = Number(detail.productVariantId);
+                if (!variantId) continue;
+                const payload = detail.trackedPayload ? JSON.parse(detail.trackedPayload) : null;
+                const ids: number[] = payload?.processedIds ?? [];
+                if (ids.length > 0) map[variantId] = ids;
+            }
+            setSrSerialMap(map);
+        } catch {
+            setSrSerialMap({});
+        }
     };
 
     const clearSr = () => {
         setStockRequestId(""); setStockRequestRef(""); setSrSearch(""); setSrResults([]);
+        setSrSerialMap({});
         setLines(prev => prev.map(l => ({ ...l, availableItems: [], showSerialPanel: false })));
     };
 
@@ -1066,7 +1094,8 @@ const CustomerEquipmentForm: React.FC = () => {
                                                             const isCeqAssigned   = (item as any).activeCeqAssigned === true;
                                                             const soldOrderId     = item.orderItemLinks?.[0]?.orderItem?.order?.id;
                                                             const isUnlockedBySoldInvoice = isSold && !!orderId && soldOrderId === Number(orderId);
-                                                            const isBlocked       = usedElse || isCeqAssigned || (isSold && !isUnlockedBySoldInvoice) || (isReserved && !isUnlockedBySoldInvoice) || (item.status !== "IN_STOCK" && !checked && !isUnlockedBySoldInvoice);
+                                                            const isFromLinkedSR  = item.status === "TRANSFERRED" && (srSerialMap[line.variantId!] ?? []).includes(item.id);
+                                                            const isBlocked       = usedElse || isCeqAssigned || (isSold && !isUnlockedBySoldInvoice) || (isReserved && !isUnlockedBySoldInvoice) || (item.status !== "IN_STOCK" && !checked && !isUnlockedBySoldInvoice && !isFromLinkedSR);
                                                             const soldOrder       = isSold ? item.orderItemLinks?.[0]?.orderItem?.order : null;
                                                             const pendingSwap     = pendingSwaps[item.id];
 
@@ -1095,18 +1124,24 @@ const CustomerEquipmentForm: React.FC = () => {
                                                                             {usedElse
                                                                                 ? <span className="text-gray-400">[used on line above]</span>
                                                                                 : isCeqAssigned
-                                                                                    ? <span className="text-purple-500 font-medium">Already assigned to another CEQ record</span>
+                                                                                    ? <span className="text-purple-500 font-medium">Already assigned to {(item as any).activeCeqRef || "another CEQ record"}</span>
                                                                                     : isUnlockedBySoldInvoice
-                                                                                        ? <span className="text-green-600 font-medium">✓ Linked via invoice</span>
-                                                                                        : isSold
-                                                                                            ? <span className="text-red-500 font-medium">
-                                                                                                Sold via {soldOrder ? <strong>{soldOrder.ref}</strong> : "invoice"}
-                                                                                                {soldOrder?.customer && <span className="text-red-400"> ({soldOrder.customer.name})</span>}
-                                                                                                {" — link the Order above"}
-                                                                                              </span>
-                                                                                            : isReserved
-                                                                                                ? <span className="text-orange-500 font-medium">Already assigned to another customer</span>
-                                                                                                : <span className="text-gray-400">[{item.status}]</span>
+                                                                                        ? <span className="text-green-600 font-medium">✓ Linked via invoice {orderRef}</span>
+                                                                                        : isFromLinkedSR
+                                                                                            ? <span className="text-indigo-600 font-medium">✓ Linked via request {stockRequestRef}</span>
+                                                                                            : isSold
+                                                                                                ? <span className="text-red-500 font-medium">
+                                                                                                    Sold via {soldOrder ? <strong>{soldOrder.ref}</strong> : "invoice"}
+                                                                                                    {soldOrder?.customer && <span className="text-red-400"> ({soldOrder.customer.name})</span>}
+                                                                                                    {" — link the Order above"}
+                                                                                                  </span>
+                                                                                                : isReserved
+                                                                                                    ? <span className="text-orange-500 font-medium">Already assigned to another customer</span>
+                                                                                                    : item.status === "TRANSFERRED"
+                                                                                                        ? <span className="text-orange-500 font-medium">
+                                                                                                            {(item as any).transferredViaSrRef ? `Transferred via ${(item as any).transferredViaSrRef} — link it below` : "Transferred via stock request — link it below"}
+                                                                                                          </span>
+                                                                                                        : <span className="text-gray-400">[{item.status}]</span>
                                                                             }
                                                                         </span>
                                                                     </label>
@@ -1656,7 +1691,8 @@ const CustomerEquipmentForm: React.FC = () => {
                                                         const isCeqAssigned = (item as any).activeCeqAssigned === true;
                                                         const soldOrderId   = item.orderItemLinks?.[0]?.orderItem?.order?.id;
                                                         const isUnlockedBySoldInvoice = isSold && !!orderId && soldOrderId === Number(orderId);
-                                                        const isBlocked     = usedElse || isCeqAssigned || (isSold && !isUnlockedBySoldInvoice) || (isReserved && !isUnlockedBySoldInvoice) || (item.status !== "IN_STOCK" && !checked && !isUnlockedBySoldInvoice);
+                                                        const isFromLinkedSR  = item.status === "TRANSFERRED" && (srSerialMap[line.variantId!] ?? []).includes(item.id);
+                                                        const isBlocked     = usedElse || isCeqAssigned || (isSold && !isUnlockedBySoldInvoice) || (isReserved && !isUnlockedBySoldInvoice) || (item.status !== "IN_STOCK" && !checked && !isUnlockedBySoldInvoice && !isFromLinkedSR);
                                                         const soldOrder     = isSold ? item.orderItemLinks?.[0]?.orderItem?.order : null;
                                                         const pendingSwap   = pendingSwaps[item.id];
 
@@ -1686,16 +1722,22 @@ const CustomerEquipmentForm: React.FC = () => {
                                                                             : isCeqAssigned
                                                                                 ? <span className="text-purple-500 font-medium">Already assigned to another CEQ record</span>
                                                                                 : isUnlockedBySoldInvoice
-                                                                                    ? <span className="text-green-600 font-medium">✓ Linked via invoice</span>
-                                                                                    : isSold
-                                                                                        ? <span className="text-red-500 font-medium">
-                                                                                            Sold via {soldOrder ? <strong>{soldOrder.ref}</strong> : "invoice"}
-                                                                                            {soldOrder?.customer && <span className="text-red-400"> ({soldOrder.customer.name})</span>}
-                                                                                            {" — link the Order above"}
-                                                                                          </span>
-                                                                                        : isReserved
-                                                                                            ? <span className="text-orange-500 font-medium">Already assigned to another customer</span>
-                                                                                            : <span className="text-gray-400">[{item.status}]</span>
+                                                                                    ? <span className="text-green-600 font-medium">✓ Linked via invoice {orderRef}</span>
+                                                                                    : isFromLinkedSR
+                                                                                        ? <span className="text-indigo-600 font-medium">✓ Linked via request {stockRequestRef}</span>
+                                                                                        : isSold
+                                                                                            ? <span className="text-red-500 font-medium">
+                                                                                                Sold via {soldOrder ? <strong>{soldOrder.ref}</strong> : "invoice"}
+                                                                                                {soldOrder?.customer && <span className="text-red-400"> ({soldOrder.customer.name})</span>}
+                                                                                                {" — link the Order above"}
+                                                                                              </span>
+                                                                                            : isReserved
+                                                                                                ? <span className="text-orange-500 font-medium">Already assigned to another customer</span>
+                                                                                                : item.status === "TRANSFERRED"
+                                                                                                    ? <span className="text-orange-500 font-medium">
+                                                                                                        {(item as any).transferredViaSrRef ? `Transferred via ${(item as any).transferredViaSrRef} — link it below` : "Transferred via stock request — link it below"}
+                                                                                                      </span>
+                                                                                                    : <span className="text-gray-400">[{item.status}]</span>
                                                                         }
                                                                     </span>
                                                                 </label>

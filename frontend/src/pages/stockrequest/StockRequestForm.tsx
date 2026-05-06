@@ -644,9 +644,32 @@ ${watch("note") ? `<div style="margin-bottom:20px;font-size:13px"><span style="f
                     return;
                 }
 
-                // Serial tracking validation — MANUAL mode only, enforced on APPROVED
+                // Stale serial check — runs on any save (PENDING or APPROVED)
                 if (
-                    formData.StatusType === "APPROVED" &&
+                    row.trackingType &&
+                    row.trackingType !== "NONE" &&
+                    row.serialSelectionMode === "MANUAL" &&
+                    !linkedOrderId &&
+                    (row.selectedTrackedItemIds?.length ?? 0) > 0
+                ) {
+                    const productName = row.products?.name || "unknown product";
+                    const branchIdVal = Number(row.branchId ?? watch("branchId") ?? 0);
+                    const currentItems = await getAvailableTrackedItems(
+                        row.productVariantId, branchIdVal, null, row.selectedTrackedItemIds
+                    );
+                    const stale = currentItems.filter(
+                        (i: any) => (row.selectedTrackedItemIds ?? []).includes(Number(i.id)) && i.status !== "IN_STOCK"
+                    );
+                    if (stale.length > 0) {
+                        const names = stale.map((i: any) => `${i.serialNumber} (${i.status})`).join(", ");
+                        toast.error(`"${productName}": Serial(s) no longer available — ${names}. Open the serial picker and deselect them.`);
+                        setIsLoading(false);
+                        return;
+                    }
+                }
+
+                // Serial count validation — enforced on any save when MANUAL mode
+                if (
                     row.trackingType &&
                     row.trackingType !== "NONE" &&
                     row.serialSelectionMode === "MANUAL"
@@ -656,7 +679,7 @@ ${watch("note") ? `<div style="margin-bottom:20px;font-size:13px"><span style="f
                     const selected = row.selectedTrackedItemIds?.length ?? 0;
 
                     if (selected === 0) {
-                        toast.error(`"${productName}": Please select serials before approving (or switch to Auto mode).`);
+                        toast.error(`"${productName}": Please select serials (or switch to Auto mode).`);
                         setIsLoading(false);
                         return;
                     }
@@ -664,23 +687,6 @@ ${watch("note") ? `<div style="margin-bottom:20px;font-size:13px"><span style="f
                         toast.error(`"${productName}": Selected ${selected} serial(s) but quantity is ${requiredQty}. They must match.`);
                         setIsLoading(false);
                         return;
-                    }
-
-                    // Check if selected serials are still IN_STOCK
-                    if (!linkedOrderId && (row.selectedTrackedItemIds?.length ?? 0) > 0) {
-                        const branchIdVal = Number(row.branchId ?? watch("branchId") ?? 0);
-                        const currentItems = await getAvailableTrackedItems(
-                            row.productVariantId, branchIdVal, null, row.selectedTrackedItemIds
-                        );
-                        const stale = currentItems.filter(
-                            (i: any) => (row.selectedTrackedItemIds ?? []).includes(Number(i.id)) && i.status !== "IN_STOCK"
-                        );
-                        if (stale.length > 0) {
-                            const names = stale.map((i: any) => `${i.serialNumber} (${i.status})`).join(", ");
-                            toast.error(`"${productName}": Serial(s) no longer available — ${names}. Open the serial picker to update your selection.`);
-                            setIsLoading(false);
-                            return;
-                        }
                     }
                 }
             }

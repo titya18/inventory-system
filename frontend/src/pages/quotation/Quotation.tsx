@@ -435,17 +435,17 @@ const Quotation: React.FC = () => {
                                                                                 <PrinterCheck color="purple" />
                                                                             </NavLink>
                                                                         )}
-                                                                        {hasPermission('Quotation-Edit') &&
+                                                                        {['PENDING', 'SENT'].includes(rows.status ?? '') &&
+                                                                            hasPermission('Quotation-Edit') &&
                                                                                 <NavLink to={`/editquotation/${rows.id}`} className="hover:text-warning" title="Edit">
                                                                                     <Pencil color="green" />
                                                                                 </NavLink>
                                                                         }
-                                                                        {rows.status === 'PENDING' &&
+                                                                        {['PENDING', 'SENT'].includes(rows.status ?? '') &&
                                                                             hasPermission('Quotation-Delete') &&
                                                                                 <button type="button" className="hover:text-danger" onClick={() => rows.id && handleDeleteQuotation(rows.id)} title="Delete">
                                                                                     <Trash2 color="red" />
                                                                                 </button>
-                                                                            
                                                                         }
                                                                     </div>
                                                                 </td>

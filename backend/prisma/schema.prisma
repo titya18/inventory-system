@@ -863,6 +863,7 @@ model QuotationDetails {
   quantity        Int?
 
   serialSelectionMode String? @default("AUTO")
+  trackedPayload      String? @db.Text
 
   // ✅ NEW
   unit Units? @relation(fields: [unitId], references: [id])

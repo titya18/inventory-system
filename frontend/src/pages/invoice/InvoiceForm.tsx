@@ -8,7 +8,7 @@ import { getAllBranches } from "@/api/branch";
 import { getAllCustomers } from "@/api/customer";
 import { searchProduct } from "@/api/searchProduct";
 import { searchService } from "@/api/searchService";
-import { getNextInvoiceRef } from "@/api/invoice";
+import { getNextInvoiceRef, getAvailableTrackedItems } from "@/api/invoice";
 import { upsertInvoice, getInvoiceByid } from "@/api/invoice";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
@@ -293,6 +293,32 @@ const InvoiceForm: React.FC = () => {
                  
                     setInvoiceDetails(hydratedDetails);
                     setStatusValue(invoiceData.status);
+
+                    // Stale serial check on reopen — only for PENDING invoices
+                    if (invoiceData.status === "PENDING") {
+                        const branchIdVal = Number(invoiceData.branchId ?? 0);
+                        for (const detail of hydratedDetails) {
+                            if (
+                                detail.trackingType && detail.trackingType !== "NONE" &&
+                                detail.serialSelectionMode === "MANUAL" &&
+                                (detail.selectedTrackedItemIds?.length ?? 0) > 0 &&
+                                detail.productVariantId && branchIdVal
+                            ) {
+                                try {
+                                    const items = await getAvailableTrackedItems(
+                                        Number(detail.productVariantId), branchIdVal, Number(detail.id ?? 0), detail.selectedTrackedItemIds
+                                    );
+                                    const stale = items.filter((i: any) =>
+                                        (detail.selectedTrackedItemIds ?? []).includes(Number(i.id)) && i.status !== "IN_STOCK"
+                                    );
+                                    if (stale.length > 0) {
+                                        const names = stale.map((i: any) => `${i.serialNumber} (${i.status})`).join(", ");
+                                        toast.warning(`"${detail.products?.name ?? "Product"}": Previously selected serial(s) no longer available — ${names}. Please update before approving.`, { autoClose: 8000 });
+                                    }
+                                } catch { /* ignore */ }
+                            }
+                        }
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching invoice:", error);
@@ -1032,6 +1058,32 @@ const InvoiceForm: React.FC = () => {
     const onSubmit: SubmitHandler<InvoiceType> = async (formData) => {
         setIsLoading(true);
         try {
+            // Stale serial check before saving (PENDING invoices only)
+            if (formData.status === "PENDING") {
+                const branchIdVal = Number(formData.branchId ?? user?.branchId ?? 0);
+                for (const detail of invoiceDetails) {
+                    if (
+                        detail.trackingType && detail.trackingType !== "NONE" &&
+                        detail.serialSelectionMode === "MANUAL" &&
+                        (detail.selectedTrackedItemIds?.length ?? 0) > 0 &&
+                        detail.productVariantId && branchIdVal
+                    ) {
+                        const items = await getAvailableTrackedItems(
+                            Number(detail.productVariantId), branchIdVal, Number(detail.id ?? 0), detail.selectedTrackedItemIds
+                        );
+                        const stale = items.filter((i: any) =>
+                            (detail.selectedTrackedItemIds ?? []).includes(Number(i.id)) && i.status !== "IN_STOCK"
+                        );
+                        if (stale.length > 0) {
+                            const names = stale.map((i: any) => `${i.serialNumber} (${i.status})`).join(", ");
+                            toast.error(`"${detail.products?.name ?? "Product"}": Serial(s) no longer available — ${names}. Please update selection before saving.`);
+                            setIsLoading(false);
+                            return;
+                        }
+                    }
+                }
+            }
+
             await queryClient.invalidateQueries({ queryKey: ["validateToken"] });
             const invoiceData: InvoiceType = {
                 id: id ? Number(id) : undefined,

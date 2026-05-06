@@ -303,15 +303,8 @@ export const getNextPurchaseRef = async (req: Request, res: Response): Promise<v
     }
 
     const lastPurchase = await prisma.purchases.findFirst({
-        where: {
-            branchId: Number(branchIdNumber),
-        },
-        orderBy: {
-            id: "desc",
-        },
-        select: {
-            ref: true,
-        },
+        orderBy: { id: "desc" },
+        select: { ref: true },
     });
 
     let nextRef = "PO-00001";
@@ -525,7 +518,6 @@ export const upsertPurchase = async (req: Request, res: Response): Promise<void>
 
       const checkRef = await tx.purchases.findFirst({
         where: {
-          branchId: Number(branchId),
           ref,
           ...(purchaseId ? { id: { not: purchaseId } } : {}),
         },

@@ -40916,3 +40916,1089 @@ Unknown argument `deletedAt`. Available options are marked with ?.
     at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
     at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
     at async searchOrders (D:\Citylink-Inventory-claude\backend\src\controllers\customerEquipmentController.ts:319:24)
+2026-05-06 16:50:48 error: Error creating/updating invoice: Insufficient stock for barcode: 699865654122 Error: Insufficient stock for barcode: 699865654122
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:512:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:209:20)
+2026-05-06 17:02:06 error: Error creating/updating invoice: Serial is not available: 000008 Error: Serial is not available: 000008
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:488:23)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:209:20)
+2026-05-06 20:23:19 error: Error creating/updating quotation: 
+Invalid `tx.quotations.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:300:39
+
+  297 };
+  298 
+  299 const quotation = quotationId
+→ 300     ? await tx.quotations.update({
+            where: {
+              id: 5
+            },
+            data: {
+              ref: "QR-00003",
+              branchId: 1,
+              customerId: 2,
+              quotationDate: new Date("2026-05-06T00:00:00.000Z"),
+              QuoteSaleType: "RETAIL",
+              taxRate: 0,
+              taxNet: 0,
+              discount: 0,
+              shipping: 0,
+              grandTotal: 40,
+              status: "SENT",
+              note: "",
+              updatedAt: new Date("2026-05-06T20:22:02.000Z"),
+              updatedBy: 1,
+              sentAt: new Date("2026-05-06T20:22:02.000Z"),
+              sentBy: 1,
+              quotationDetails: {
+                deleteMany: {
+                  quotationId: 5
+                },
+                create: [
+                  {
+                    ItemType: "PRODUCT",
+                    products: {
+                      connect: {
+                        id: 24
+                      }
+                    },
+                    productvariants: {
+                      connect: {
+                        id: 31
+                      }
+                    },
+                    unit: {
+                      connect: {
+                        id: 1
+                      }
+                    },
+                    unitQty: new Prisma.Decimal("2"),
+                    baseQty: new Prisma.Decimal("2"),
+                    cost: new Prisma.Decimal("20"),
+                    costPerBaseUnit: new Prisma.Decimal("10"),
+                    taxNet: new Prisma.Decimal("0"),
+                    taxMethod: "Include",
+                    discount: new Prisma.Decimal("0"),
+                    discountMethod: "Fixed",
+                    total: new Prisma.Decimal("40"),
+                    quantity: 2,
+                    serialSelectionMode: "AUTO",
+                    trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[83]}",
+                    selectedAssetItems: undefined
+                  }
+                ]
+              }
+            },
+            include: {
+              quotationDetails: {
+                orderBy: {
+                  id: "asc"
+                },
+                include: {
+                  products: true,
+                  productvariants: true,
+                  services: true,
+                  selectedAssetItems: {
+                    include: {
+                      productAssetItem: true
+                    }
+                  }
+                }
+              }
+            }
+          })
+
+Unknown argument `trackedPayload`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `tx.quotations.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:300:39
+
+  297 };
+  298 
+  299 const quotation = quotationId
+→ 300     ? await tx.quotations.update({
+            where: {
+              id: 5
+            },
+            data: {
+              ref: "QR-00003",
+              branchId: 1,
+              customerId: 2,
+              quotationDate: new Date("2026-05-06T00:00:00.000Z"),
+              QuoteSaleType: "RETAIL",
+              taxRate: 0,
+              taxNet: 0,
+              discount: 0,
+              shipping: 0,
+              grandTotal: 40,
+              status: "SENT",
+              note: "",
+              updatedAt: new Date("2026-05-06T20:22:02.000Z"),
+              updatedBy: 1,
+              sentAt: new Date("2026-05-06T20:22:02.000Z"),
+              sentBy: 1,
+              quotationDetails: {
+                deleteMany: {
+                  quotationId: 5
+                },
+                create: [
+                  {
+                    ItemType: "PRODUCT",
+                    products: {
+                      connect: {
+                        id: 24
+                      }
+                    },
+                    productvariants: {
+                      connect: {
+                        id: 31
+                      }
+                    },
+                    unit: {
+                      connect: {
+                        id: 1
+                      }
+                    },
+                    unitQty: new Prisma.Decimal("2"),
+                    baseQty: new Prisma.Decimal("2"),
+                    cost: new Prisma.Decimal("20"),
+                    costPerBaseUnit: new Prisma.Decimal("10"),
+                    taxNet: new Prisma.Decimal("0"),
+                    taxMethod: "Include",
+                    discount: new Prisma.Decimal("0"),
+                    discountMethod: "Fixed",
+                    total: new Prisma.Decimal("40"),
+                    quantity: 2,
+                    serialSelectionMode: "AUTO",
+                    trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[83]}",
+                    selectedAssetItems: undefined
+                  }
+                ]
+              }
+            },
+            include: {
+              quotationDetails: {
+                orderBy: {
+                  id: "asc"
+                },
+                include: {
+                  products: true,
+                  productvariants: true,
+                  services: true,
+                  selectedAssetItems: {
+                    include: {
+                      productAssetItem: true
+                    }
+                  }
+                }
+              }
+            }
+          })
+
+Unknown argument `trackedPayload`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:300:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertQuotation (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:176:24)
+2026-05-06 20:23:23 error: Error creating/updating quotation: 
+Invalid `tx.quotations.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:300:39
+
+  297 };
+  298 
+  299 const quotation = quotationId
+→ 300     ? await tx.quotations.update({
+            where: {
+              id: 5
+            },
+            data: {
+              ref: "QR-00003",
+              branchId: 1,
+              customerId: 2,
+              quotationDate: new Date("2026-05-06T00:00:00.000Z"),
+              QuoteSaleType: "RETAIL",
+              taxRate: 0,
+              taxNet: 0,
+              discount: 0,
+              shipping: 0,
+              grandTotal: 40,
+              status: "SENT",
+              note: "",
+              updatedAt: new Date("2026-05-06T20:22:02.000Z"),
+              updatedBy: 1,
+              sentAt: new Date("2026-05-06T20:22:02.000Z"),
+              sentBy: 1,
+              quotationDetails: {
+                deleteMany: {
+                  quotationId: 5
+                },
+                create: [
+                  {
+                    ItemType: "PRODUCT",
+                    products: {
+                      connect: {
+                        id: 24
+                      }
+                    },
+                    productvariants: {
+                      connect: {
+                        id: 31
+                      }
+                    },
+                    unit: {
+                      connect: {
+                        id: 1
+                      }
+                    },
+                    unitQty: new Prisma.Decimal("2"),
+                    baseQty: new Prisma.Decimal("2"),
+                    cost: new Prisma.Decimal("20"),
+                    costPerBaseUnit: new Prisma.Decimal("10"),
+                    taxNet: new Prisma.Decimal("0"),
+                    taxMethod: "Include",
+                    discount: new Prisma.Decimal("0"),
+                    discountMethod: "Fixed",
+                    total: new Prisma.Decimal("40"),
+                    quantity: 2,
+                    serialSelectionMode: "AUTO",
+                    trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[83]}",
+                    selectedAssetItems: undefined
+                  }
+                ]
+              }
+            },
+            include: {
+              quotationDetails: {
+                orderBy: {
+                  id: "asc"
+                },
+                include: {
+                  products: true,
+                  productvariants: true,
+                  services: true,
+                  selectedAssetItems: {
+                    include: {
+                      productAssetItem: true
+                    }
+                  }
+                }
+              }
+            }
+          })
+
+Unknown argument `trackedPayload`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `tx.quotations.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:300:39
+
+  297 };
+  298 
+  299 const quotation = quotationId
+→ 300     ? await tx.quotations.update({
+            where: {
+              id: 5
+            },
+            data: {
+              ref: "QR-00003",
+              branchId: 1,
+              customerId: 2,
+              quotationDate: new Date("2026-05-06T00:00:00.000Z"),
+              QuoteSaleType: "RETAIL",
+              taxRate: 0,
+              taxNet: 0,
+              discount: 0,
+              shipping: 0,
+              grandTotal: 40,
+              status: "SENT",
+              note: "",
+              updatedAt: new Date("2026-05-06T20:22:02.000Z"),
+              updatedBy: 1,
+              sentAt: new Date("2026-05-06T20:22:02.000Z"),
+              sentBy: 1,
+              quotationDetails: {
+                deleteMany: {
+                  quotationId: 5
+                },
+                create: [
+                  {
+                    ItemType: "PRODUCT",
+                    products: {
+                      connect: {
+                        id: 24
+                      }
+                    },
+                    productvariants: {
+                      connect: {
+                        id: 31
+                      }
+                    },
+                    unit: {
+                      connect: {
+                        id: 1
+                      }
+                    },
+                    unitQty: new Prisma.Decimal("2"),
+                    baseQty: new Prisma.Decimal("2"),
+                    cost: new Prisma.Decimal("20"),
+                    costPerBaseUnit: new Prisma.Decimal("10"),
+                    taxNet: new Prisma.Decimal("0"),
+                    taxMethod: "Include",
+                    discount: new Prisma.Decimal("0"),
+                    discountMethod: "Fixed",
+                    total: new Prisma.Decimal("40"),
+                    quantity: 2,
+                    serialSelectionMode: "AUTO",
+                    trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[83]}",
+                    selectedAssetItems: undefined
+                  }
+                ]
+              }
+            },
+            include: {
+              quotationDetails: {
+                orderBy: {
+                  id: "asc"
+                },
+                include: {
+                  products: true,
+                  productvariants: true,
+                  services: true,
+                  selectedAssetItems: {
+                    include: {
+                      productAssetItem: true
+                    }
+                  }
+                }
+              }
+            }
+          })
+
+Unknown argument `trackedPayload`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:300:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertQuotation (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:176:24)
+2026-05-06 20:23:24 error: Error creating/updating quotation: 
+Invalid `tx.quotations.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:300:39
+
+  297 };
+  298 
+  299 const quotation = quotationId
+→ 300     ? await tx.quotations.update({
+            where: {
+              id: 5
+            },
+            data: {
+              ref: "QR-00003",
+              branchId: 1,
+              customerId: 2,
+              quotationDate: new Date("2026-05-06T00:00:00.000Z"),
+              QuoteSaleType: "RETAIL",
+              taxRate: 0,
+              taxNet: 0,
+              discount: 0,
+              shipping: 0,
+              grandTotal: 40,
+              status: "SENT",
+              note: "",
+              updatedAt: new Date("2026-05-06T20:22:02.000Z"),
+              updatedBy: 1,
+              sentAt: new Date("2026-05-06T20:22:02.000Z"),
+              sentBy: 1,
+              quotationDetails: {
+                deleteMany: {
+                  quotationId: 5
+                },
+                create: [
+                  {
+                    ItemType: "PRODUCT",
+                    products: {
+                      connect: {
+                        id: 24
+                      }
+                    },
+                    productvariants: {
+                      connect: {
+                        id: 31
+                      }
+                    },
+                    unit: {
+                      connect: {
+                        id: 1
+                      }
+                    },
+                    unitQty: new Prisma.Decimal("2"),
+                    baseQty: new Prisma.Decimal("2"),
+                    cost: new Prisma.Decimal("20"),
+                    costPerBaseUnit: new Prisma.Decimal("10"),
+                    taxNet: new Prisma.Decimal("0"),
+                    taxMethod: "Include",
+                    discount: new Prisma.Decimal("0"),
+                    discountMethod: "Fixed",
+                    total: new Prisma.Decimal("40"),
+                    quantity: 2,
+                    serialSelectionMode: "AUTO",
+                    trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[83]}",
+                    selectedAssetItems: undefined
+                  }
+                ]
+              }
+            },
+            include: {
+              quotationDetails: {
+                orderBy: {
+                  id: "asc"
+                },
+                include: {
+                  products: true,
+                  productvariants: true,
+                  services: true,
+                  selectedAssetItems: {
+                    include: {
+                      productAssetItem: true
+                    }
+                  }
+                }
+              }
+            }
+          })
+
+Unknown argument `trackedPayload`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `tx.quotations.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:300:39
+
+  297 };
+  298 
+  299 const quotation = quotationId
+→ 300     ? await tx.quotations.update({
+            where: {
+              id: 5
+            },
+            data: {
+              ref: "QR-00003",
+              branchId: 1,
+              customerId: 2,
+              quotationDate: new Date("2026-05-06T00:00:00.000Z"),
+              QuoteSaleType: "RETAIL",
+              taxRate: 0,
+              taxNet: 0,
+              discount: 0,
+              shipping: 0,
+              grandTotal: 40,
+              status: "SENT",
+              note: "",
+              updatedAt: new Date("2026-05-06T20:22:02.000Z"),
+              updatedBy: 1,
+              sentAt: new Date("2026-05-06T20:22:02.000Z"),
+              sentBy: 1,
+              quotationDetails: {
+                deleteMany: {
+                  quotationId: 5
+                },
+                create: [
+                  {
+                    ItemType: "PRODUCT",
+                    products: {
+                      connect: {
+                        id: 24
+                      }
+                    },
+                    productvariants: {
+                      connect: {
+                        id: 31
+                      }
+                    },
+                    unit: {
+                      connect: {
+                        id: 1
+                      }
+                    },
+                    unitQty: new Prisma.Decimal("2"),
+                    baseQty: new Prisma.Decimal("2"),
+                    cost: new Prisma.Decimal("20"),
+                    costPerBaseUnit: new Prisma.Decimal("10"),
+                    taxNet: new Prisma.Decimal("0"),
+                    taxMethod: "Include",
+                    discount: new Prisma.Decimal("0"),
+                    discountMethod: "Fixed",
+                    total: new Prisma.Decimal("40"),
+                    quantity: 2,
+                    serialSelectionMode: "AUTO",
+                    trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[83]}",
+                    selectedAssetItems: undefined
+                  }
+                ]
+              }
+            },
+            include: {
+              quotationDetails: {
+                orderBy: {
+                  id: "asc"
+                },
+                include: {
+                  products: true,
+                  productvariants: true,
+                  services: true,
+                  selectedAssetItems: {
+                    include: {
+                      productAssetItem: true
+                    }
+                  }
+                }
+              }
+            }
+          })
+
+Unknown argument `trackedPayload`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:300:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertQuotation (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:176:24)
+2026-05-06 20:24:28 error: Error creating/updating quotation: 
+Invalid `tx.quotations.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:300:39
+
+  297 };
+  298 
+  299 const quotation = quotationId
+→ 300     ? await tx.quotations.update({
+            where: {
+              id: 5
+            },
+            data: {
+              ref: "QR-00003",
+              branchId: 1,
+              customerId: 2,
+              quotationDate: new Date("2026-05-06T00:00:00.000Z"),
+              QuoteSaleType: "RETAIL",
+              taxRate: 0,
+              taxNet: 0,
+              discount: 0,
+              shipping: 0,
+              grandTotal: 40,
+              status: "SENT",
+              note: "",
+              updatedAt: new Date("2026-05-06T20:22:02.000Z"),
+              updatedBy: 1,
+              sentAt: new Date("2026-05-06T20:22:02.000Z"),
+              sentBy: 1,
+              quotationDetails: {
+                deleteMany: {
+                  quotationId: 5
+                },
+                create: [
+                  {
+                    ItemType: "PRODUCT",
+                    products: {
+                      connect: {
+                        id: 24
+                      }
+                    },
+                    productvariants: {
+                      connect: {
+                        id: 31
+                      }
+                    },
+                    unit: {
+                      connect: {
+                        id: 1
+                      }
+                    },
+                    unitQty: new Prisma.Decimal("2"),
+                    baseQty: new Prisma.Decimal("2"),
+                    cost: new Prisma.Decimal("20"),
+                    costPerBaseUnit: new Prisma.Decimal("20"),
+                    taxNet: new Prisma.Decimal("0"),
+                    taxMethod: "Include",
+                    discount: new Prisma.Decimal("0"),
+                    discountMethod: "Fixed",
+                    total: new Prisma.Decimal("40"),
+                    quantity: 2,
+                    serialSelectionMode: "AUTO",
+                    trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[83]}",
+                    selectedAssetItems: undefined
+                  }
+                ]
+              }
+            },
+            include: {
+              quotationDetails: {
+                orderBy: {
+                  id: "asc"
+                },
+                include: {
+                  products: true,
+                  productvariants: true,
+                  services: true,
+                  selectedAssetItems: {
+                    include: {
+                      productAssetItem: true
+                    }
+                  }
+                }
+              }
+            }
+          })
+
+Unknown argument `trackedPayload`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `tx.quotations.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:300:39
+
+  297 };
+  298 
+  299 const quotation = quotationId
+→ 300     ? await tx.quotations.update({
+            where: {
+              id: 5
+            },
+            data: {
+              ref: "QR-00003",
+              branchId: 1,
+              customerId: 2,
+              quotationDate: new Date("2026-05-06T00:00:00.000Z"),
+              QuoteSaleType: "RETAIL",
+              taxRate: 0,
+              taxNet: 0,
+              discount: 0,
+              shipping: 0,
+              grandTotal: 40,
+              status: "SENT",
+              note: "",
+              updatedAt: new Date("2026-05-06T20:22:02.000Z"),
+              updatedBy: 1,
+              sentAt: new Date("2026-05-06T20:22:02.000Z"),
+              sentBy: 1,
+              quotationDetails: {
+                deleteMany: {
+                  quotationId: 5
+                },
+                create: [
+                  {
+                    ItemType: "PRODUCT",
+                    products: {
+                      connect: {
+                        id: 24
+                      }
+                    },
+                    productvariants: {
+                      connect: {
+                        id: 31
+                      }
+                    },
+                    unit: {
+                      connect: {
+                        id: 1
+                      }
+                    },
+                    unitQty: new Prisma.Decimal("2"),
+                    baseQty: new Prisma.Decimal("2"),
+                    cost: new Prisma.Decimal("20"),
+                    costPerBaseUnit: new Prisma.Decimal("20"),
+                    taxNet: new Prisma.Decimal("0"),
+                    taxMethod: "Include",
+                    discount: new Prisma.Decimal("0"),
+                    discountMethod: "Fixed",
+                    total: new Prisma.Decimal("40"),
+                    quantity: 2,
+                    serialSelectionMode: "AUTO",
+                    trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[83]}",
+                    selectedAssetItems: undefined
+                  }
+                ]
+              }
+            },
+            include: {
+              quotationDetails: {
+                orderBy: {
+                  id: "asc"
+                },
+                include: {
+                  products: true,
+                  productvariants: true,
+                  services: true,
+                  selectedAssetItems: {
+                    include: {
+                      productAssetItem: true
+                    }
+                  }
+                }
+              }
+            }
+          })
+
+Unknown argument `trackedPayload`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:300:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertQuotation (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:176:24)
+2026-05-06 20:26:22 error: Error creating/updating quotation: 
+Invalid `tx.quotations.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:300:39
+
+  297 };
+  298 
+  299 const quotation = quotationId
+→ 300     ? await tx.quotations.update({
+            where: {
+              id: 5
+            },
+            data: {
+              ref: "QR-00003",
+              branchId: 1,
+              customerId: 2,
+              quotationDate: new Date("2026-05-06T00:00:00.000Z"),
+              QuoteSaleType: "RETAIL",
+              taxRate: 0,
+              taxNet: 0,
+              discount: 0,
+              shipping: 0,
+              grandTotal: 20,
+              status: "PENDING",
+              note: "",
+              updatedAt: new Date("2026-05-06T20:25:47.000Z"),
+              updatedBy: 1,
+              sentAt: null,
+              sentBy: null,
+              quotationDetails: {
+                deleteMany: {
+                  quotationId: 5
+                },
+                create: [
+                  {
+                    ItemType: "PRODUCT",
+                    products: {
+                      connect: {
+                        id: 24
+                      }
+                    },
+                    productvariants: {
+                      connect: {
+                        id: 31
+                      }
+                    },
+                    unit: {
+                      connect: {
+                        id: 1
+                      }
+                    },
+                    unitQty: new Prisma.Decimal("1"),
+                    baseQty: new Prisma.Decimal("1"),
+                    cost: new Prisma.Decimal("20"),
+                    costPerBaseUnit: new Prisma.Decimal("20"),
+                    taxNet: new Prisma.Decimal("0"),
+                    taxMethod: "Include",
+                    discount: new Prisma.Decimal("0"),
+                    discountMethod: "Fixed",
+                    total: new Prisma.Decimal("20"),
+                    quantity: 1,
+                    serialSelectionMode: "AUTO",
+                    trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[83]}",
+                    selectedAssetItems: undefined
+                  }
+                ]
+              }
+            },
+            include: {
+              quotationDetails: {
+                orderBy: {
+                  id: "asc"
+                },
+                include: {
+                  products: true,
+                  productvariants: true,
+                  services: true,
+                  selectedAssetItems: {
+                    include: {
+                      productAssetItem: true
+                    }
+                  }
+                }
+              }
+            }
+          })
+
+Unknown argument `trackedPayload`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `tx.quotations.update()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:300:39
+
+  297 };
+  298 
+  299 const quotation = quotationId
+→ 300     ? await tx.quotations.update({
+            where: {
+              id: 5
+            },
+            data: {
+              ref: "QR-00003",
+              branchId: 1,
+              customerId: 2,
+              quotationDate: new Date("2026-05-06T00:00:00.000Z"),
+              QuoteSaleType: "RETAIL",
+              taxRate: 0,
+              taxNet: 0,
+              discount: 0,
+              shipping: 0,
+              grandTotal: 20,
+              status: "PENDING",
+              note: "",
+              updatedAt: new Date("2026-05-06T20:25:47.000Z"),
+              updatedBy: 1,
+              sentAt: null,
+              sentBy: null,
+              quotationDetails: {
+                deleteMany: {
+                  quotationId: 5
+                },
+                create: [
+                  {
+                    ItemType: "PRODUCT",
+                    products: {
+                      connect: {
+                        id: 24
+                      }
+                    },
+                    productvariants: {
+                      connect: {
+                        id: 31
+                      }
+                    },
+                    unit: {
+                      connect: {
+                        id: 1
+                      }
+                    },
+                    unitQty: new Prisma.Decimal("1"),
+                    baseQty: new Prisma.Decimal("1"),
+                    cost: new Prisma.Decimal("20"),
+                    costPerBaseUnit: new Prisma.Decimal("20"),
+                    taxNet: new Prisma.Decimal("0"),
+                    taxMethod: "Include",
+                    discount: new Prisma.Decimal("0"),
+                    discountMethod: "Fixed",
+                    total: new Prisma.Decimal("20"),
+                    quantity: 1,
+                    serialSelectionMode: "AUTO",
+                    trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[83]}",
+                    selectedAssetItems: undefined
+                  }
+                ]
+              }
+            },
+            include: {
+              quotationDetails: {
+                orderBy: {
+                  id: "asc"
+                },
+                include: {
+                  products: true,
+                  productvariants: true,
+                  services: true,
+                  selectedAssetItems: {
+                    include: {
+                      productAssetItem: true
+                    }
+                  }
+                }
+              }
+            }
+          })
+
+Unknown argument `trackedPayload`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:300:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertQuotation (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:176:24)
+2026-05-06 20:27:26 error: Error creating/updating quotation: 
+Invalid `tx.quotations.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:325:39
+
+  322         },
+  323     },
+  324 })
+→ 325 : await tx.quotations.create({
+        data: {
+          ref: "QR-00004",
+          branchId: 1,
+          customerId: 1,
+          quotationDate: new Date("2026-05-06T00:00:00.000Z"),
+          QuoteSaleType: "RETAIL",
+          taxRate: 0,
+          taxNet: 0,
+          discount: 0,
+          shipping: 0,
+          grandTotal: 20,
+          status: "PENDING",
+          note: "",
+          updatedAt: new Date("2026-05-06T20:25:47.000Z"),
+          updatedBy: 1,
+          sentAt: null,
+          sentBy: null,
+          createdAt: new Date("2026-05-06T20:25:47.000Z"),
+          createdBy: 1,
+          quotationDetails: {
+            create: [
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 24
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 31
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 1
+                  }
+                },
+                unitQty: new Prisma.Decimal("1"),
+                baseQty: new Prisma.Decimal("1"),
+                cost: new Prisma.Decimal("20"),
+                costPerBaseUnit: new Prisma.Decimal("20"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("20"),
+                quantity: 1,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                selectedAssetItems: undefined
+              }
+            ]
+          }
+        },
+        include: {
+          quotationDetails: {
+            orderBy: {
+              id: "asc"
+            },
+            include: {
+              products: true,
+              productvariants: true,
+              services: true,
+              selectedAssetItems: {
+                include: {
+                  productAssetItem: true
+                }
+              }
+            }
+          }
+        }
+      })
+
+Unknown argument `trackedPayload`. Available options are marked with ?. PrismaClientValidationError: 
+Invalid `tx.quotations.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:325:39
+
+  322         },
+  323     },
+  324 })
+→ 325 : await tx.quotations.create({
+        data: {
+          ref: "QR-00004",
+          branchId: 1,
+          customerId: 1,
+          quotationDate: new Date("2026-05-06T00:00:00.000Z"),
+          QuoteSaleType: "RETAIL",
+          taxRate: 0,
+          taxNet: 0,
+          discount: 0,
+          shipping: 0,
+          grandTotal: 20,
+          status: "PENDING",
+          note: "",
+          updatedAt: new Date("2026-05-06T20:25:47.000Z"),
+          updatedBy: 1,
+          sentAt: null,
+          sentBy: null,
+          createdAt: new Date("2026-05-06T20:25:47.000Z"),
+          createdBy: 1,
+          quotationDetails: {
+            create: [
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 24
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 31
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 1
+                  }
+                },
+                unitQty: new Prisma.Decimal("1"),
+                baseQty: new Prisma.Decimal("1"),
+                cost: new Prisma.Decimal("20"),
+                costPerBaseUnit: new Prisma.Decimal("20"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("20"),
+                quantity: 1,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                selectedAssetItems: undefined
+              }
+            ]
+          }
+        },
+        include: {
+          quotationDetails: {
+            orderBy: {
+              id: "asc"
+            },
+            include: {
+              products: true,
+              productvariants: true,
+              services: true,
+              selectedAssetItems: {
+                include: {
+                  productAssetItem: true
+                }
+              }
+            }
+          }
+        }
+      })
+
+Unknown argument `trackedPayload`. Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:325:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertQuotation (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:176:24)

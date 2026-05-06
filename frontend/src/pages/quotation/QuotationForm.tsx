@@ -10,6 +10,7 @@ import { searchProduct } from "@/api/searchProduct";
 import { searchService } from "@/api/searchService";
 import { getNextQuotationRef } from "@/api/quotation";
 import { upsertQuotation, getQuotationByid } from "@/api/quotation";
+import { getAvailableTrackedItems } from "@/api/invoice";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useAppContext } from '@/hooks/useAppContext';
@@ -295,7 +296,7 @@ const QuotationForm: React.FC = () => {
                         return safePrice;
                     };
 
-                    console.log("[DEBUG] raw quotationDetails from API:", (quotationData.quotationDetails || []).map((d: any) => ({ id: d.id, ItemType: d.ItemType, serialSelectionMode: d.serialSelectionMode })));
+                    // console.log("[DEBUG] raw quotationDetails from API:", (quotationData.quotationDetails || []).map((d: any) => ({ id: d.id, ItemType: d.ItemType, serialSelectionMode: d.serialSelectionMode })));
 
                     const hydratedDetails = (quotationData.quotationDetails || []).map((detail: any) => {
                         const variant = detail.productvariants;
@@ -386,6 +387,17 @@ const QuotationForm: React.FC = () => {
 
                         const normalizedUnitOptions = Array.from(unitMap.values());
 
+                        // Restore serial selections: trackedPayload (DB) > selectedAssetItems (legacy) > frontend state
+                        const dbPayload = detail.trackedPayload ? (() => { try { return JSON.parse(detail.trackedPayload); } catch { return null; } })() : null;
+                        const dbSelectedIds: number[] = dbPayload?.selectedIds?.map(Number) ?? [];
+                        const dbMode: "AUTO" | "MANUAL" = dbPayload?.mode === "MANUAL" ? "MANUAL" : "AUTO";
+
+                        const resolvedIds = dbSelectedIds.length > 0
+                            ? dbSelectedIds
+                            : Array.isArray(detail.selectedAssetItems)
+                            ? detail.selectedAssetItems.map((x: any) => Number(x.productAssetItemId))
+                            : [];
+
                         return {
                             ...detail,
                             unitOptions: normalizedUnitOptions,
@@ -400,37 +412,29 @@ const QuotationForm: React.FC = () => {
                             },
 
                             trackingType: detail.productvariants?.trackingType ?? "NONE",
-                            serialSelectionMode: detail.serialSelectionMode ?? "AUTO",
-                            selectedTrackedItemIds: Array.isArray(detail.selectedAssetItems)
-                                ? detail.selectedAssetItems.map((x: any) => Number(x.productAssetItemId))
-                                : Array.isArray(detail.selectedTrackedItemIds)
-                                ? detail.selectedTrackedItemIds.map(Number)
-                                : [],
-                            selectedTrackedItems: Array.isArray(detail.selectedAssetItems)
+                            serialSelectionMode: dbMode,
+                            selectedTrackedItemIds: resolvedIds,
+                            selectedTrackedItems: Array.isArray(detail.selectedAssetItems) && dbSelectedIds.length === 0
                                 ? detail.selectedAssetItems.map((x: any) => ({
                                     id: x.productAssetItem?.id,
-                                    branchId: x.productAssetItem?.branchId,
                                     serialNumber: x.productAssetItem?.serialNumber,
                                     assetCode: x.productAssetItem?.assetCode ?? null,
                                     macAddress: x.productAssetItem?.macAddress ?? null,
                                     status: x.productAssetItem?.status ?? null,
-                                    soldOrderItemId: x.productAssetItem?.soldOrderItemId ?? null,
                                 }))
-                                : Array.isArray(detail.selectedTrackedItems)
-                                ? detail.selectedTrackedItems
                                 : [],
                             branchId: quotationData.branchId ?? null,
                         };
                     });
 
-                    console.log("[DEBUG] hydratedDetails serialSelectionMode:", hydratedDetails.map((d: any) => ({ id: d.id, serialSelectionMode: d.serialSelectionMode })));
+                    // console.log("[DEBUG] hydratedDetails serialSelectionMode:", hydratedDetails.map((d: any) => ({ id: d.id, serialSelectionMode: d.serialSelectionMode })));
 
                     const savedTrackedSelections = readTrackedSelectionsFromStorage(
                         Number(id),
                         quotationData.ref
                     );
 
-                    console.log("[DEBUG] savedTrackedSelections from localStorage:", savedTrackedSelections.map((s) => ({ serialSelectionMode: s.serialSelectionMode })));
+                    // console.log("[DEBUG] savedTrackedSelections from localStorage:", savedTrackedSelections.map((s) => ({ serialSelectionMode: s.serialSelectionMode })));
 
                     const mergedHydratedDetails = hydratedDetails.map((detail, index) => {
                         const saved = findStoredTrackedSelection(savedTrackedSelections, detail, index);
@@ -458,7 +462,7 @@ const QuotationForm: React.FC = () => {
                         };
                     });
 
-                    console.log("[DEBUG] mergedHydratedDetails serialSelectionMode:", mergedHydratedDetails.map((d: any) => ({ id: d.id, serialSelectionMode: d.serialSelectionMode })));
+                    // console.log("[DEBUG] mergedHydratedDetails serialSelectionMode:", mergedHydratedDetails.map((d: any) => ({ id: d.id, serialSelectionMode: d.serialSelectionMode })));
 
                     await fetchBranches();
                     // await fetchSuppliers();
@@ -479,6 +483,30 @@ const QuotationForm: React.FC = () => {
                  
                     setQuotationDetails(mergedHydratedDetails);
                     setStatusValue(quotationData.status);
+
+                    // Stale serial check: warn if any previously selected serials are no longer IN_STOCK
+                    const branchIdVal = Number(quotationData.branchId ?? 0);
+                    for (const detail of mergedHydratedDetails) {
+                        if (
+                            detail.trackingType && detail.trackingType !== "NONE" &&
+                            detail.serialSelectionMode === "MANUAL" &&
+                            (detail.selectedTrackedItemIds?.length ?? 0) > 0 &&
+                            detail.productVariantId && branchIdVal
+                        ) {
+                            try {
+                                const items = await getAvailableTrackedItems(
+                                    Number(detail.productVariantId), branchIdVal, null, detail.selectedTrackedItemIds
+                                );
+                                const stale = items.filter((i: any) =>
+                                    (detail.selectedTrackedItemIds ?? []).includes(Number(i.id)) && i.status !== "IN_STOCK"
+                                );
+                                if (stale.length > 0) {
+                                    const names = stale.map((i: any) => `${i.serialNumber} (${i.status})`).join(", ");
+                                    toast.warning(`"${detail.products?.name ?? "Product"}": Previously selected serial(s) no longer available — ${names}. Please update serial selection before submitting.`, { autoClose: 8000 });
+                                }
+                            } catch { /* ignore */ }
+                        }
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching quotation:", error);
@@ -1246,6 +1274,30 @@ const QuotationForm: React.FC = () => {
     const onSubmit: SubmitHandler<QuotationType> = async (formData) => {
         setIsLoading(true);
         try {
+            // Stale serial check before saving
+            const branchIdVal = Number(formData.branchId ?? user?.branchId ?? 0);
+            for (const detail of quotationDetails) {
+                if (
+                    detail.trackingType && detail.trackingType !== "NONE" &&
+                    detail.serialSelectionMode === "MANUAL" &&
+                    (detail.selectedTrackedItemIds?.length ?? 0) > 0 &&
+                    detail.productVariantId && branchIdVal
+                ) {
+                    const items = await getAvailableTrackedItems(
+                        Number(detail.productVariantId), branchIdVal, null, detail.selectedTrackedItemIds
+                    );
+                    const stale = items.filter((i: any) =>
+                        (detail.selectedTrackedItemIds ?? []).includes(Number(i.id)) && i.status !== "IN_STOCK"
+                    );
+                    if (stale.length > 0) {
+                        const names = stale.map((i: any) => `${i.serialNumber} (${i.status})`).join(", ");
+                        toast.error(`"${detail.products?.name ?? "Product"}": Serial(s) no longer available — ${names}. Please update selection before saving.`);
+                        setIsLoading(false);
+                        return;
+                    }
+                }
+            }
+
             await queryClient.invalidateQueries({ queryKey: ["validateToken"] });
             const quotationData: QuotationType = {
                 id: id ? Number(id) : undefined,
@@ -1885,7 +1937,7 @@ const QuotationForm: React.FC = () => {
                                 <FontAwesomeIcon icon={faArrowLeft} className='mr-1' />
                                 Go Back
                             </NavLink>
-                            {statusValue === 'PENDING' &&
+                            {['PENDING', 'SENT'].includes(statusValue) &&
                                 (hasPermission('Quotation-Create') || hasPermission('Quotation-Edit')) && (
                                 <button type="submit" className="btn btn-primary ltr:ml-4 rtl:mr-4" disabled={isLoading}>
                                     <FontAwesomeIcon icon={faSave} className='mr-1' />

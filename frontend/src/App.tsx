@@ -50,7 +50,6 @@ import StockTransfer from "./pages/stocktransfer/StockTransfer";
 import StockTransferForm from "./pages/stocktransfer/StockTransferForm";
 import StockRequest from "./pages/stockrequest/StockRequest";
 import StockRequestForm from "./pages/stockrequest/StockRequestForm";
-import PrintStockRequest from "./pages/stockrequest/PrintStockRequest";
 import StockReturn from "./pages/stockreturn/StockReturn";
 import StockReturnForm from "./pages/stockreturn/StockReturnForm";
 import Expense from "./pages/expense/Expense";
@@ -186,7 +185,6 @@ const App: React.FC = () => {
                         <Route path="/stockrequest" element={<PrivateRoute element={<Layout><StockRequest /></Layout>} />} />
                         <Route path="/addrequeststock" element={<PrivateRoute element={<Layout><StockRequestForm /></Layout>} />} />
                         <Route path="/editrequeststock/:id" element={<PrivateRoute element={<Layout><StockRequestForm /></Layout>} />} />
-                        <Route path="/printstockrequest/:id" element={<PrivateRoute element={<Layout><PrintStockRequest /></Layout>} />} />
                         {/* Stock Transfer */}
                         <Route path="/stockreturn" element={<PrivateRoute element={<Layout><StockReturn /></Layout>} />} />
                         <Route path="/addreturnstock" element={<PrivateRoute element={<Layout><StockReturnForm /></Layout>} />} />
