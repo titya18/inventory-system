@@ -866,8 +866,13 @@ const StockTransferForm: React.FC = () => {
                                             const selectedUnit = getSelectedUnit(detail);
                                             const stockInSelectedUnit = getDisplayStockInSelectedUnit(detail);
 
+                                            const transferredSerials: any[] = (detail as any).transferredSerials ?? [];
+                                            const isApproved = statusValue === "APPROVED";
+                                            const isTracked = !!(detail.trackingType && detail.trackingType !== "NONE");
+
                                             return (
-                                                <tr key={index}>
+                                                <React.Fragment key={index}>
+                                                <tr>
                                                     <td>{index + 1}</td>
 
                                                     <td>
@@ -976,48 +981,49 @@ const StockTransferForm: React.FC = () => {
                                                     )}
 
                                                     <td>
-                                                        {detail.trackingType && detail.trackingType !== "NONE" && (() => {
+                                                        {isTracked && !isApproved && (() => {
                                                             const mode = detail.serialSelectionMode ?? "AUTO";
                                                             const count = detail.selectedTrackedItemIds?.length ?? 0;
                                                             const requiredQty = Math.round(Number(detail.baseQty ?? 0));
                                                             const isManualMatch = mode === "MANUAL" && count === requiredQty && count > 0;
                                                             const isManualMismatch = mode === "MANUAL" && count > 0 && count !== requiredQty;
-                                                            const btnClass = mode === "AUTO"
-                                                                ? "btn-outline-info"
-                                                                : isManualMatch
-                                                                    ? "btn-success"
-                                                                    : isManualMismatch
-                                                                        ? "btn-warning"
-                                                                        : "btn-outline-primary";
+                                                            const btnClass = mode === "AUTO" ? "btn-outline-info" : isManualMatch ? "btn-success" : isManualMismatch ? "btn-warning" : "btn-outline-primary";
                                                             return (
                                                                 <div className="mb-1">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => setTrackedModalIndex(index)}
-                                                                        className={`btn btn-xs ${btnClass}`}
-                                                                    >
-                                                                        {mode === "AUTO"
-                                                                            ? "Auto Assign"
-                                                                            : count > 0
-                                                                                ? `${count} / ${requiredQty} Serial(s)`
-                                                                                : "+ Select Serial"}
+                                                                    <button type="button" onClick={() => setTrackedModalIndex(index)} className={`btn btn-xs ${btnClass}`}>
+                                                                        {mode === "AUTO" ? "Auto Assign" : count > 0 ? `${count} / ${requiredQty} Serial(s)` : "+ Select Serial"}
                                                                     </button>
-                                                                    {mode === "MANUAL" && count === 0 && (
-                                                                        <span className="text-xs text-gray-400 block">Required on approve</span>
-                                                                    )}
+                                                                    {mode === "MANUAL" && count === 0 && <span className="text-xs text-gray-400 block">Required on approve</span>}
                                                                 </div>
                                                             );
                                                         })()}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => removeProductFromCart(index)}
-                                                            className="hover:text-danger block"
-                                                            title="Delete"
-                                                        >
-                                                            <Trash2 color="red" />
-                                                        </button>
+                                                        {!isApproved && (
+                                                            <button type="button" onClick={() => removeProductFromCart(index)} className="hover:text-danger block" title="Delete">
+                                                                <Trash2 color="red" />
+                                                            </button>
+                                                        )}
                                                     </td>
                                                 </tr>
+
+                                                {/* Transferred serials sub-row — shown after approval */}
+                                                {isApproved && isTracked && transferredSerials.length > 0 && (
+                                                    <tr>
+                                                        <td colSpan={6} className="px-4 pb-3 pt-0">
+                                                            <div className="flex items-start gap-2">
+                                                                <span className="text-xs text-gray-500 font-medium mt-0.5 whitespace-nowrap">Transferred Serials:</span>
+                                                                <div className="flex flex-wrap gap-1.5">
+                                                                    {transferredSerials.map((s: any) => (
+                                                                        <span key={s.id} className="inline-flex items-center gap-1 bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-mono rounded-full px-2.5 py-0.5">
+                                                                            {s.serialNumber}
+                                                                            {s.assetCode && <span className="text-indigo-400">· {s.assetCode}</span>}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                                </React.Fragment>
                                             );
                                         })
                                     )}

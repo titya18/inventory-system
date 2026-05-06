@@ -50,7 +50,7 @@ export const getAvailableAssetItems = async (variantId: number, branchId: number
     return res.json();
 };
 
-export const searchStockRequests = async (branchId: number, ref = ""): Promise<{ id: number; ref: string; requestDate: string }[]> => {
+export const searchStockRequests = async (branchId: number, ref = ""): Promise<{ id: number; ref: string; requestDate: string; linkedCeq?: { id: number; ref: string } | null }[]> => {
     const params = new URLSearchParams({ branchId: String(branchId), ref });
     const res = await fetch(`${API_BASE_URL}/api/customerequipment/search-stock-requests?${params}`, {
         credentials: "include",
@@ -67,7 +67,7 @@ export const getVariantUnits = async (variantId: number): Promise<{ id: number; 
     return res.json();
 };
 
-export const searchOrders = async (branchId: number, ref = ""): Promise<{ id: number; ref: string; customer?: { name: string } | null }[]> => {
+export const searchOrders = async (branchId: number, ref = ""): Promise<{ id: number; ref: string; customer?: { name: string } | null; linkedStockRequest?: { id: number; ref: string } | null; linkedCeq?: { id: number; ref: string } | null }[]> => {
     const params = new URLSearchParams({ branchId: String(branchId), ref });
     const res = await fetch(`${API_BASE_URL}/api/customerequipment/search-orders?${params}`, {
         credentials: "include",

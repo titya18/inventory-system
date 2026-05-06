@@ -1174,14 +1174,21 @@ const CustomerEquipmentForm: React.FC = () => {
                         {showOrderSuggestions && orderResults.length > 0 && !orderId && (
                             <ul className="absolute mt-1 bg-white dark:bg-[#1b2e4b] border border-gray-200 dark:border-gray-600 w-full max-h-52 overflow-y-auto rounded-lg shadow-2xl" style={{ zIndex: 9999 }}>
                                 {orderResults.map((o) => {
-                                    const alreadyLinked = !!(o.linkedCeq);
+                                    const linkedCeq = o.linkedCeq;
+                                    const linkedSr = o.linkedStockRequest;
+                                    const alreadyLinked = !!(linkedCeq || linkedSr);
+                                    const linkedLabel = linkedCeq
+                                        ? `Already linked to ${linkedCeq.ref}`
+                                        : linkedSr
+                                        ? `Already linked to ${linkedSr.ref}`
+                                        : null;
                                     return (
                                         <li key={o.id}
                                             className={`px-4 py-2.5 border-b border-gray-100 dark:border-gray-700 last:border-0 flex items-center gap-3 ${alreadyLinked ? "opacity-60 cursor-not-allowed bg-red-50" : "hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer"}`}
                                             onClick={() => !alreadyLinked && selectOrder(o)}>
                                             <span className={`font-mono font-semibold text-sm ${alreadyLinked ? "text-gray-400" : "text-blue-600 dark:text-blue-400"}`}>{o.ref}</span>
                                             {o.customer?.name && <span className="text-gray-400 text-xs">{o.customer.name}</span>}
-                                            {alreadyLinked && <span className="ml-auto text-xs text-red-500 font-medium">Already linked to {o.linkedCeq!.ref}</span>}
+                                            {alreadyLinked && <span className="ml-auto text-xs text-red-500 font-medium">{linkedLabel}</span>}
                                         </li>
                                     );
                                 })}
@@ -1795,18 +1802,25 @@ const CustomerEquipmentForm: React.FC = () => {
                     {/* Suggestions dropdown */}
                     {showOrderSuggestions && orderResults.length > 0 && !orderId && (
                         <ul className="absolute mt-1 bg-white dark:bg-[#1b2e4b] border border-gray-200 dark:border-gray-600 w-full max-h-52 overflow-y-auto rounded-lg shadow-2xl" style={{ zIndex: 9999 }}>
-                            {orderResults.map((o) => (
-                                <li
-                                    key={o.id}
-                                    className="px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-0 flex items-center gap-3"
-                                    onClick={() => selectOrder(o)}
-                                >
-                                    <span className="font-mono font-semibold text-blue-600 dark:text-blue-400 text-sm">{o.ref}</span>
-                                    {o.customer?.name && (
-                                        <span className="text-gray-400 dark:text-gray-500 text-xs">{o.customer.name}</span>
-                                    )}
-                                </li>
-                            ))}
+                            {orderResults.map((o) => {
+                                const linkedCeq = o.linkedCeq;
+                                const linkedSr = o.linkedStockRequest;
+                                const alreadyLinked = !!(linkedCeq || linkedSr);
+                                const linkedLabel = linkedCeq
+                                    ? `Already linked to ${linkedCeq.ref}`
+                                    : linkedSr
+                                    ? `Already linked to ${linkedSr.ref}`
+                                    : null;
+                                return (
+                                    <li key={o.id}
+                                        className={`px-4 py-2.5 border-b border-gray-100 dark:border-gray-700 last:border-0 flex items-center gap-3 ${alreadyLinked ? "opacity-60 cursor-not-allowed bg-red-50" : "hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer"}`}
+                                        onClick={() => !alreadyLinked && selectOrder(o)}>
+                                        <span className={`font-mono font-semibold text-sm ${alreadyLinked ? "text-gray-400" : "text-blue-600 dark:text-blue-400"}`}>{o.ref}</span>
+                                        {o.customer?.name && <span className="text-gray-400 dark:text-gray-500 text-xs">{o.customer.name}</span>}
+                                        {alreadyLinked && <span className="ml-auto text-xs text-red-500 font-medium">{linkedLabel}</span>}
+                                    </li>
+                                );
+                            })}
                         </ul>
                     )}
 

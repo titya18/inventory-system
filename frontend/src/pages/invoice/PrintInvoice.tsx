@@ -315,11 +315,11 @@ const formatCurrency = (value: any) => {
                 }}>
                   <div style={{ fontWeight: 'bold' }}>
                     {item.productvariants?.name || item.description || `Item ${index + 1}`}
-                    {item.serialNumbers?.length > 0 && (
+                    {/* {item.serialNumbers?.length > 0 && (
                       <span style={{ fontWeight: 'normal', fontSize: '12px', color: '#555', marginLeft: '6px' }}>
                         ({item.serialNumbers.join(', ')})
                       </span>
-                    )}
+                    )} */}
                   </div>
                 </td>
                 <td style={{ 

@@ -532,6 +532,25 @@ export const getStockTransferById = async (
             stocks.map((s) => [s.productVariantId, Number(s.quantity)])
         );
 
+        // Resolve serial numbers from trackedPayload for each detail
+        const allSerialIds: number[] = [];
+        for (const detail of transfer.transferDetails as any[]) {
+            if (detail.trackedPayload) {
+                try {
+                    const p = JSON.parse(detail.trackedPayload);
+                    (p.selectedIds ?? []).forEach((sid: number) => allSerialIds.push(sid));
+                } catch {}
+            }
+        }
+        const serialMap = new Map<number, { id: number; serialNumber: string; assetCode?: string | null; macAddress?: string | null }>();
+        if (allSerialIds.length > 0) {
+            const items = await prisma.productAssetItem.findMany({
+                where: { id: { in: allSerialIds } },
+                select: { id: true, serialNumber: true, assetCode: true, macAddress: true },
+            });
+            items.forEach((item) => serialMap.set(item.id, item));
+        }
+
         transfer.transferDetails = transfer.transferDetails.map((detail: any) => {
             const pv = detail.productvariants;
 
@@ -591,6 +610,17 @@ export const getStockTransferById = async (
                 unitOptions = Array.from(unitMap.values());
             }
 
+            // Resolve transferred serials from trackedPayload
+            let transferredSerials: { id: number; serialNumber: string; assetCode?: string | null; macAddress?: string | null }[] = [];
+            if (detail.trackedPayload) {
+                try {
+                    const p = JSON.parse(detail.trackedPayload);
+                    transferredSerials = (p.selectedIds ?? [])
+                        .map((sid: number) => serialMap.get(sid))
+                        .filter(Boolean);
+                } catch {}
+            }
+
             return {
                 ...detail,
                 productvariants: pv
@@ -603,6 +633,7 @@ export const getStockTransferById = async (
                 barcode: detail.productvariants?.barcode,
                 sku: detail.productvariants?.sku,
                 stocks: stockMap.get(detail.productVariantId) ?? 0,
+                transferredSerials,
             };
         });
 

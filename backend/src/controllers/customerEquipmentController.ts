@@ -334,6 +334,7 @@ export const searchOrders = async (req: Request, res: Response): Promise<void> =
                     take: 1,
                 },
                 customerEquipments: {
+                    orderBy: { id: "desc" },
                     select: { id: true, ref: true },
                     take: 1,
                 },
@@ -416,6 +417,7 @@ export const searchStockRequests = async (req: Request, res: Response): Promise<
                 ref: true,
                 requestDate: true,
                 customerEquipments: {
+                    orderBy: { id: "desc" },
                     select: { id: true, ref: true },
                     take: 1,
                 },
@@ -658,6 +660,7 @@ export const createCustomerEquipment = async (req: Request, res: Response): Prom
             if (!order) { res.status(400).json({ message: `Invoice/Order ID ${orderId} does not exist.` }); return; }
             const existingCeq = await prisma.customerEquipment.findFirst({
                 where: { orderId: Number(orderId) },
+                orderBy: { id: "desc" },
                 select: { id: true, ref: true },
             });
             if (existingCeq) { res.status(400).json({ message: `Invoice is already linked to Customer Equipment ${existingCeq.ref}. Each invoice can only be linked once.` }); return; }
@@ -668,6 +671,7 @@ export const createCustomerEquipment = async (req: Request, res: Response): Prom
             if (req2.StatusType !== "APPROVED") { res.status(400).json({ message: "Stock Request must be APPROVED before linking to equipment." }); return; }
             const existingCeq = await prisma.customerEquipment.findFirst({
                 where: { stockRequestId: Number(stockRequestId) },
+                orderBy: { id: "desc" },
                 select: { id: true, ref: true },
             });
             if (existingCeq) { res.status(400).json({ message: `Stock Request is already linked to Customer Equipment ${existingCeq.ref}. Each stock request can only be linked once.` }); return; }
@@ -1038,6 +1042,7 @@ export const updateCustomerEquipment = async (req: Request, res: Response): Prom
             if (!order) { res.status(400).json({ message: `Invoice/Order ID ${orderId} does not exist.` }); return; }
             const existingCeq = await prisma.customerEquipment.findFirst({
                 where: { orderId: Number(orderId), id: { not: id } },
+                orderBy: { id: "desc" },
                 select: { id: true, ref: true },
             });
             if (existingCeq) { res.status(400).json({ message: `Invoice is already linked to Customer Equipment ${existingCeq.ref}. Each invoice can only be linked once.` }); return; }
@@ -1048,6 +1053,7 @@ export const updateCustomerEquipment = async (req: Request, res: Response): Prom
             if (sr.StatusType !== "APPROVED") { res.status(400).json({ message: "Stock Request must be APPROVED before linking." }); return; }
             const existingCeq = await prisma.customerEquipment.findFirst({
                 where: { stockRequestId: Number(stockRequestId), id: { not: id } },
+                orderBy: { id: "desc" },
                 select: { id: true, ref: true },
             });
             if (existingCeq) { res.status(400).json({ message: `Stock Request is already linked to Customer Equipment ${existingCeq.ref}. Each stock request can only be linked once.` }); return; }
