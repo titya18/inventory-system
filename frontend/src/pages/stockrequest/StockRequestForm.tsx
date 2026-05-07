@@ -84,13 +84,16 @@ const StockRequestForm: React.FC = () => {
         setSerialPanels(prev => ({ ...prev, [index]: { open: true, items: prev[index]?.items ?? [], loading: true } }));
         try {
             const items = await getAvailableAssetItems(variantId, branchIdVal, undefined, undefined);
-            // When invoice linked: show SOLD (invoice) + IN_STOCK; else only IN_STOCK
+            const currentSelectedIds = requestDetails[index]?.selectedTrackedItemIds ?? [];
+            // When invoice linked: show SOLD (invoice) + already-selected serials (e.g. swapped via CEQ); else only IN_STOCK
             const filtered = linkedOrderId
                 ? items.filter((r: any) => {
                     if (r.status === "SOLD") {
                         const soldOrderId = r.orderItemLinks?.[0]?.orderItem?.order?.id;
                         return soldOrderId === Number(linkedOrderId);
                     }
+                    // Also include any currently selected serials (e.g. swapped-in via CEQ)
+                    if (currentSelectedIds.includes(Number(r.id))) return true;
                     return false;
                 })
                 : items.filter((r: any) => r.status === "IN_STOCK");
@@ -166,22 +169,46 @@ const StockRequestForm: React.FC = () => {
             const productItems = (invoice.items ?? []).filter(
                 (item) => item.ItemType === "PRODUCT" && item.productVariantId
             );
-            const newDetails: StockRequestDetailType[] = productItems.map((item) => ({
-                id: 0,
-                productId: item.products?.id || 0,
-                productVariantId: item.productVariantId!,
-                products: item.products || null,
-                productvariants: item.productvariants || null,
-                quantity: Number(item.baseQty) || 0,
-                stocks: 0,
-                unitId: item.unitId || null,
-                unitQty: item.unitQty || 1,
-                baseQty: item.baseQty || 0,
-                branchId: Number(branchId) || 0,
-                trackingType: (item.productvariants?.trackingType as any) ?? undefined,
-                serialSelectionMode: "MANUAL",
-                selectedTrackedItemIds: [],
-                selectedTrackedItems: [],
+
+            // For tracked products, auto-fetch and pre-select invoice serials
+            const newDetails: StockRequestDetailType[] = await Promise.all(productItems.map(async (item) => {
+                const isTracked = item.productvariants?.trackingType && item.productvariants.trackingType !== "NONE";
+                let selectedTrackedItemIds: number[] = [];
+                let selectedTrackedItems: any[] = [];
+
+                if (isTracked) {
+                    try {
+                        const allItems = await getAvailableAssetItems(
+                            item.productVariantId!, Number(branchId) || 0, undefined, undefined
+                        );
+                        // Pick only serials sold via this invoice
+                        const invoiceSerials = (allItems as any[]).filter((r) => {
+                            if (r.status !== "SOLD") return false;
+                            const soldOrderId = r.orderItemLinks?.[0]?.orderItem?.order?.id;
+                            return soldOrderId === o.id;
+                        });
+                        selectedTrackedItemIds = invoiceSerials.map((r: any) => Number(r.id));
+                        selectedTrackedItems = invoiceSerials;
+                    } catch { /* leave empty */ }
+                }
+
+                return {
+                    id: 0,
+                    productId: item.products?.id || 0,
+                    productVariantId: item.productVariantId!,
+                    products: item.products || null,
+                    productvariants: item.productvariants || null,
+                    quantity: Number(item.baseQty) || 0,
+                    stocks: 0,
+                    unitId: item.unitId || null,
+                    unitQty: item.unitQty || 1,
+                    baseQty: item.baseQty || 0,
+                    branchId: Number(branchId) || 0,
+                    trackingType: (item.productvariants?.trackingType as any) ?? undefined,
+                    serialSelectionMode: isTracked ? "MANUAL" as const : "AUTO" as const,
+                    selectedTrackedItemIds,
+                    selectedTrackedItems,
+                };
             }));
             setRequestDetails(newDetails);
         } catch {
@@ -394,31 +421,45 @@ ${watch("note") ? `<div style="margin-bottom:20px;font-size:13px"><span style="f
                 setOrderSearch(requestData.order.ref);
             }
 
-            setRequestDetails(
-                (requestData.requestDetails || []).map((detail) => {
+            const hydratedDetails = await Promise.all(
+                (requestData.requestDetails || []).map(async (detail) => {
                     let serialSelectionMode: "AUTO" | "MANUAL" = "AUTO";
                     let selectedTrackedItemIds: number[] = [];
                     if ((detail as any).trackedPayload) {
                         try {
                             const payload = JSON.parse((detail as any).trackedPayload);
                             serialSelectionMode = payload.mode ?? "AUTO";
-                            selectedTrackedItemIds = payload.selectedIds ?? [];
+                            selectedTrackedItemIds = (payload.selectedIds ?? []).map(Number);
                         } catch (_e) {}
                     }
+
+                    // Fetch serial items so print shows serial numbers
+                    let selectedTrackedItems: any[] = [];
+                    const trackingType = (detail.productvariants as any)?.trackingType ?? "NONE";
+                    if (serialSelectionMode === "MANUAL" && selectedTrackedItemIds.length > 0 && trackingType !== "NONE" && detail.productVariantId && requestData.branchId) {
+                        try {
+                            const items = await getAvailableTrackedItems(
+                                Number(detail.productVariantId), Number(requestData.branchId), null, selectedTrackedItemIds
+                            );
+                            selectedTrackedItems = (items as any[]).filter((i) => selectedTrackedItemIds.includes(Number(i.id)));
+                        } catch (_e) {}
+                    }
+
                     return {
                         ...detail,
                         unitId: detail.unitId ?? null,
                         unitQty: detail.unitQty ?? 1,
                         baseQty: detail.baseQty ?? detail.quantity ?? 1,
                         quantity: detail.quantity ?? Number(detail.baseQty ?? 1),
-                        trackingType: (detail.productvariants as any)?.trackingType ?? "NONE",
+                        trackingType,
                         serialSelectionMode,
                         selectedTrackedItemIds,
-                        selectedTrackedItems: [],
+                        selectedTrackedItems,
                         branchId: requestData.branchId,
                     };
                 })
             );
+            setRequestDetails(hydratedDetails);
         } catch (error) {
             console.error("Error fetching stock request:", error);
             toast.error("Failed to fetch stock request");
@@ -637,6 +678,7 @@ ${watch("note") ? `<div style="margin-bottom:20px;font-size:13px"><span style="f
                 }
                 if (
                     formData.StatusType === "APPROVED" &&
+                    !linkedOrderId &&
                     Number(row.baseQty) > Number(row.stocks ?? 0)
                 ) {
                     toast.error(`Insufficient stock for ${row.products?.name || ""}`);
@@ -1115,17 +1157,20 @@ ${watch("note") ? `<div style="margin-bottom:20px;font-size:13px"><span style="f
                                                                         {serialPanels[index].items.map((item: any) => {
                                                                             const checked = (detail.selectedTrackedItemIds ?? []).includes(Number(item.id));
                                                                             const isInvoice = item.status === "SOLD";
+                                                                            const isSwapped = !isInvoice && checked;
                                                                             return (
                                                                                 <div key={item.id}
                                                                                     onClick={() => toggleSerial(index, Number(item.id))}
-                                                                                    className={`flex items-center gap-3 px-4 py-2 cursor-pointer text-sm transition-colors ${checked ? (isInvoice ? "bg-green-50" : "bg-blue-50") : "hover:bg-gray-50"}`}>
+                                                                                    className={`flex items-center gap-3 px-4 py-2 cursor-pointer text-sm transition-colors ${checked ? (isInvoice ? "bg-green-50" : "bg-indigo-50") : "hover:bg-gray-50"}`}>
                                                                                     <input type="checkbox" className="form-checkbox shrink-0" checked={checked} readOnly />
                                                                                     <span className="font-mono font-medium text-blue-700">{item.serialNumber}</span>
                                                                                     {item.assetCode && <span className="text-gray-400 text-xs">Asset: {item.assetCode}</span>}
                                                                                     <span className="ml-auto">
                                                                                         {isInvoice
                                                                                             ? <span className="text-xs font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700">✓ From invoice</span>
-                                                                                            : <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500">IN_STOCK</span>}
+                                                                                            : isSwapped
+                                                                                                ? <span className="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-100 text-indigo-700">✓ Swapped in</span>
+                                                                                                : <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500">{item.status}</span>}
                                                                                     </span>
                                                                                 </div>
                                                                             );

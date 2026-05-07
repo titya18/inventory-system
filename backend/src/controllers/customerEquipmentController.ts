@@ -361,6 +361,7 @@ export const searchOrders = async (req: Request, res: Response): Promise<void> =
                     take: 1,
                 },
                 customerEquipments: {
+                    where: { returnedAt: null },
                     orderBy: { id: "desc" },
                     select: { id: true, ref: true },
                     take: 1,
@@ -444,6 +445,7 @@ export const searchStockRequests = async (req: Request, res: Response): Promise<
                 ref: true,
                 requestDate: true,
                 customerEquipments: {
+                    where: { returnedAt: null },
                     orderBy: { id: "desc" },
                     select: { id: true, ref: true },
                     take: 1,
@@ -686,7 +688,7 @@ export const createCustomerEquipment = async (req: Request, res: Response): Prom
             const order = await prisma.order.findUnique({ where: { id: Number(orderId) }, select: { id: true } });
             if (!order) { res.status(400).json({ message: `Invoice/Order ID ${orderId} does not exist.` }); return; }
             const existingCeq = await prisma.customerEquipment.findFirst({
-                where: { orderId: Number(orderId) },
+                where: { orderId: Number(orderId), returnedAt: null },
                 orderBy: { id: "desc" },
                 select: { id: true, ref: true },
             });
@@ -697,7 +699,7 @@ export const createCustomerEquipment = async (req: Request, res: Response): Prom
             if (!req2) { res.status(400).json({ message: `Stock Request ID ${stockRequestId} does not exist.` }); return; }
             if (req2.StatusType !== "APPROVED") { res.status(400).json({ message: "Stock Request must be APPROVED before linking to equipment." }); return; }
             const existingCeq = await prisma.customerEquipment.findFirst({
-                where: { stockRequestId: Number(stockRequestId) },
+                where: { stockRequestId: Number(stockRequestId), returnedAt: null },
                 orderBy: { id: "desc" },
                 select: { id: true, ref: true },
             });
@@ -852,6 +854,28 @@ export const createCustomerEquipment = async (req: Request, res: Response): Prom
                     // New serial → SOLD/RESERVED and deduct stock
                     await tx.productAssetItem.update({ where: { id: Number(newSerialId) }, data: { status: newStatus as any } });
                     await adjustStocks(tx, newSerial.productVariantId!, Number(branchId), -1, loggedInUser.id, currentDate);
+
+                    // Update linked SR trackedPayload
+                    if (stockRequestId) {
+                        const srDetails = await tx.requestDetails.findMany({
+                            where: { requestId: Number(stockRequestId), productVariantId: oldSerial.productVariantId! },
+                            select: { id: true, trackedPayload: true },
+                        });
+                        for (const d of srDetails) {
+                            if (!d.trackedPayload) continue;
+                            try {
+                                const p = JSON.parse(d.trackedPayload);
+                                let changed = false;
+                                const selIds: number[] = p.selectedIds ?? [];
+                                const selIdx = selIds.findIndex((x: any) => Number(x) === Number(oldSerialId));
+                                if (selIdx !== -1) { selIds[selIdx] = Number(newSerialId); changed = true; }
+                                const procIds: number[] = p.processedIds ?? [];
+                                const procIdx = procIds.findIndex((x: any) => Number(x) === Number(oldSerialId));
+                                if (procIdx !== -1) { procIds[procIdx] = Number(newSerialId); changed = true; }
+                                if (changed) await tx.requestDetails.update({ where: { id: d.id }, data: { trackedPayload: JSON.stringify({ ...p, selectedIds: selIds, processedIds: procIds }) } });
+                            } catch { /* skip */ }
+                        }
+                    }
 
                     const reasonText = reason?.trim() ? reason.trim() : "Replaced at assignment";
                     swapNotes.push(`[SWAP ${dayjs().tz(tz).format("YYYY-MM-DD HH:mm")}] ${oldSerial.serialNumber} → ${newSerial.serialNumber}. Reason: ${reasonText}`);
@@ -1262,6 +1286,29 @@ export const updateCustomerEquipment = async (req: Request, res: Response): Prom
                         await tx.productAssetItem.update({ where: { id: Number(newSerialId) }, data: { status: newStatus as any } });
                         await adjustStocks(tx, newSerial.productVariantId!, record.branchId, -1, loggedInUser.id, currentDate);
                     }
+                    // Update linked SR trackedPayload
+                    const srIdForSwap = stockRequestId ? Number(stockRequestId) : (record.stockRequestId ?? null);
+                    if (srIdForSwap) {
+                        const srDetails = await tx.requestDetails.findMany({
+                            where: { requestId: srIdForSwap, productVariantId: oldSerial.productVariantId! },
+                            select: { id: true, trackedPayload: true },
+                        });
+                        for (const d of srDetails) {
+                            if (!d.trackedPayload) continue;
+                            try {
+                                const p = JSON.parse(d.trackedPayload);
+                                let changed = false;
+                                const selIds: number[] = p.selectedIds ?? [];
+                                const selIdx = selIds.findIndex((x: any) => Number(x) === Number(oldSerialId));
+                                if (selIdx !== -1) { selIds[selIdx] = Number(newSerialId); changed = true; }
+                                const procIds: number[] = p.processedIds ?? [];
+                                const procIdx = procIds.findIndex((x: any) => Number(x) === Number(oldSerialId));
+                                if (procIdx !== -1) { procIds[procIdx] = Number(newSerialId); changed = true; }
+                                if (changed) await tx.requestDetails.update({ where: { id: d.id }, data: { trackedPayload: JSON.stringify({ ...p, selectedIds: selIds, processedIds: procIds }) } });
+                            } catch { /* skip */ }
+                        }
+                    }
+
                     // Always record swap history in note
                     const reasonText = reason?.trim() ? reason.trim() : "Replaced on edit";
                     swapNotes.push(`[SWAP ${dayjs().tz(tz).format("YYYY-MM-DD HH:mm")}] ${oldSerial.serialNumber} → ${newSerial.serialNumber}. Reason: ${reasonText}`);
@@ -1532,13 +1579,22 @@ export const swapSerialInCustomerEquipment = async (
                     if (!detail.trackedPayload) continue;
                     try {
                         const payload = JSON.parse(detail.trackedPayload);
-                        const ids: number[] = payload.selectedIds ?? [];
-                        const idx = ids.indexOf(oldSerialId);
-                        if (idx !== -1) {
-                            ids[idx] = newSerialId;
+                        let changed = false;
+
+                        // Update selectedIds (pre-approval manual selection)
+                        const selectedIds: number[] = payload.selectedIds ?? [];
+                        const selIdx = selectedIds.findIndex((x: any) => Number(x) === Number(oldSerialId));
+                        if (selIdx !== -1) { selectedIds[selIdx] = Number(newSerialId); changed = true; }
+
+                        // Update processedIds (post-approval assigned serials)
+                        const processedIds: number[] = payload.processedIds ?? [];
+                        const procIdx = processedIds.findIndex((x: any) => Number(x) === Number(oldSerialId));
+                        if (procIdx !== -1) { processedIds[procIdx] = Number(newSerialId); changed = true; }
+
+                        if (changed) {
                             await tx.requestDetails.update({
                                 where: { id: detail.id },
-                                data: { trackedPayload: JSON.stringify({ ...payload, selectedIds: ids }) },
+                                data: { trackedPayload: JSON.stringify({ ...payload, selectedIds, processedIds }) },
                             });
                         }
                     } catch (_) { /* malformed payload — skip */ }

@@ -25,6 +25,7 @@ import { getAllBranches } from "@/api/branch";
 import { getAllCustomers } from "@/api/customer";
 import { searchProduct } from "@/api/searchProduct";
 import { getStockRequestById } from "@/api/stockRequest";
+import { getInvoiceByid } from "@/api/invoice";
 import { BranchType, CustomerType, AssignType } from "@/data_types/types";
 
 type AssetItem = {
@@ -136,6 +137,7 @@ const CustomerEquipmentForm: React.FC = () => {
 
     // Equipment lines (create mode only)
     const [lines, setLines] = useState<EquipmentLine[]>([newLine()]);
+    const [serialSearch, setSerialSearch] = useState<Record<string, string>>({});
 
     // Serial history modal
     const [serialHistory, setSerialHistory] = useState<{ serialNumber: string; records: any[] } | null>(null);
@@ -489,11 +491,79 @@ const CustomerEquipmentForm: React.FC = () => {
         }
     };
 
-    const selectOrder = (order: { id: number; ref: string; customer?: { name: string } | null }) => {
+    const selectOrder = async (order: { id: number; ref: string; customer?: { name: string } | null }) => {
         setOrderId(order.id);
         setOrderRef(order.ref);
         setOrderSearch(order.ref);
         setShowOrderSuggestions(false);
+        setLines(prev => prev.map(l => ({ ...l, availableItems: [], showSerialPanel: false })));
+
+        // Auto-fill equipment lines from invoice items
+        try {
+            const invoice = await getInvoiceByid(order.id);
+
+            // Auto-set customer from invoice
+            if (invoice.customerId && !customerId) {
+                setCustomerId(Number(invoice.customerId));
+            } else if (invoice.customerId && customerId && Number(invoice.customerId) !== Number(customerId)) {
+                toast.warning(`Invoice belongs to a different customer. Customer updated to match the invoice.`);
+                setCustomerId(Number(invoice.customerId));
+            }
+            const productItems = (invoice.items ?? []).filter(
+                (item: any) => item.ItemType === "PRODUCT" && item.productVariantId
+            );
+            if (productItems.length === 0 || !branchId) return;
+
+            const autoLines: EquipmentLine[] = [];
+            for (const item of productItems) {
+                const variant = item.productvariants;
+                if (!variant) continue;
+                const variantId = Number(item.productVariantId);
+                const tracked = variant.trackingType && variant.trackingType !== "NONE";
+                const label = `${item.products?.name ?? ""} (${variant.productType ?? ""}) — ${variant.barcode ?? ""}`;
+                const lineKey = String(++lineKeyCounter);
+
+                const line: EquipmentLine = {
+                    key: lineKey,
+                    variantId,
+                    trackingType: variant.trackingType ?? null,
+                    productLabel: label,
+                    searchTerm: label,
+                    searchResults: [],
+                    showSuggestions: false,
+                    availableItems: [],
+                    selectedIds: [],
+                    selectedItems: [],
+                    showSerialPanel: tracked ? true : false,
+                    quantity: Number(item.unitQty ?? item.quantity ?? 1),
+                    availableUnits: [],
+                    selectedUnitId: item.unitId ? Number(item.unitId) : null,
+                };
+                autoLines.push(line);
+
+                if (tracked) {
+                    try {
+                        const items = await getAvailableAssetItems(variantId, Number(branchId), id ? Number(id) : undefined);
+                        // Pre-select serials sold via this invoice
+                        const invoiceSerials = (items as any[]).filter((i) => {
+                            if (i.status !== "SOLD") return false;
+                            const soldOrderId = i.orderItemLinks?.[0]?.orderItem?.order?.id;
+                            return soldOrderId === order.id;
+                        }) as AssetItem[];
+                        line.availableItems = items;
+                        line.selectedIds = invoiceSerials.map((i) => i.id);
+                        line.selectedItems = invoiceSerials;
+                    } catch { /* ok */ }
+                } else if (item.unitId) {
+                    try {
+                        const units = await getVariantUnits(variantId);
+                        line.availableUnits = units;
+                        line.selectedUnitId = Number(item.unitId);
+                    } catch { /* ok */ }
+                }
+            }
+            if (autoLines.length > 0) setLines(autoLines);
+        } catch { /* ignore — user can add products manually */ }
     };
 
     const clearOrder = () => {
@@ -510,14 +580,18 @@ const CustomerEquipmentForm: React.FC = () => {
         } catch { setSrResults([]); }
     };
 
-    const selectSr = async (sr: { id: number; ref: string }) => {
+    const selectSr = async (sr: { id: number; ref: string; linkedCeq?: { ref: string } | null }) => {
+        if (sr.linkedCeq) {
+            toast.error(`${sr.ref} is already linked to ${sr.linkedCeq.ref} — each stock request can only be linked once.`);
+            return;
+        }
         setStockRequestId(sr.id);
         setStockRequestRef(sr.ref);
         setSrSearch(sr.ref);
         setShowSrSuggestions(false);
         setLines(prev => prev.map(l => ({ ...l, availableItems: [], showSerialPanel: false })));
 
-        // Fetch SR details to extract processedIds per variant
+        // Fetch SR details to extract processedIds per variant and auto-fill lines
         try {
             const srData = await getStockRequestById(sr.id);
             const map: Record<number, number[]> = {};
@@ -529,6 +603,94 @@ const CustomerEquipmentForm: React.FC = () => {
                 if (ids.length > 0) map[variantId] = ids;
             }
             setSrSerialMap(map);
+
+            // If SR has a linked invoice, auto-populate the Invoice/Order field
+            const linkedOrder = (srData as any).order;
+            if (linkedOrder?.id && !orderId) {
+                setOrderId(linkedOrder.id);
+                setOrderRef(linkedOrder.ref);
+                setOrderSearch(linkedOrder.ref);
+
+                // Also auto-set customer from the linked invoice
+                try {
+                    const invoice = await getInvoiceByid(linkedOrder.id);
+                    if (invoice.customerId) {
+                        if (!customerId) {
+                            setCustomerId(Number(invoice.customerId));
+                        } else if (Number(invoice.customerId) !== Number(customerId)) {
+                            toast.warning(`Invoice belongs to a different customer. Customer updated to match the invoice.`);
+                            setCustomerId(Number(invoice.customerId));
+                        }
+                    }
+                } catch { /* ok */ }
+            }
+
+            // Auto-fill equipment lines from SR details
+            const details = (srData as any).requestDetails ?? [];
+            if (details.length > 0 && branchId) {
+                const autoLines: EquipmentLine[] = [];
+                for (const detail of details) {
+                    const variant = detail.productvariants;
+                    if (!variant) continue;
+                    const variantId = Number(detail.productVariantId);
+                    const tracked = variant.trackingType && variant.trackingType !== "NONE";
+                    const label = `${detail.products?.name ?? ""} (${variant.productType ?? ""}) — ${variant.barcode ?? ""}`;
+                    const lineKey = String(++lineKeyCounter);
+                    const payload = detail.trackedPayload ? JSON.parse(detail.trackedPayload) : null;
+                    const processedIds: number[] = payload?.processedIds ?? [];
+
+                    const line: EquipmentLine = {
+                        key: lineKey,
+                        variantId,
+                        trackingType: variant.trackingType ?? null,
+                        productLabel: label,
+                        searchTerm: label,
+                        searchResults: [],
+                        showSuggestions: false,
+                        availableItems: [],
+                        selectedIds: [],
+                        selectedItems: [],
+                        showSerialPanel: tracked ? true : false,
+                        quantity: Number(detail.unitQty ?? detail.baseQty ?? 1),
+                        availableUnits: [],
+                        selectedUnitId: detail.unitId ? Number(detail.unitId) : null,
+                    };
+                    autoLines.push(line);
+
+                    // Fetch available items and pre-select processedIds (or invoice serials as fallback)
+                    if (tracked) {
+                        try {
+                            const items = await getAvailableAssetItems(variantId, Number(branchId), id ? Number(id) : undefined, sr.id);
+                            let preSelected: AssetItem[];
+                            if (processedIds.length > 0) {
+                                // SR was approved with TRANSFERRED serials
+                                preSelected = items.filter((i: AssetItem) => processedIds.includes(i.id));
+                            } else if (linkedOrder?.id) {
+                                // SR linked to invoice — serials are SOLD via that invoice
+                                preSelected = (items as any[]).filter((i) => {
+                                    if (i.status !== "SOLD") return false;
+                                    const soldOrderId = i.orderItemLinks?.[0]?.orderItem?.order?.id;
+                                    return soldOrderId === linkedOrder.id;
+                                }) as AssetItem[];
+                            } else {
+                                preSelected = [];
+                            }
+                            line.availableItems = items;
+                            line.selectedIds = preSelected.map((i: AssetItem) => i.id);
+                            line.selectedItems = preSelected;
+                        } catch { /* ok */ }
+                    } else if (detail.unitId) {
+                        try {
+                            const units = await getVariantUnits(variantId);
+                            line.availableUnits = units;
+                            line.selectedUnitId = Number(detail.unitId);
+                        } catch { /* ok */ }
+                    }
+                }
+                if (autoLines.length > 0) {
+                    setLines(autoLines);
+                }
+            }
         } catch {
             setSrSerialMap({});
         }
@@ -1083,11 +1245,28 @@ const CustomerEquipmentForm: React.FC = () => {
                                                 </div>
                                             )}
                                             {line.showSerialPanel && (
-                                                <div className="border rounded max-h-48 overflow-y-auto bg-white dark:bg-[#1c2e4a]">
+                                                <div className="border rounded bg-white dark:bg-[#1c2e4a]">
+                                                    <div className="p-2 border-b">
+                                                        <input
+                                                            type="text"
+                                                            className="form-input w-full text-sm py-1"
+                                                            placeholder="Search serial / asset / MAC..."
+                                                            value={serialSearch[line.key] ?? ""}
+                                                            onChange={(e) => setSerialSearch(prev => ({ ...prev, [line.key]: e.target.value }))}
+                                                        />
+                                                    </div>
+                                                    <div className="max-h-48 overflow-y-auto">
                                                     {line.availableItems.length === 0
                                                         ? <p className="text-sm text-orange-500 p-3">No serial numbers available in this branch.</p>
-                                                        : line.availableItems.map((item) => {
-                                                            const checked         = line.selectedIds.includes(item.id);
+                                                        : (() => {
+                                                            const q = (serialSearch[line.key] ?? "").toLowerCase().trim();
+                                                            const filtered = q ? line.availableItems.filter((i) =>
+                                                                i.serialNumber?.toLowerCase().includes(q) ||
+                                                                (i.assetCode ?? "").toLowerCase().includes(q) ||
+                                                                (i.macAddress ?? "").toLowerCase().includes(q)
+                                                            ) : line.availableItems;
+                                                            if (filtered.length === 0) return <p className="text-sm text-gray-400 p-3">No serials match "{q}"</p>;
+                                                            return filtered.map((item) => { const checked         = line.selectedIds.includes(item.id);
                                                             const usedElse        = isSerialUsedElsewhere(line.key, item.id);
                                                             const isSold          = item.status === "SOLD";
                                                             const isReserved      = item.status === "RESERVED";
@@ -1145,7 +1324,7 @@ const CustomerEquipmentForm: React.FC = () => {
                                                                             }
                                                                         </span>
                                                                     </label>
-                                                                    {(isUnlockedBySoldInvoice || (checked && !orderId && !isUnlockedBySoldInvoice)) && (
+                                                                    {(isUnlockedBySoldInvoice || isFromLinkedSR || (checked && !orderId && !stockRequestId && !isUnlockedBySoldInvoice && !isFromLinkedSR)) && (
                                                                         <button type="button" onClick={() => openCreateSwapPicker(line.key, item, line.variantId!)}
                                                                             className="shrink-0 flex items-center gap-0.5 text-xs text-blue-500 hover:text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 hover:border-blue-400 whitespace-nowrap"
                                                                             title="Replace this serial with an IN_STOCK unit">
@@ -1157,8 +1336,9 @@ const CustomerEquipmentForm: React.FC = () => {
                                                                     </button>
                                                                 </div>
                                                             );
-                                                        })
-                                                    }
+                                                        });
+                                                          })()}
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -1679,11 +1859,28 @@ const CustomerEquipmentForm: React.FC = () => {
 
                                         {/* Checkbox list */}
                                         {line.showSerialPanel && (
-                                            <div className="border rounded max-h-48 overflow-y-auto bg-white dark:bg-[#1c2e4a]">
+                                            <div className="border rounded bg-white dark:bg-[#1c2e4a]">
+                                                <div className="p-2 border-b">
+                                                    <input
+                                                        type="text"
+                                                        className="form-input w-full text-sm py-1"
+                                                        placeholder="Search serial / asset / MAC..."
+                                                        value={serialSearch[line.key] ?? ""}
+                                                        onChange={(e) => setSerialSearch(prev => ({ ...prev, [line.key]: e.target.value }))}
+                                                    />
+                                                </div>
+                                                <div className="max-h-48 overflow-y-auto">
                                                 {line.availableItems.length === 0 ? (
                                                     <p className="text-sm text-orange-500 p-3">No serial numbers available in this branch.</p>
-                                                ) : (
-                                                    line.availableItems.map((item) => {
+                                                ) : (() => {
+                                                    const q = (serialSearch[line.key] ?? "").toLowerCase().trim();
+                                                    const filteredItems = q ? line.availableItems.filter((i) =>
+                                                        i.serialNumber?.toLowerCase().includes(q) ||
+                                                        (i.assetCode ?? "").toLowerCase().includes(q) ||
+                                                        (i.macAddress ?? "").toLowerCase().includes(q)
+                                                    ) : line.availableItems;
+                                                    if (filteredItems.length === 0) return <p className="text-sm text-gray-400 p-3">No serials match "{q}"</p>;
+                                                    return filteredItems.map((item) => {
                                                         const checked       = line.selectedIds.includes(item.id);
                                                         const usedElse      = isSerialUsedElsewhere(line.key, item.id);
                                                         const isSold        = item.status === "SOLD";
@@ -1741,7 +1938,7 @@ const CustomerEquipmentForm: React.FC = () => {
                                                                         }
                                                                     </span>
                                                                 </label>
-                                                                {isUnlockedBySoldInvoice && (
+                                                                {(isUnlockedBySoldInvoice || isFromLinkedSR) && (
                                                                     <button type="button" onClick={() => openCreateSwapPicker(line.key, item, line.variantId!)}
                                                                         className="shrink-0 flex items-center gap-0.5 text-xs text-blue-500 hover:text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 hover:border-blue-400 whitespace-nowrap"
                                                                         title="Replace this serial with an IN_STOCK unit">
@@ -1753,8 +1950,9 @@ const CustomerEquipmentForm: React.FC = () => {
                                                                 </button>
                                                             </div>
                                                         );
-                                                    })
-                                                )}
+                                                    });
+                                                  })()}
+                                                </div>
                                             </div>
                                         )}
                                     </div>

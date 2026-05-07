@@ -1284,36 +1284,28 @@ const PurchaseForm: React.FC = () => {
                                                 </td>
                                                 {/* <td>5</td> */}
                                                 <td>
-                                                    <div className="inline-flex" style={{ width: "40%" }}>
+                                                    <div className="inline-flex items-center" style={{ minWidth: 120 }}>
                                                         <button
                                                             type="button"
                                                             onClick={() => decreaseQuantity(index)}
-                                                            className="flex items-center justify-center border border-r-0 border-danger bg-danger px-3 font-semibold text-white ltr:rounded-l-md rtl:rounded-r-md"
+                                                            className="flex items-center justify-center shrink-0 h-9 w-9 border border-r-0 border-danger bg-danger font-semibold text-white ltr:rounded-l-md rtl:rounded-r-md"
                                                         >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                                             </svg>
                                                         </button>
-                                                        <div className="flex flex-col">
-                                                            <input
-                                                                type="text"
-                                                                value={detail.unitQty ?? 0}
-                                                                className="form-input rounded-none text-center"
-                                                                readOnly
-                                                            />
-                                                            {/* <span className="text-xs text-gray-500 text-center mt-1">
-                                                                {getSelectedUnitOption(detail.productvariants, detail.unitId)?.unitName || ""}
-                                                            </span> */}
-                                                            {/* <span className="text-[11px] text-gray-400 text-center">
-                                                                {Number(detail.baseQty ?? 0).toFixed(4)} {detail.productvariants?.baseUnit?.name || ""}
-                                                            </span> */}
-                                                        </div>
+                                                        <input
+                                                            type="text"
+                                                            value={detail.unitQty ?? 0}
+                                                            className="form-input rounded-none text-center w-14 min-w-0"
+                                                            readOnly
+                                                        />
                                                         <button
                                                             type="button"
                                                             onClick={() => increaseQuantity(index)}
-                                                            className="flex items-center justify-center border border-l-0 border-warning bg-warning px-3 font-semibold text-white ltr:rounded-r-md rtl:rounded-l-md"
+                                                            className="flex items-center justify-center shrink-0 h-9 w-9 border border-l-0 border-warning bg-warning font-semibold text-white ltr:rounded-r-md rtl:rounded-l-md"
                                                         >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                                 <line x1="12" y1="5" x2="12" y2="19"></line>
                                                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                                             </svg>

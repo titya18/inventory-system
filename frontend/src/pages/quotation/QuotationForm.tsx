@@ -1772,15 +1772,15 @@ const QuotationForm: React.FC = () => {
                                                 </td>
                                                 {/* <td>5</td> */}
                                                 <td>
-                                                    <div className="inline-flex" style={{width: '40%'}}>
-                                                        <button type="button" onClick={() => decreaseQuantity(index)} className="flex items-center justify-center border border-r-0 border-danger bg-danger px-3 font-semibold text-white ltr:rounded-l-md rtl:rounded-r-md">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                                                    <div className="inline-flex items-center" style={{ minWidth: 120 }}>
+                                                        <button type="button" onClick={() => decreaseQuantity(index)} className="flex items-center justify-center shrink-0 h-9 w-9 border border-r-0 border-danger bg-danger font-semibold text-white ltr:rounded-l-md rtl:rounded-r-md">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                                             </svg>
                                                         </button>
-                                                            <input type="text" value={detail.quantity} className="form-input rounded-none text-center" min="0" max="25" readOnly />
-                                                        <button type="button" onClick={() => increaseQuantity(index)} className="flex items-center justify-center border border-l-0 border-warning bg-warning px-3 font-semibold text-white ltr:rounded-r-md rtl:rounded-l-md">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                                                        <input type="text" value={detail.quantity} className="form-input rounded-none text-center w-14 min-w-0" min="0" readOnly />
+                                                        <button type="button" onClick={() => increaseQuantity(index)} className="flex items-center justify-center shrink-0 h-9 w-9 border border-l-0 border-warning bg-warning font-semibold text-white ltr:rounded-r-md rtl:rounded-l-md">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                                 <line x1="12" y1="5" x2="12" y2="19"></line>
                                                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                                             </svg>

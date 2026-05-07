@@ -1502,19 +1502,23 @@ const InvoiceForm: React.FC = () => {
                                                 </td>
                                                 {/* <td>5</td> */}
                                                 <td>
-                                                    <div className="inline-flex" style={{width: '40%'}}>
-                                                        {!isApproved && <button type="button" onClick={() => decreaseQuantity(index)} className="flex items-center justify-center border border-r-0 border-danger bg-danger px-3 font-semibold text-white ltr:rounded-l-md rtl:rounded-r-md">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-                                                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                                                            </svg>
-                                                        </button>}
-                                                            <input type="text" value={detail.quantity} className={`form-input text-center ${isApproved ? "rounded-md bg-gray-100" : "rounded-none"}`} min="0" max="25" readOnly />
-                                                        {!isApproved && <button type="button" onClick={() => increaseQuantity(index)} className="flex items-center justify-center border border-l-0 border-warning bg-warning px-3 font-semibold text-white ltr:rounded-r-md rtl:rounded-l-md">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-                                                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                                                            </svg>
-                                                        </button>}
+                                                    <div className="inline-flex items-center" style={{ minWidth: 120 }}>
+                                                        {!isApproved && (
+                                                            <button type="button" onClick={() => decreaseQuantity(index)} className="flex items-center justify-center shrink-0 h-9 w-9 border border-r-0 border-danger bg-danger font-semibold text-white ltr:rounded-l-md rtl:rounded-r-md">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                                </svg>
+                                                            </button>
+                                                        )}
+                                                        <input type="text" value={detail.quantity} className={`form-input text-center w-14 min-w-0 ${isApproved ? "rounded-md bg-gray-100" : "rounded-none"}`} min="0" readOnly />
+                                                        {!isApproved && (
+                                                            <button type="button" onClick={() => increaseQuantity(index)} className="flex items-center justify-center shrink-0 h-9 w-9 border border-l-0 border-warning bg-warning font-semibold text-white ltr:rounded-r-md rtl:rounded-l-md">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                                </svg>
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </td>
                                                 {statusValue == "PENDING" && 

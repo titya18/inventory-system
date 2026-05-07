@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import * as apiClient from "@/api/stockRequest";
 import { getStockRequestById } from "@/api/stockRequest";
+import { getAvailableTrackedItems } from "@/api/invoice";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import Pagination from "../components/Pagination"; // Import the Pagination component
 import ShowDeleteConfirmation from "../components/ShowDeleteConfirmation";
@@ -68,6 +69,7 @@ const StockRequest: React.FC = () => {
     const sortOrder: "desc" | "asc" = rawSortOrder === "desc" ? "desc" : "asc";
     const [total, setTotal] = useState(0);
     const [visibleCols, setVisibleCols] = useState(columns);
+    const [selected, setSelected] = useState<number[]>([]);
     const [printingId, setPrintingId] = useState<number | null>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteInvoiceId, setDeleteInvoiceId] = useState<number | null>(null);
@@ -162,15 +164,27 @@ const StockRequest: React.FC = () => {
             const requesterName = req ? `${req.firstName ?? ""} ${req.lastName ?? ""}`.trim() : "—";
             const linkedOrderRef = data.order?.ref ?? "";
 
+            // Fetch serial numbers for tracked details
+            const serialsByDetail: Record<number, string[]> = {};
+            for (const detail of (data.requestDetails ?? []) as any[]) {
+                const trackingType = detail.productvariants?.trackingType ?? "NONE";
+                if (trackingType === "NONE" || !detail.trackedPayload) continue;
+                try {
+                    const p = JSON.parse(detail.trackedPayload);
+                    const ids: number[] = (p.selectedIds ?? []).map(Number);
+                    if (ids.length > 0 && detail.productVariantId && data.branchId) {
+                        const items = await getAvailableTrackedItems(Number(detail.productVariantId), Number(data.branchId), null, ids);
+                        serialsByDetail[detail.id] = (items as any[])
+                            .filter((i) => ids.includes(Number(i.id)))
+                            .map((i) => i.serialNumber)
+                            .filter(Boolean);
+                    }
+                } catch (_) {}
+            }
+
             const itemRows = (data.requestDetails ?? []).map((detail: any, i: number) => {
                 const unitName = detail.unit?.name ?? detail.productvariants?.baseUnit?.name ?? "pcs";
-                const serials: string[] = [];
-                if (detail.trackedPayload) {
-                    try {
-                        const p = JSON.parse(detail.trackedPayload);
-                        (p.selectedItems ?? []).forEach((s: any) => { if (s.serialNumber) serials.push(s.serialNumber); });
-                    } catch (_) {}
-                }
+                const serials: string[] = serialsByDetail[detail.id] ?? [];
                 const serialHtml = serials.length > 0
                     ? serials.map((sn) => `<span style="background:#ede9fe;color:#5b21b6;border-radius:4px;padding:1px 6px;font-family:monospace;font-size:11px;margin:2px;display:inline-block">${sn}</span>`).join("")
                     : `<span style="color:#bbb;font-size:11px">—</span>`;

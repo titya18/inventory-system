@@ -1266,8 +1266,8 @@ export const getAvailableTrackedItems = async (req: Request, res: Response): Pro
       .map((r) => r.productAssetItemId)
       .filter((id): id is number => id !== null);
 
-    // Serials that are CEQ-assigned but also already on this invoice line stay visible
-    const blockedIds = ceqAssignedIds.filter((id) => !selectedIds.includes(id));
+    // Serials that are CEQ-assigned but explicitly requested (via selectedIds or extraSelectedIds) stay visible
+    const blockedIds = ceqAssignedIds.filter((id) => !selectedIds.includes(id) && !extraSelectedIds.includes(id));
 
     const allIncludeIds = [...new Set([...selectedIds, ...extraSelectedIds])];
 

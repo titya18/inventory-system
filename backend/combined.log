@@ -42267,3 +42267,16 @@ Unknown argument `trackedPayload`. Available options are marked with ?.
     at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:325:19)
     at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
     at async upsertQuotation (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:176:24)
+2026-05-06 20:29:46 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 21:34:14 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 21:34:22 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 21:53:43 info: CEQ return non-tracked variantId=33: ceqBaseQty=3, saleReturnedBaseQty=0, netRestoreQty=3 
+2026-05-06 21:53:43 info: CEQ return non-tracked variantId=32: ceqBaseQty=1220, saleReturnedBaseQty=0, netRestoreQty=1220 
+2026-05-06 21:59:47 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 22:06:59 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 22:07:33 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 22:23:18 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 22:23:31 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 22:43:15 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 22:48:58 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-06 23:02:02 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
