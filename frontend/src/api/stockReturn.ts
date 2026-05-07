@@ -67,6 +67,14 @@ export const getStockReturnById = async (id: number): Promise<StockReturnType> =
     return response.json();
 };
 
+export const getReturnedQtyByPurchase = async (purchaseId: number): Promise<Record<number, number>> => {
+    const response = await fetch(`${API_BASE_URL}/api/stockreturn/returned-qty?purchaseId=${purchaseId}`, {
+        credentials: "include",
+    });
+    if (!response.ok) throw new Error("Failed to fetch returned quantities");
+    return response.json();
+};
+
 export const deleteReturn = async (id: number, delReason: string): Promise<StockReturnType> => {
     const response = await fetch(`${API_BASE_URL}/api/stockreturn/${id}`, {
         credentials: "include",

@@ -923,6 +923,8 @@ export interface StockReturnType {
     id?: number;
     branchId: number;
     ref: string;
+    supplierId?: number | null;
+    purchaseId?: number | null;
     returnBy: number;
     returnDate?: string | Date | null;
     StatusType: string;
@@ -940,6 +942,8 @@ export interface StockReturnType {
     returner?: UserType | null;
 
     branch: BranchType | null;
+    supplier?: SupplierType | null;
+    purchase?: { id: number; ref: string } | null;
     returnDetails: StockReturnDetailType[];
 
     totalQuantity?: number;

@@ -532,6 +532,26 @@ export const getStockRequestById = async (
             stocks.map((s) => [s.productVariantId, Number(s.quantity)])
         );
 
+        // Resolve serial numbers from trackedPayload (processedIds after approval, selectedIds otherwise)
+        const allSerialIds: number[] = [];
+        for (const detail of purchase.requestDetails as any[]) {
+            if (detail.trackedPayload) {
+                try {
+                    const p = JSON.parse(detail.trackedPayload);
+                    const ids: number[] = p.processedIds ?? p.selectedIds ?? [];
+                    ids.forEach((sid) => allSerialIds.push(sid));
+                } catch {}
+            }
+        }
+        const serialMap = new Map<number, { id: number; serialNumber: string; assetCode?: string | null; macAddress?: string | null }>();
+        if (allSerialIds.length > 0) {
+            const items = await prisma.productAssetItem.findMany({
+                where: { id: { in: allSerialIds } },
+                select: { id: true, serialNumber: true, assetCode: true, macAddress: true },
+            });
+            items.forEach((item) => serialMap.set(item.id, item));
+        }
+
         purchase.requestDetails = purchase.requestDetails.map((detail: any) => {
             const pv = detail.productvariants;
 
@@ -588,6 +608,16 @@ export const getStockRequestById = async (
                 unitOptions = Array.from(unitMap.values());
             }
 
+            // Attach resolved serials
+            let processedSerials: { id: number; serialNumber: string; assetCode?: string | null; macAddress?: string | null }[] = [];
+            if (detail.trackedPayload) {
+                try {
+                    const p = JSON.parse(detail.trackedPayload);
+                    const ids: number[] = p.processedIds ?? p.selectedIds ?? [];
+                    processedSerials = ids.map((sid) => serialMap.get(sid)).filter(Boolean) as any[];
+                } catch {}
+            }
+
             return {
                 ...detail,
                 productvariants: pv
@@ -600,6 +630,7 @@ export const getStockRequestById = async (
                 barcode: detail.productvariants?.barcode,
                 sku: detail.productvariants?.sku,
                 stocks: stockMap.get(detail.productVariantId) ?? 0,
+                processedSerials,
             };
         });
 

@@ -25,7 +25,9 @@ dayjs.extend(timezone);
 
 const columns = [
     "No",
-    "Rference",
+    "Reference",
+    "Supplier",
+    "Purchase Ref",
     "Return Date",
     "Return By",
     "Branch",
@@ -41,7 +43,9 @@ const columns = [
 
 const sortFields: Record<string, string> = {
     "No": "id",
-    "Rference": "ref",
+    "Reference": "ref",
+    "Supplier": "supplierId",
+    "Purchase Ref": "purchaseId",
     "Return Date": "returnDate",
     "Return By": "returnBy",
     "Branch": "branchId",
@@ -133,7 +137,9 @@ const StockReturn: React.FC = () => {
 
     const exportData = returnData.map((request, index) => ({
         "No": (page - 1) * pageSize + index + 1,
-        "Rference": request.ref,
+        "Reference": request.ref,
+        "Supplier": request.supplier?.name ?? "",
+        "Purchase Ref": (request as any).purchase?.ref ?? "",
         "Return Date": request.returnDate,
         "Return By": `${request.returner?.lastName || ''} ${request.returner?.firstName || 'N/A'}`,
         "Branch": request.branch ? request.branch.name : "",
@@ -224,7 +230,7 @@ const StockReturn: React.FC = () => {
                                         visibleColumns={visibleCols}
                                         onToggleColumn={toggleCol}
                                     />
-                                    <ExportDropdown data={exportData} prefix="Stock_Return" />
+                                    <ExportDropdown data={exportData} prefix="Purchase_Return" />
                                 </div>
                                 <div className="dataTable-container">
                                     {isLoading ? (
@@ -265,8 +271,14 @@ const StockReturn: React.FC = () => {
                                                             {visibleCols.includes("No") && (
                                                                 <td>{(page - 1) * pageSize + index + 1}</td>
                                                             )}
-                                                            {visibleCols.includes("Rference") && (
+                                                            {visibleCols.includes("Reference") && (
                                                                 <td>{rows.ref}</td>
+                                                            )}
+                                                            {visibleCols.includes("Supplier") && (
+                                                                <td>{rows.supplier?.name ?? "—"}</td>
+                                                            )}
+                                                            {visibleCols.includes("Purchase Ref") && (
+                                                                <td>{(rows as any).purchase?.ref ?? "—"}</td>
                                                             )}
                                                             {visibleCols.includes("Return Date") && (
                                                                 <td>{rows.returnDate ? format(new Date(rows.returnDate), 'dd-MMM-yyyy') : ''}</td>
@@ -329,7 +341,7 @@ const StockReturn: React.FC = () => {
                                                     ))
                                                 ) : (
                                                     <tr>
-                                                        <td colSpan={3}>No Stock Return Found!</td>
+                                                        <td colSpan={columns.length}>No Purchase Return Found!</td>
                                                     </tr>
                                                 )}
                                             </tbody>
@@ -355,7 +367,7 @@ const StockReturn: React.FC = () => {
                         <div className="panel border-0 p-0 rounded-lg overflow-hidden w-full max-w-lg my-8">
                             <div className="flex bg-[#fbfbfb] dark:bg-[#121c2c] items-center justify-between px-5 py-3">
                                 <h5 className="flex font-bold text-lg">
-                                    <MessageCircleOff /> Delete Stock Adjustment
+                                    <MessageCircleOff /> Delete Purchase Return
                                 </h5>
                                 <button type="button" className="text-white-dark hover:text-dark" onClick={() => setShowDeleteModal(false)}>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">

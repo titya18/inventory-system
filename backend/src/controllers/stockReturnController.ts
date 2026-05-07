@@ -7,7 +7,6 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { getQueryNumber, getQueryString } from "../utils/request";
 import { Decimal } from "@prisma/client/runtime/library";
-import { addReturnStockLayer, resolveReturnCostPerBaseUnit } from "../utils/addReturnStockLayer";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -61,6 +60,7 @@ export const getAllStockReturns = async (req: Request, res: Response): Promise<v
             SELECT COUNT(*) AS total
             FROM "StockReturns" sr
             LEFT JOIN "Branch" br ON sr."branchId" = br.id
+            LEFT JOIN "Suppliers" sp ON sr."supplierId" = sp.id
             LEFT JOIN "User" c ON sr."createdBy" = c.id
             LEFT JOIN "User" u ON sr."updatedBy" = u.id
             LEFT JOIN "User" ab ON sr."approvedBy" = ab.id
@@ -69,6 +69,8 @@ export const getAllStockReturns = async (req: Request, res: Response): Promise<v
                 ${branchRestriction}
                 AND (
                     sr."StatusType"::text ILIKE $1
+                    OR sr."ref" ILIKE $1
+                    OR sp."name" ILIKE $1
                     OR rb."firstName" ILIKE $1
                     OR rb."lastName" ILIKE $1
                     OR br."name" ILIKE $1
@@ -89,12 +91,14 @@ export const getAllStockReturns = async (req: Request, res: Response): Promise<v
         const stockAdjustment: any = await prisma.$queryRawUnsafe(`
             SELECT sr.*,
                    json_build_object('id', br.id, 'name', br.name) AS branch,
+                   CASE WHEN sp.id IS NOT NULL THEN json_build_object('id', sp.id, 'name', sp.name) ELSE NULL END AS supplier,
                    json_build_object('id', c.id, 'firstName', c."firstName", 'lastName', c."lastName") AS creator,
                    json_build_object('id', u.id, 'firstName', u."firstName", 'lastName', u."lastName") AS updater,
                    json_build_object('id', ab.id, 'firstName', ab."firstName", 'lastName', ab."lastName") AS approver,
                    json_build_object('id', rb.id, 'firstName', rb."firstName", 'lastName', rb."lastName") AS returner
             FROM "StockReturns" sr
             LEFT JOIN "Branch" br ON sr."branchId" = br.id
+            LEFT JOIN "Suppliers" sp ON sr."supplierId" = sp.id
             LEFT JOIN "User" c ON sr."createdBy" = c.id
             LEFT JOIN "User" u ON sr."updatedBy" = u.id
             LEFT JOIN "User" ab ON sr."approvedBy" = ab.id
@@ -103,6 +107,8 @@ export const getAllStockReturns = async (req: Request, res: Response): Promise<v
                 ${branchRestriction}
                 AND (
                     sr."StatusType"::text ILIKE $1
+                    OR sr."ref" ILIKE $1
+                    OR sp."name" ILIKE $1
                     OR rb."firstName" ILIKE $1
                     OR rb."lastName" ILIKE $1
                     OR br."name" ILIKE $1
@@ -129,7 +135,7 @@ export const getAllStockReturns = async (req: Request, res: Response): Promise<v
 
 export const upsertReturn = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-  const { branchId, StatusType, note, returnDetails, returnDate } = req.body;
+  const { branchId, supplierId, purchaseId, StatusType, note, returnDetails, returnDate } = req.body;
 
   try {
     const result = await prisma.$transaction(async (tx) => {
@@ -167,48 +173,29 @@ export const upsertReturn = async (req: Request, res: Response): Promise<void> =
         }
       }
 
-      if (!branchId || Number(branchId) <= 0) {
-        throw new Error("branchId is required");
-      }
-
-      if (!returnDate) {
-        throw new Error("returnDate is required");
-      }
-
-      if (!returnDetails || !Array.isArray(returnDetails) || returnDetails.length === 0) {
+      if (!branchId || Number(branchId) <= 0) throw new Error("branchId is required");
+      if (!supplierId || Number(supplierId) <= 0) throw new Error("supplierId is required");
+      if (!returnDate) throw new Error("returnDate is required");
+      if (!returnDetails || !Array.isArray(returnDetails) || returnDetails.length === 0)
         throw new Error("Return details cannot be empty");
-      }
 
       for (const detail of returnDetails) {
-        if (!detail.productVariantId) {
-          throw new Error("productVariantId is required in return details");
-        }
-
-        if (!detail.unitId) {
-          throw new Error("unitId is required in return details");
-        }
-
-        if (detail.unitQty == null || Number(detail.unitQty) <= 0) {
-          throw new Error("unitQty must be greater than 0");
-        }
-
-        if (detail.baseQty == null || Number(detail.baseQty) <= 0) {
-          throw new Error("baseQty must be greater than 0");
-        }
+        if (!detail.productVariantId) throw new Error("productVariantId is required in return details");
+        if (!detail.unitId) throw new Error("unitId is required in return details");
+        if (detail.unitQty == null || Number(detail.unitQty) <= 0) throw new Error("unitQty must be greater than 0");
+        if (detail.baseQty == null || Number(detail.baseQty) <= 0) throw new Error("baseQty must be greater than 0");
       }
 
-      let ref = oldReturn?.ref ?? "SRT-00001";
-
+      // Global ref sequence (not branch-scoped)
+      let ref = oldReturn?.ref ?? "PRE-00001";
       if (!returnId) {
         const lastReturn = await tx.stockReturns.findFirst({
-          where: { branchId: Number(branchId) },
           orderBy: { id: "desc" },
           select: { ref: true },
         });
-
         if (lastReturn?.ref) {
           const refNumber = parseInt(lastReturn.ref.split("-")[1], 10) || 0;
-          ref = `SRT-${String(refNumber + 1).padStart(5, "0")}`;
+          ref = `PRE-${String(refNumber + 1).padStart(5, "0")}`;
         }
       }
 
@@ -221,8 +208,6 @@ export const upsertReturn = async (req: Request, res: Response): Promise<void> =
         unitQty: new Decimal(detail.unitQty ?? 0),
         baseQty: new Decimal(detail.baseQty ?? 0),
         quantity: Math.round(Number(detail.baseQty ?? 0)),
-
-        // frontend does not send cost now
         cost: null,
         costPerBaseUnit: null,
         trackedPayload: detail.trackedPayload ?? null,
@@ -230,6 +215,8 @@ export const upsertReturn = async (req: Request, res: Response): Promise<void> =
 
       const basePayload = {
         branchId: Number(branchId),
+        supplierId: Number(supplierId),
+        purchaseId: purchaseId ? Number(purchaseId) : null,
         returnBy: loggedInUser.id,
         returnDate: dayjs(returnDate).startOf("day").toDate(),
         StatusType: normalizedStatus as any,
@@ -240,10 +227,7 @@ export const upsertReturn = async (req: Request, res: Response): Promise<void> =
 
       const updateData: Prisma.StockReturnsUncheckedUpdateInput = {
         ...basePayload,
-        returnDetails: {
-          deleteMany: { returnId },
-          create: detailCreates,
-        },
+        returnDetails: { deleteMany: { returnId }, create: detailCreates },
       };
 
       const createData: Prisma.StockReturnsUncheckedCreateInput = {
@@ -251,87 +235,91 @@ export const upsertReturn = async (req: Request, res: Response): Promise<void> =
         ref,
         createdAt: currentDate,
         createdBy: loggedInUser.id,
-        returnDetails: {
-          create: detailCreates,
-        },
+        returnDetails: { create: detailCreates },
       };
 
       const returnData = returnId
-        ? await tx.stockReturns.update({
-            where: { id: returnId },
-            data: updateData,
-            include: {
-              returnDetails: true,
-            },
-          })
-        : await tx.stockReturns.create({
-            data: createData,
-            include: {
-              returnDetails: true,
-            },
-          });
+        ? await tx.stockReturns.update({ where: { id: returnId }, data: updateData, include: { returnDetails: true } })
+        : await tx.stockReturns.create({ data: createData, include: { returnDetails: true } });
 
       if (normalizedStatus === "APPROVED") {
         for (const detail of returnData.returnDetails) {
           const baseQty = new Decimal(detail.baseQty ?? 0);
+          if (baseQty.lte(0)) throw new Error("baseQty must be greater than 0");
 
-          if (baseQty.lte(0)) {
-            throw new Error("baseQty must be greater than 0");
+          const variantId = Number(detail.productVariantId);
+          const branchIdNum = Number(branchId);
+
+          // Validate sufficient stock exists before returning
+          const stock = await tx.stocks.findUnique({
+            where: { productVariantId_branchId: { productVariantId: variantId, branchId: branchIdNum } },
+          });
+          if (!stock || new Decimal(stock.quantity ?? 0).lt(baseQty)) {
+            const productName = `variant #${variantId}`;
+            throw new Error(`Insufficient stock for ${productName} — cannot return more than available quantity`);
           }
 
-          const costPerBaseUnit = await resolveReturnCostPerBaseUnit({
-            tx,
-            productVariantId: Number(detail.productVariantId),
-            branchId: Number(branchId),
+          // Consume FIFO layers (outbound — stock decreases, records COGS)
+          let qtyToConsume = new Decimal(baseQty);
+          let totalCogs = new Decimal(0);
+          const fifoBatches = await tx.stockMovements.findMany({
+            where: {
+              productVariantId: variantId,
+              branchId: branchIdNum,
+              status: "APPROVED",
+              remainingQty: { gt: 0 },
+              OR: [
+                { type: "PURCHASE" },
+                { type: "SALE_RETURN" },
+                { type: "ADJUSTMENT", AdjustMentType: "POSITIVE" },
+                { type: "TRANSFER", quantity: { gt: 0 } },
+              ],
+            },
+            orderBy: [{ createdAt: "asc" }, { id: "asc" }],
           });
+          for (const batch of fifoBatches) {
+            if (qtyToConsume.lte(0)) break;
+            const available = batch.remainingQty ?? new Decimal(0);
+            if (available.lte(0)) continue;
+            const consume = Decimal.min(available, qtyToConsume);
+            const unitCost = batch.unitCost ?? new Decimal(0);
+            totalCogs = totalCogs.plus(consume.mul(unitCost));
+            await tx.stockMovements.create({
+              data: {
+                productVariantId: variantId,
+                branchId: branchIdNum,
+                returnDetailId: detail.id,
+                type: "RETURN",
+                status: "APPROVED",
+                quantity: consume.neg(),
+                unitCost,
+                sourceMovementId: batch.id,
+                note: `Purchase Return #${returnData.ref}`,
+                createdBy: loggedInUser.id,
+                createdAt: currentDate,
+              },
+            });
+            await tx.stockMovements.update({
+              where: { id: batch.id },
+              data: { remainingQty: available.minus(consume), updatedAt: currentDate, updatedBy: loggedInUser.id },
+            });
+            qtyToConsume = qtyToConsume.minus(consume);
+          }
 
-          const operationValue = Number(detail.baseQty ?? 0) > 0 && Number(detail.unitQty ?? 0) > 0
-            ? Number(detail.baseQty) / Number(detail.unitQty)
-            : 1;
-
-          const cost = costPerBaseUnit.mul(new Decimal(operationValue || 1));
+          // Record cost on detail
+          const costPerBaseUnit = baseQty.gt(0) ? totalCogs.div(baseQty) : new Decimal(0);
+          const unitOpValue = Number(detail.baseQty ?? 0) > 0 && Number(detail.unitQty ?? 0) > 0
+            ? Number(detail.baseQty) / Number(detail.unitQty) : 1;
 
           await tx.returnDetails.update({
             where: { id: detail.id },
-            data: {
-              cost,
-              costPerBaseUnit,
-            },
+            data: { cost: costPerBaseUnit.mul(unitOpValue), costPerBaseUnit },
           });
 
-          await tx.stocks.upsert({
-            where: {
-              productVariantId_branchId: {
-                productVariantId: Number(detail.productVariantId),
-                branchId: Number(branchId),
-              },
-            },
-            update: {
-              quantity: { increment: baseQty },
-              updatedBy: loggedInUser.id,
-              updatedAt: currentDate,
-            },
-            create: {
-              productVariantId: Number(detail.productVariantId),
-              branchId: Number(branchId),
-              quantity: baseQty,
-              createdBy: loggedInUser.id,
-              createdAt: currentDate,
-              updatedBy: loggedInUser.id,
-              updatedAt: currentDate,
-            },
-          });
-
-          await addReturnStockLayer({
-            tx,
-            productVariantId: Number(detail.productVariantId),
-            branchId: Number(branchId),
-            qtyToAdd: baseQty,
-            unitCost: costPerBaseUnit,
-            userId: loggedInUser.id,
-            currentDate,
-            note: note || `Stock return #${returnData.ref}`,
-            returnDetailId: detail.id,
+          // DECREMENT stock (outbound to supplier)
+          await tx.stocks.update({
+            where: { productVariantId_branchId: { productVariantId: variantId, branchId: branchIdNum } },
+            data: { quantity: { decrement: baseQty }, updatedBy: loggedInUser.id, updatedAt: currentDate },
           });
 
           // Serial/asset tracking: mark returned items
@@ -343,45 +331,28 @@ export const upsertReturn = async (req: Request, res: Response): Promise<void> =
               const returnQty = Math.round(Number(detail.baseQty ?? 0));
 
               let idsToReturn: number[] = [];
-
               if (mode === "MANUAL" && selectedIds.length > 0) {
                 const items = await tx.productAssetItem.findMany({
-                  where: {
-                    id: { in: selectedIds },
-                    productVariantId: Number(detail.productVariantId),
-                    branchId: Number(branchId),
-                    status: "IN_STOCK",
-                  },
+                  where: { id: { in: selectedIds }, productVariantId: variantId, branchId: branchIdNum, status: "IN_STOCK" },
                   select: { id: true },
                 });
                 idsToReturn = items.map((i) => i.id);
               } else {
                 const items = await tx.productAssetItem.findMany({
-                  where: {
-                    productVariantId: Number(detail.productVariantId),
-                    branchId: Number(branchId),
-                    status: "IN_STOCK",
-                  },
+                  where: { productVariantId: variantId, branchId: branchIdNum, status: "IN_STOCK" },
                   orderBy: [{ id: "asc" }],
                   take: returnQty,
                   select: { id: true },
                 });
                 idsToReturn = items.map((i) => i.id);
               }
-
               if (idsToReturn.length > 0) {
                 await tx.productAssetItem.updateMany({
                   where: { id: { in: idsToReturn } },
-                  data: {
-                    status: "RETURNED",
-                    updatedAt: currentDate,
-                    updatedBy: loggedInUser.id,
-                  },
+                  data: { status: "RETURNED", updatedAt: currentDate, updatedBy: loggedInUser.id },
                 });
               }
-            } catch {
-              // skip serial processing if payload is malformed
-            }
+            } catch { /* skip malformed payload */ }
           }
         }
 
@@ -425,6 +396,8 @@ export const getStockReturnById = async (
             where: { id: Number(stockReturnId) },
             include: {
                 branch: true,
+                supplier: true,
+                purchase: { select: { id: true, ref: true } },
                 creator: true,
                 updater: true,
                 returnDetails: {
@@ -512,6 +485,26 @@ export const getStockReturnById = async (
             stocks.map((s) => [s.productVariantId, Number(s.quantity)])
         );
 
+        // Resolve serial numbers from trackedPayload for each return detail
+        const allReturnSerialIds: number[] = [];
+        for (const detail of purchase.returnDetails as any[]) {
+            if (detail.trackedPayload) {
+                try {
+                    const p = JSON.parse(detail.trackedPayload);
+                    const ids: number[] = p.selectedIds ?? [];
+                    ids.forEach((sid) => allReturnSerialIds.push(sid));
+                } catch {}
+            }
+        }
+        const returnSerialMap = new Map<number, { id: number; serialNumber: string; assetCode?: string | null; macAddress?: string | null }>();
+        if (allReturnSerialIds.length > 0) {
+            const items = await prisma.productAssetItem.findMany({
+                where: { id: { in: allReturnSerialIds } },
+                select: { id: true, serialNumber: true, assetCode: true, macAddress: true },
+            });
+            items.forEach((item) => returnSerialMap.set(item.id, item));
+        }
+
         purchase.returnDetails = purchase.returnDetails.map((detail: any) => {
             const pv = detail.productvariants;
 
@@ -580,6 +573,14 @@ export const getStockReturnById = async (
                 barcode: detail.productvariants?.barcode,
                 sku: detail.productvariants?.sku,
                 stocks: stockMap.get(detail.productVariantId) ?? 0,
+                returnedSerials: (() => {
+                    if (!detail.trackedPayload) return [];
+                    try {
+                        const p = JSON.parse(detail.trackedPayload);
+                        const ids: number[] = p.selectedIds ?? [];
+                        return ids.map((sid: number) => returnSerialMap.get(sid)).filter(Boolean);
+                    } catch { return []; }
+                })(),
             };
         });
 
@@ -589,6 +590,39 @@ export const getStockReturnById = async (
         res.status(500).json({
             message: "Error fetching return by ID",
         });
+    }
+};
+
+// Returns sum of already-approved returned baseQty per productVariantId for a given PO
+export const getReturnedQtyByPurchase = async (req: Request, res: Response): Promise<void> => {
+    const purchaseId = getQueryNumber(req.query.purchaseId, 0)!;
+    if (!purchaseId) {
+        res.status(400).json({ message: "purchaseId is required" });
+        return;
+    }
+    try {
+        const details = await prisma.returnDetails.findMany({
+            where: {
+                stockreturns: {
+                    purchaseId,
+                    StatusType: "APPROVED",
+                    deletedAt: null,
+                },
+            },
+            select: { productVariantId: true, baseQty: true },
+        });
+
+        // Sum baseQty per variant
+        const result: Record<number, number> = {};
+        for (const d of details) {
+            const vid = d.productVariantId ?? 0;
+            if (!vid) continue;
+            result[vid] = (result[vid] ?? 0) + Number(d.baseQty ?? 0);
+        }
+
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch returned quantities" });
     }
 };
 

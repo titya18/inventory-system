@@ -472,7 +472,7 @@ const ReportReturn: React.FC = () => {
                                                 ) : (
                                                     <tr>
                                                         <td colSpan={visibleCols.length || 1} className="text-center py-4">
-                                                            No Stock Return Found!
+                                                            No Purchase Return Found!
                                                         </td>
                                                     </tr>
                                                 )}
@@ -539,7 +539,7 @@ const ReportReturn: React.FC = () => {
                         <div className="panel border-0 p-0 rounded-lg overflow-hidden w-full max-w-5xl my-8">
                             <div className="flex bg-[#fbfbfb] dark:bg-[#121c2c] items-center justify-between px-5 py-3">
                                 <h5 className="flex font-bold text-lg">
-                                    <Eye size={18} className="mr-2" /> Stock Return Details
+                                    <Eye size={18} className="mr-2" /> Purchase Return Details
                                 </h5>
                                 <button
                                     type="button"
@@ -602,6 +602,7 @@ const ReportReturn: React.FC = () => {
                                                         <th className="border px-3 py-2 text-right">Base Qty</th>
                                                         <th className="border px-3 py-2 text-right">Cost</th>
                                                         <th className="border px-3 py-2 text-right">Cost/Base Unit</th>
+                                                        <th className="border px-3 py-2 text-left">Serial Numbers</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -633,11 +634,22 @@ const ReportReturn: React.FC = () => {
                                                                 <td className="border px-3 py-2 text-right">
                                                                     {detail.costPerBaseUnit ?? 0}
                                                                 </td>
+                                                                <td className="border px-3 py-2">
+                                                                    {detail.returnedSerials?.length > 0 ? (
+                                                                        <div className="flex flex-wrap gap-1">
+                                                                            {detail.returnedSerials.map((s: any) => (
+                                                                                <span key={s.id} className="badge badge-outline-primary rounded-full text-xs">
+                                                                                    {s.serialNumber}{s.assetCode ? ` / ${s.assetCode}` : ""}
+                                                                                </span>
+                                                                            ))}
+                                                                        </div>
+                                                                    ) : "—"}
+                                                                </td>
                                                             </tr>
                                                         ))
                                                     ) : (
                                                         <tr>
-                                                            <td colSpan={9} className="border px-3 py-2 text-center">
+                                                            <td colSpan={10} className="border px-3 py-2 text-center">
                                                                 No detail lines found
                                                             </td>
                                                         </tr>

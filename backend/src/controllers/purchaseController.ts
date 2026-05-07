@@ -230,6 +230,14 @@ export const getAllPurchases = async (req: Request, res: Response): Promise<void
             ? `AND p."createdBy" = ${loggedInUser.id}`
             : "";
 
+        const filterBranchId = getQueryNumber(req.query.branchId, 0)!;
+        const branchRestriction = filterBranchId > 0 ? `AND p."branchId" = ${filterBranchId}` : "";
+
+        // Only show RECEIVED/COMPLETED POs (stock was actually received) for purchase return purposes
+        const statusFilter = req.query.receivedOnly === "1"
+            ? `AND p."status" IN ('RECEIVED', 'COMPLETED')`
+            : "";
+
         // ----- 1) COUNT -----
         const totalResult: any = await prisma.$queryRawUnsafe(`
             SELECT COUNT(*) AS total
@@ -240,6 +248,8 @@ export const getAllPurchases = async (req: Request, res: Response): Promise<void
             LEFT JOIN "User" u ON p."updatedBy" = u.id
             WHERE 1=1
                 ${userRestriction}
+                ${branchRestriction}
+                ${statusFilter}
                 AND (
                     p."ref" ILIKE $1
                     OR su."name" ILIKE $1
@@ -269,6 +279,8 @@ export const getAllPurchases = async (req: Request, res: Response): Promise<void
             LEFT JOIN "User" u ON p."updatedBy" = u.id
             WHERE 1=1
                 ${userRestriction}
+                ${branchRestriction}
+                ${statusFilter}
                 AND (
                     p."ref" ILIKE $1
                     OR su."name" ILIKE $1

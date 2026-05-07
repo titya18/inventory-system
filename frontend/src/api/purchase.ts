@@ -118,16 +118,21 @@ export const getAllPurchases = async (
     sortOrder: 'desc' | 'asc' | null,
     page: number,
     searchTerm: string | null,
-    pageSize: number
+    pageSize: number,
+    branchId?: number | null,
+    receivedOnly?: boolean
 ): Promise<{ data: PurchaseType[], total: number }> => {
     const sortParam =
         sortField && sortOrder
         ? `&sortField=${sortField}&sortOrder=${sortOrder}`
         : '';
 
+    const branchParam = branchId ? `&branchId=${branchId}` : '';
+    const receivedParam = receivedOnly ? `&receivedOnly=1` : '';
+
     const url = `${API_BASE_URL}/api/purchase?page=${page}&searchTerm=${
         searchTerm || ''
-    }&pageSize=${pageSize}${sortParam}`;
+    }&pageSize=${pageSize}${sortParam}${branchParam}${receivedParam}`;
 
     const response = await fetch(url, {
         credentials: 'include',

@@ -783,6 +783,54 @@ Full-featured Point-of-Sale interface at `/pos`. Separate from the main invoice 
 | 55 | `InvoiceForm.tsx` TypeScript error: `setValue("customerId", undefined)` — field typed as `number`, not `number \| undefined` | `InvoiceForm.tsx` — `value={watch("customerId") ?? undefined}`, `onChange` passes `0` (walk-in) instead of `undefined` |
 | 56 | POS invoice items sent to backend with hardcoded `taxNet: 0, taxMethod: "0", discount: 0, discountMethod: "0"` — per-item tax/discount set in `POSAddItemModal` was never passed through | `PaymentModal.tsx` `handleConfirm` — `invoiceItems` now reads `item.orderTax`, `item.taxType`, `item.discount`, `item.discountType`; computes correct `lineTotal`; passes `taxNet`, `taxMethod`, `discount`, `discountMethod` per item |
 | 57 | Top Sales Person report: `column u.name does not exist` — `User` table has `firstName`/`lastName` only, no `name` column | `reportController.ts` `getTopSalesPersonReport` — removed `u.name` from SELECT and GROUP BY; `fullName` constructed as `firstName + " " + lastName` in `safeData` mapping |
+| 58 | Stock Summary report locked USER role to their own branch — `buildBranchFilter` forced `branchId = user.branchId` for non-admins | `stockController.ts` + `StockSummary.tsx` — removed branch lock; all users see all branches by default, branch dropdown filter works for everyone |
+| 59 | Quotation edit/delete allowed on INVOICED and CANCELLED status — no status guard | `quotationController.ts` + `Quotation.tsx` — edit/delete blocked unless status is PENDING or SENT; backend throws 400, frontend hides buttons |
+| 60 | Quotation Save button only showed for PENDING status — SENT quotations had no Save button | `QuotationForm.tsx` — Save button condition changed from `statusValue === 'PENDING'` to `['PENDING','SENT'].includes(statusValue)` |
+| 61 | Quotation/Invoice reference numbers were branch-scoped — same number could exist in two branches | `quotationController.ts` + `purchaseController.ts` + `invoiceController.ts` — `findFirst` for last ref no longer filters by `branchId`; dup check also removed `branchId` filter; refs are now globally unique |
+| 62 | Quotation serial selections lost on reopen — no `trackedPayload` column on `QuotationDetails`, selections only stored in localStorage | Added `trackedPayload String? @db.Text` to `QuotationDetails` (migration `20260506101504`); backend saves `{ mode, selectedIds }` on upsert; frontend restores from DB on load; stale serial warning shown; submit blocked if stale serials selected |
+| 63 | Invoice (PENDING) stale serial issue — same as quotation; no warning shown when previously selected serials became SOLD/TRANSFERRED | `InvoiceForm.tsx` — on reopen (PENDING only), fetches `getAvailableTrackedItems` for each MANUAL-mode detail; shows warning toast for stale serials; blocks save if stale |
+| 64 | Stock Request submit allowed with insufficient stock when invoice is linked — `baseQty > stocks` check ran even though invoice already pre-cut stock | `StockRequestForm.tsx` — stock quantity check skipped when `linkedOrderId` is set |
+| 65 | Stock Request serial count/stale validation only ran on APPROVED status — user could save PENDING with wrong serial count or stale serials | `StockRequestForm.tsx` — stale check and count-must-match check now run on any save status |
+| 66 | `getAvailableTrackedItems` blocked swapped-in serials (RESERVED/CEQ-assigned) from appearing in SR serial panel — `blockedIds` only whitelisted `selectedIds` from order item, not `extraSelectedIds` | `invoiceController.ts` `getAvailableTrackedItems` — changed `blockedIds` filter to also exclude IDs in `extraSelectedIds` |
+| 67 | CEQ swap in create/update form did not update SR `trackedPayload` — only the dedicated view-mode swap endpoint updated it | `customerEquipmentController.ts` `createCustomerEquipment` + `updateCustomerEquipment` — swap loops now also update SR `trackedPayload` (`selectedIds` + `processedIds`) using `findIndex` with type coercion |
+| 68 | CEQ swap (view-mode) only updated `selectedIds` in SR `trackedPayload` — post-approval `processedIds` not updated, so SR still showed old serial | `customerEquipmentController.ts` `swapSerialInCustomerEquipment` — now updates both `selectedIds` and `processedIds`; uses `findIndex((x) => Number(x) === Number(id))` for type-safe match |
+| 69 | `getAvailableAssetItems` returned generic "[TRANSFERRED]" and "Already assigned to another CEQ record" labels — user couldn't identify which SR or CEQ | `customerEquipmentController.ts` — now returns `activeCeqRef` (CEQ ref for assigned serials) and `transferredViaSrRef` (SR ref for transferred serials, found by parsing `RequestDetails.trackedPayload.processedIds`); frontend shows e.g. "Transferred via SRQ-00008 — link it below" and "Already assigned to CEQ-00003" |
+| 70 | CEQ invoice/SR one-time link check blocked re-linking even after CEQ was returned — `findFirst` had no `returnedAt: null` filter | `customerEquipmentController.ts` — both invoice and SR uniqueness checks now use `returnedAt: null`; `searchOrders`/`searchStockRequests` `customerEquipments` relation queries also use `returnedAt: null`; after return, invoice/SR can be re-linked |
+| 71 | CEQ form showed swapped-in serials as missing from SR panel after CEQ swap — swapped serial was RESERVED (not SOLD via invoice), so the invoice filter excluded it | `StockRequestForm.tsx` `openSerialPanel` — when invoice linked, also includes currently-selected serials (`currentSelectedIds`) regardless of status; shows "✓ Swapped in" badge (indigo) for non-invoice selected serials |
+| 72 | Stock Request print showed "—" for serials — `handlePrint` used `detail.selectedTrackedItems` which was always `[]` when loaded from DB (only `selectedTrackedItemIds` was restored from `trackedPayload`) | `StockRequestForm.tsx` — on SR load, now calls `getAvailableTrackedItems` for each MANUAL-mode tracked detail and populates `selectedTrackedItems`; `StockRequest.tsx` list page print also fixed by fetching serial data per detail using `selectedIds` from `trackedPayload` |
+| 73 | CEQ form had no search in serial panel — with many serials, user had to scroll to find the right one | `CustomerEquipmentForm.tsx` — added search input above serial list in both create and edit sections; filters by serial number, asset code, or MAC address in real-time |
+| 74 | CEQ linking invoice/SR did not auto-fill product lines or pre-select serials — user had to add products manually after linking | `CustomerEquipmentForm.tsx` `selectOrder` + `selectSr` — now fetches invoice/SR data and auto-fills `EquipmentLine[]`; tracked products pre-select invoice serials (SOLD via that invoice) or SR serials (from `processedIds`); non-tracked products pre-fill qty+unit; also auto-sets customer from invoice |
+| 75 | CEQ linking SR did not auto-populate linked invoice field — if SR had an `orderId`, user still had to manually search and link the invoice | `CustomerEquipmentForm.tsx` `selectSr` — after fetching SR data, if `srData.order` exists, automatically sets `orderId`/`orderRef`/`orderSearch`; also fetches invoice to auto-set customer |
+| 76 | CEQ SR search still showed already-linked SRs as selectable after one-time link was used | `customerEquipmentController.ts` `searchStockRequests` — added `where: { returnedAt: null }` to `customerEquipments` relation; `selectSr` frontend guard also checks `sr.linkedCeq` before proceeding |
+| 77 | CEQ swap Replace button not shown for SR-linked serials (status TRANSFERRED) — only `isUnlockedBySoldInvoice` was checked | `CustomerEquipmentForm.tsx` — Replace button condition updated to also show when `isFromLinkedSR` is true (both create and edit sections) |
+| 78 | CEQ auto-fill from invoice used `baseQty` for quantity instead of `unitQty` — 2 boxes auto-filled as 1220 (base qty in meters) | `CustomerEquipmentForm.tsx` `selectOrder` + `selectSr` — quantity now uses `unitQty ?? baseQty` so invoice/SR sale unit quantity is used |
+| 79 | Qty input between − and + buttons was unreadable on small screens — `width: '40%'` shrunk the container too narrow | `InvoiceForm.tsx` + `QuotationForm.tsx` + `PurchaseForm.tsx` — removed `width: '40%'`; buttons are now `h-9 w-9 shrink-0`; input is `w-14 min-w-0`; container uses `minWidth: 120` |
+
+---
+
+## Stock Request — Serial Tracking & Invoice Link
+
+### trackedPayload Field (RequestDetails)
+`RequestDetails.trackedPayload String? @db.Text` stores:
+- **Before approval**: `{ mode: "MANUAL"|"AUTO", selectedIds: [id1, id2] }` — user's serial selection
+- **After approval**: adds `processedIds: [id1, id2]` — IDs actually transferred/processed
+
+### Invoice-Linked Stock Request
+- When SR links an invoice (`orderId`), auto-fills items from invoice on the frontend
+- Serial selection shows SOLD serials from that invoice (status=SOLD, soldOrderId=orderId)
+- Approval does NOT cut stock again (invoice already did); backend skips stock quantity check
+- After CEQ swap, `processedIds` in `trackedPayload` is updated to reflect new serials
+
+### Stale Serial Validation
+- **Quotation** (PENDING/SENT): warns on reopen + blocks save if previously selected serials no longer IN_STOCK
+- **Invoice** (PENDING only): same warning/block behavior
+- **Stock Request**: stale check + count-must-match check run on any save (not just APPROVED)
+
+---
+
+## Quotation — trackedPayload (NEW)
+
+`QuotationDetails.trackedPayload String? @db.Text` added via migration `20260506101504_add_tracked_payload_to_quotation_details`. Stores `{ mode, selectedIds }` — serial selections now persist to DB (no longer localStorage-only). On reopen, restored from DB with stale serial warnings.
 
 ---
 

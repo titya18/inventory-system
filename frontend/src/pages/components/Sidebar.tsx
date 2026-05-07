@@ -617,7 +617,7 @@ const Sidebar: React.FC = () => {
                             hasPermission('Adjust-Stock-View') ||
                             hasPermission('Stock-Transfer-View') ||
                             hasPermission('Stock-Request-View') ||
-                            hasPermission('Stock-Return-View')
+                            hasPermission('Purchase-Return-View')
                         ) && (
                             <h2 className="-mx-4 mb-1 flex items-center bg-white-light/30 px-7 py-3 font-extrabold uppercase dark:bg-dark dark:bg-opacity-[0.08]">
                                 <svg
@@ -689,7 +689,7 @@ const Sidebar: React.FC = () => {
                             </li>
                         }
 
-                        {hasPermission('Stock-Return-View') &&
+                        {hasPermission('Purchase-Return-View') &&
                             <li className="nav-item">
                                 <ul>
                                     <li className="nav-item" onClick={() => handleToggleMenu(null)}>
@@ -699,7 +699,7 @@ const Sidebar: React.FC = () => {
                                         >
                                             <div className="flex items-center">
                                                 <HandCoins />
-                                                <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Stock Return</span>
+                                                <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Purchase Return</span>
                                             </div>
                                         </NavLink>
                                     </li>
@@ -778,7 +778,7 @@ const Sidebar: React.FC = () => {
                             hasPermission('Profit-Report') ||
                             hasPermission('Adjustment-Report') ||
                             hasPermission('Request-Report') ||
-                            hasPermission('Return-Report') ||
+                            hasPermission('Return-Purchase-Report') ||
                             hasPermission('Transfer-Report') ||
                             hasPermission('Expense-Report') ||
                             hasPermission('Income-Report') ||
@@ -965,6 +965,24 @@ const Sidebar: React.FC = () => {
                             </li>
                         }
 
+                        {hasPermission('Stock-Summary-Report') &&
+                            <li className="nav-item">
+                                <ul>
+                                    <li className="nav-item" onClick={() => handleToggleMenu(null)}>
+                                        <NavLink
+                                            to="/asset-report"
+                                            className={['asset-report'].some(seg => location.pathname.includes(seg)) ? 'active' : ''}
+                                        >
+                                            <div className="flex items-center">
+                                                <ScanBarcode />
+                                                <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Serial / Asset Report</span>
+                                            </div>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+
                         {hasPermission('Stock-Low-Report') &&
                             <li className="nav-item">
                                 <ul>
@@ -1012,24 +1030,6 @@ const Sidebar: React.FC = () => {
                                             <div className="flex items-center">
                                                 <ChartCandlestick />
                                                 <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Stock Valuation Report</span>
-                                            </div>
-                                        </NavLink>
-                                    </li>
-                                </ul>
-                            </li>
-                        }
-
-                        {hasPermission('Stock-Summary-Report') &&
-                            <li className="nav-item">
-                                <ul>
-                                    <li className="nav-item" onClick={() => handleToggleMenu(null)}>
-                                        <NavLink
-                                            to="/asset-report"
-                                            className={['asset-report'].some(seg => location.pathname.includes(seg)) ? 'active' : ''}
-                                        >
-                                            <div className="flex items-center">
-                                                <ScanBarcode />
-                                                <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Serial / Asset Report</span>
                                             </div>
                                         </NavLink>
                                     </li>
@@ -1091,7 +1091,7 @@ const Sidebar: React.FC = () => {
                             </li>
                         }
 
-                        {hasPermission('Return-Report') &&
+                        {hasPermission('Return-Purchase-Report') &&
                             <li className="nav-item">
                                 <ul>
                                     <li className="nav-item" onClick={() => handleToggleMenu(null)}>
@@ -1101,7 +1101,7 @@ const Sidebar: React.FC = () => {
                                         >
                                             <div className="flex items-center">
                                                 <HandCoins />
-                                                <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Return Report</span>
+                                                <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Purchase Return Report</span>
                                             </div>
                                         </NavLink>
                                     </li>

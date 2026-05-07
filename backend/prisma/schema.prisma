@@ -620,7 +620,8 @@ model Suppliers {
   updater User? @relation("SuppliersUpdatedBy", fields: [updatedBy], references: [id])
   deleter User? @relation("SuppliersDeletedBy", fields: [deletedBy], references: [id])
 
-  purchases Purchases[]
+  purchases    Purchases[]
+  stockReturns StockReturns[]
 }
 
 enum PurchaseStatus {
@@ -687,6 +688,7 @@ model Purchases {
   suppliers       Suppliers            @relation(fields: [supplierId], references: [id])
   purchaseDetails PurchaseDetails[]
   payments        PurchaseOnPayments[] @relation("PurchasePayments")
+  stockReturns    StockReturns[]
 }
 
 // PURCHASE ITEM DETAILS
@@ -1368,6 +1370,8 @@ model RequestDetails {
 model StockReturns {
   id         Int         @id @default(autoincrement())
   branchId   Int
+  supplierId Int
+  purchaseId Int?
   ref        String      @db.VarChar(50)
   returnDate DateTime    @default(now())
   returnBy   Int
@@ -1390,6 +1394,8 @@ model StockReturns {
   returner User? @relation("ReturnBy", fields: [returnBy], references: [id])
 
   branch        Branch          @relation(fields: [branchId], references: [id])
+  supplier      Suppliers       @relation(fields: [supplierId], references: [id])
+  purchase      Purchases?      @relation(fields: [purchaseId], references: [id])
   returnDetails ReturnDetails[]
 }
 

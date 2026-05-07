@@ -601,6 +601,7 @@ const ReportTransfer: React.FC = () => {
                                                         <th className="border px-3 py-2 text-left">Unit</th>
                                                         <th className="border px-3 py-2 text-right">Unit Qty</th>
                                                         <th className="border px-3 py-2 text-right">Base Qty</th>
+                                                        <th className="border px-3 py-2 text-left">Serial Numbers</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -626,11 +627,22 @@ const ReportTransfer: React.FC = () => {
                                                                 <td className="border px-3 py-2 text-right">
                                                                     {detail.baseQty ?? 0}
                                                                 </td>
+                                                                <td className="border px-3 py-2">
+                                                                    {detail.transferredSerials?.length > 0 ? (
+                                                                        <div className="flex flex-wrap gap-1">
+                                                                            {detail.transferredSerials.map((s: any) => (
+                                                                                <span key={s.id} className="badge badge-outline-primary rounded-full text-xs">
+                                                                                    {s.serialNumber}{s.assetCode ? ` / ${s.assetCode}` : ""}
+                                                                                </span>
+                                                                            ))}
+                                                                        </div>
+                                                                    ) : "—"}
+                                                                </td>
                                                             </tr>
                                                         ))
                                                     ) : (
                                                         <tr>
-                                                            <td colSpan={7} className="border px-3 py-2 text-center">
+                                                            <td colSpan={8} className="border px-3 py-2 text-center">
                                                                 No detail lines found
                                                             </td>
                                                         </tr>
