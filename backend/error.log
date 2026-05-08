@@ -42002,3 +42002,55 @@ Unknown argument `trackedPayload`. Available options are marked with ?.
     at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:325:19)
     at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
     at async upsertQuotation (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:176:24)
+2026-05-08 10:00:22 error: Error creating/updating invoice: Insufficient stock for barcode: 112852552779 Error: Insufficient stock for barcode: 112852552779
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:512:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:209:20)
+2026-05-08 10:00:28 error: Error creating/updating invoice: Insufficient stock for barcode: 112852552779 Error: Insufficient stock for barcode: 112852552779
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:512:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:209:20)
+2026-05-08 10:12:50 error: Error creating/updating invoice: Not enough tracked serials available for product 699865654122 Error: Not enough tracked serials available for product 699865654122
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:454:23)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:209:20)
+2026-05-08 10:13:04 error: Error creating/updating invoice: Not enough tracked serials available for product 699865654122 Error: Not enough tracked serials available for product 699865654122
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:454:23)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:209:20)
+2026-05-08 10:13:06 error: Error creating/updating invoice: Not enough tracked serials available for product 699865654122 Error: Not enough tracked serials available for product 699865654122
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:454:23)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:209:20)
+2026-05-08 10:13:56 error: Error creating/updating invoice: Not enough tracked serials available for product 699865654122 Error: Not enough tracked serials available for product 699865654122
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:454:23)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:209:20)
+2026-05-08 10:14:17 error: Error creating/updating invoice: Not enough tracked serials available for product 699865654122 Error: Not enough tracked serials available for product 699865654122
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:454:23)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:209:20)
+2026-05-08 10:14:37 error: Error creating/updating invoice: Insufficient stock for barcode: 620385833428 Error: Insufficient stock for barcode: 620385833428
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:512:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:209:20)
+2026-05-08 10:14:41 error: Error creating/updating invoice: Insufficient stock for barcode: 620385833428 Error: Insufficient stock for barcode: 620385833428
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:512:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:209:20)
+2026-05-08 10:14:42 error: Error creating/updating invoice: Insufficient stock for barcode: 620385833428 Error: Insufficient stock for barcode: 620385833428
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:512:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:209:20)
+2026-05-08 10:14:42 error: Error creating/updating invoice: Insufficient stock for barcode: 620385833428 Error: Insufficient stock for barcode: 620385833428
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:512:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:209:20)
+2026-05-08 10:14:53 error: Error creating/updating invoice: Insufficient stock for barcode: 620385833428 Error: Insufficient stock for barcode: 620385833428
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:512:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:209:20)
+2026-05-08 10:15:03 error: Error creating/updating invoice: Insufficient stock for barcode: 620385833428 Error: Insufficient stock for barcode: 620385833428
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:512:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:209:20)

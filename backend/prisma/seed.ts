@@ -177,6 +177,7 @@ async function main() {
       { name: "Purchase-Report", moduleId: 25 },
       { name: "Payment-Purchase-Report", moduleId: 25 },
       { name: "Stock-Summary-Report", moduleId: 25 },
+      { name: "Serial-Number-Report", moduleId: 25 },
       { name: "Stock-Low-Report", moduleId: 25 },
       { name: "Stock-Movement-Report", moduleId: 25 },
       { name: "Stock-Valuation-Report", moduleId: 25 },

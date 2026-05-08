@@ -772,6 +772,7 @@ const Sidebar: React.FC = () => {
                             hasPermission('Payment-Purchase-Report') ||
                             hasPermission('Quotation-Report') ||
                             hasPermission('Stock-Summary-Report') ||
+                            hasPermission('Serial-Number-Report') ||
                             hasPermission('Stock-Low-Report') ||
                             hasPermission('Stock-Movement-Report') ||
                             hasPermission('Stock-Valuation-Report') ||
@@ -965,7 +966,7 @@ const Sidebar: React.FC = () => {
                             </li>
                         }
 
-                        {hasPermission('Stock-Summary-Report') &&
+                        {hasPermission('Serial-Number-Report') &&
                             <li className="nav-item">
                                 <ul>
                                     <li className="nav-item" onClick={() => handleToggleMenu(null)}>
