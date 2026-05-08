@@ -18,5 +18,5 @@ router.route("/low-stock").get(authorize(["Stock-Low-Report"]), lowStockReport);
 router.get("/movements", authorize(["Stock-Movement-Report"]), stockMovementReport);
 router.get("/valuation", authorize(["Stock-Valuation-Report"]), stockValuationReport);
 router.get("/serials", authorize(["Stock-Summary-Report"]), getSerialsByVariant);
-router.get("/asset-report", authorize(["Stock-Summary-Report"]), getAssetReport);
+router.get("/asset-report", authorize(["Serial-Number-Report"]), getAssetReport);
 export default router;
