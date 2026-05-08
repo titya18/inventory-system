@@ -480,7 +480,7 @@ const ModalPayment: React.FC<ModalProps> = ({ isOpen, onClose, amountInvoice, on
                                                 <FontAwesomeIcon icon={faClose} className="mr-1" />
                                                 Discard
                                             </button>
-                                            {hasPermission("Purchase-Payment") && (
+                                            {hasPermission("Sale-Payment") && (
                                                 <>
                                                     <button
                                                         type="submit"
