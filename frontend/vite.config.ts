@@ -5,7 +5,7 @@ import autoprefixer from 'autoprefixer';
 
 export default defineConfig({
   plugins: [react()],
-  // base: '/inventory/',
+  base: '/inventory/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),

@@ -88,8 +88,8 @@ import NotFound from "./pages/notfound/NotFount";
 
 const App: React.FC = () => {
     return (
-        <Router>
-        {/* <BrowserRouter basename="/inventory"> */}
+        // <Router>
+        <BrowserRouter basename="/inventory">
             <AppContextProvider>
                 <LanguageProvider>
                     <ToastContainer newestOnTop position="top-right" autoClose={3000} />
@@ -226,8 +226,8 @@ const App: React.FC = () => {
                     </Routes>
                 </LanguageProvider>
             </AppContextProvider>
-        {/* </BrowserRouter> */}
-        </Router>
+        </BrowserRouter>
+        // </Router>
     );
 };
 
