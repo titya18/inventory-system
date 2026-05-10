@@ -41,8 +41,9 @@ interface ReportInvoiceParams {
     endDate?: string;
     saleType?: "RETAIL" | "WHOLESALE";
     status?: string;
-    statuses?: string; // comma-separated multi-status, e.g. "RECEIVED,COMPLETED"
+    statuses?: string;
     branchId?: number;
+    customerId?: number;
 }
 
 interface ReportAdjustmentParams {
@@ -197,7 +198,8 @@ export const getAllReportInvoices = async ({
     endDate,
     saleType,
     status,
-    branchId
+    branchId,
+    customerId,
 }: ReportInvoiceParams): Promise<ReportInvoiceResponse> => {
 
     const params = new URLSearchParams();
@@ -216,6 +218,7 @@ export const getAllReportInvoices = async ({
     if (saleType) params.set("saleType", saleType);
     if (status) params.set("status", status);
     if (branchId) params.set("branchId", String(branchId));
+    if (customerId && customerId > 0) params.set("customerId", String(customerId));
 
     const url = `${API_BASE_URL}/api/report/reportInvoices?${params.toString()}`;
 
@@ -1049,5 +1052,44 @@ export const getTopSalesPersonReport = async (params: {
     if (params.sortOrder) q.set("sortOrder", params.sortOrder);
     const res = await fetch(`${API_BASE_URL}/api/report/topSalesPerson?${q}`, { credentials: "include" });
     if (!res.ok) throw new Error("Failed to fetch top sales person report");
+    return res.json();
+};
+
+// ─── Customer Purchase Report ─────────────────────────────────────────────────
+export const getCustomerPurchaseReport = async (params: {
+    page?: number;
+    pageSize?: number;
+    searchTerm?: string;
+    startDate?: string;
+    endDate?: string;
+    branchId?: number;
+}): Promise<{
+    data: {
+        customerId: number;
+        customerName: string;
+        phone: string;
+        totalOrders: number;
+        totalRevenue: number;
+        totalPaid: number;
+        totalDue: number;
+        lastPurchaseDate: string | null;
+    }[];
+    total: number;
+    summary: {
+        totalCustomers: number;
+        totalInvoices: number;
+        totalRevenue: number;
+        totalPaid: number;
+    };
+}> => {
+    const q = new URLSearchParams();
+    q.set("page",     String(params.page     ?? 1));
+    q.set("pageSize", String(params.pageSize ?? 10));
+    if (params.searchTerm) q.set("searchTerm", params.searchTerm);
+    if (params.startDate)  q.set("startDate",  params.startDate);
+    if (params.endDate)    q.set("endDate",    params.endDate);
+    if (params.branchId)   q.set("branchId",   String(params.branchId));
+    const res = await fetch(`${API_BASE_URL}/api/report/reportCustomerPurchase?${q}`, { credentials: "include" });
+    if (!res.ok) throw new Error("Failed to fetch customer purchase report");
     return res.json();
 };

@@ -71,6 +71,7 @@ import ReportIncome from "./pages/report/ReportIncome";
 import ProfitReport from "./pages/report/ProfitReport";
 import ReportTopSellingProducts from "./pages/report/ReportTopSellingProducts";
 import ReportTopSalesPerson from "./pages/report/ReportTopSalesPerson";
+import ReportCustomer from "./pages/report/ReportCustomer";
 import PurchaseAuthorizeAmount from "./pages/setting/PurchaseAuthorizeAmount";
 import ExchangeRate from "./pages/setting/ExchangeRate";
 import CompanySettings from "./pages/setting/CompanySettings";
@@ -79,6 +80,7 @@ import Pos from "./pages/pos/Pos";
 import CustomerDisplay from "./pages/pos/CustomerDisplay";
 
 import { Customer } from "./pages/customer/Customer";
+import CustomerView from "./pages/customer/CustomerView";
 import CustomerEquipment from "./pages/customerequipment/CustomerEquipment";
 import CustomerEquipmentForm from "./pages/customerequipment/CustomerEquipmentForm";
 import CashSessionReport from "./pages/cashsession/CashSessionReport";
@@ -86,8 +88,8 @@ import NotFound from "./pages/notfound/NotFount";
 
 const App: React.FC = () => {
     return (
-        // <Router>
-        <BrowserRouter basename="/inventory">
+        <Router>
+        {/* <BrowserRouter basename="/inventory"> */}
             <AppContextProvider>
                 <LanguageProvider>
                     <ToastContainer newestOnTop position="top-right" autoClose={3000} />
@@ -116,6 +118,7 @@ const App: React.FC = () => {
 
                         {/* Customer */}
                         <Route path="/customer" element={<PrivateRoute element={<Layout><Customer /></Layout>} />} />
+                        <Route path="/customer/:id" element={<PrivateRoute element={<Layout><CustomerView /></Layout>} />} />
 
                         {/* Customer Equipment */}
                         <Route path="/customerequipment" element={<PrivateRoute element={<Layout><CustomerEquipment /></Layout>} />} />
@@ -211,6 +214,7 @@ const App: React.FC = () => {
                         <Route path="/profitreport" element={<PrivateRoute element={<Layout><ProfitReport /></Layout>} />} />
                         <Route path="/reportTopSellingProducts" element={<PrivateRoute element={<Layout><ReportTopSellingProducts /></Layout>} />} />
                         <Route path="/reportTopSalesPerson" element={<PrivateRoute element={<Layout><ReportTopSalesPerson /></Layout>} />} />
+                        <Route path="/reportCustomerPurchase" element={<PrivateRoute element={<Layout><ReportCustomer /></Layout>} />} />
 
                         {/* setting */}
                         <Route path="/authorizeamount" element={<PrivateRoute element={<Layout><PurchaseAuthorizeAmount /></Layout>} />} />
@@ -222,8 +226,8 @@ const App: React.FC = () => {
                     </Routes>
                 </LanguageProvider>
             </AppContextProvider>
-        </BrowserRouter>
-        // </Router>
+        {/* </BrowserRouter> */}
+        </Router>
     );
 };
 

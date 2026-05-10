@@ -6,7 +6,8 @@ export const getAllCustomerEquipments = async (
     searchTerm = "",
     status = "",
     branchId = 0,
-    assignType = ""
+    assignType = "",
+    customerId = 0
 ) => {
     const params = new URLSearchParams({
         page: String(page),
@@ -16,6 +17,7 @@ export const getAllCustomerEquipments = async (
         branchId: String(branchId),
         assignType,
     });
+    if (customerId > 0) params.set("customerId", String(customerId));
     const res = await fetch(`${API_BASE_URL}/api/customerequipment?${params}`, {
         credentials: "include",
     });

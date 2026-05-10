@@ -1110,6 +1110,24 @@ const Sidebar: React.FC = () => {
                             </li>
                         }
 
+                        {hasPermission('Customer-Purchase-Report') &&
+                            <li className="nav-item">
+                                <ul>
+                                    <li className="nav-item" onClick={() => handleToggleMenu(null)}>
+                                        <NavLink
+                                            to="/reportCustomerPurchase"
+                                            className={location.pathname.includes('reportCustomerPurchase') ? 'active' : ''}
+                                        >
+                                            <div className="flex items-center">
+                                                <SquareUserRound />
+                                                <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Customer Purchase Report</span>
+                                            </div>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+
                         {hasPermission('Customer-Equipment-Report') &&
                             <li className="nav-item">
                                 <ul>

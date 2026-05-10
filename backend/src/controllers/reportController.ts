@@ -37,6 +37,7 @@ export const getAllReportInvoices = async (
     const branchId = req.query.branchId
       ? parseInt(req.query.branchId as string, 10)
       : undefined;
+    const customerId = getQueryNumber(req.query.customerId, 0)!;
 
     const loggedInUser = req.user;
     if (!loggedInUser) {
@@ -120,6 +121,10 @@ export const getAllReportInvoices = async (
       conditions.push(
         Prisma.sql`rd."status" IN ('APPROVED'::"OrderStatus", 'COMPLETED'::"OrderStatus")`
       );
+    }
+
+    if (customerId > 0) {
+      conditions.push(Prisma.sql`rd."customerId" = ${customerId}`);
     }
 
     if (searchTerm) {
@@ -4152,6 +4157,110 @@ export const getTopSalesPersonReport = async (
         });
     } catch (error) {
         logger.error("Error in getTopSalesPersonReport:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// ─── Customer Purchase Report ────────────────────────────────────────────────
+export const getCustomerPurchaseReport = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const loggedInUser = req.user;
+        if (!loggedInUser) { res.status(401).json({ message: "Unauthenticated." }); return; }
+
+        const pageSize   = getQueryNumber(req.query.pageSize, 10)!;
+        const pageNumber = getQueryNumber(req.query.page, 1)!;
+        const offset     = (pageNumber - 1) * pageSize;
+
+        const searchTerm = getQueryString(req.query.searchTerm, "")!.trim();
+        const startDate  = getQueryString(req.query.startDate, "")!.trim();
+        const endDate    = getQueryString(req.query.endDate, "")!.trim();
+        const branchIdFilter = req.query.branchId ? parseInt(req.query.branchId as string, 10) : null;
+
+        const conditions: string[] = [
+            `o."deletedAt" IS NULL`,
+            `o."status" IN ('APPROVED', 'COMPLETED')`,
+            `o."customerId" IS NOT NULL`,
+        ];
+
+        if (loggedInUser.roleType === "ADMIN") {
+            if (branchIdFilter) conditions.push(`o."branchId" = ${branchIdFilter}`);
+        } else {
+            if (!loggedInUser.branchId) { res.status(403).json({ message: "Branch not assigned." }); return; }
+            conditions.push(`o."branchId" = ${loggedInUser.branchId}`);
+        }
+
+        if (startDate) conditions.push(`o."orderDate"::date >= '${startDate}'::date`);
+        if (endDate)   conditions.push(`o."orderDate"::date <= '${endDate}'::date`);
+
+        if (searchTerm) {
+            const safe = searchTerm.replace(/'/g, "''");
+            conditions.push(`(cs."name" ILIKE '%${safe}%' OR cs."phone" ILIKE '%${safe}%')`);
+        }
+
+        const whereClause = `WHERE ${conditions.join(" AND ")}`;
+
+        const summaryRows: any = await prisma.$queryRawUnsafe(`
+            SELECT
+                COUNT(DISTINCT o."customerId")                  AS "totalCustomers",
+                COUNT(o.id)                                     AS "totalInvoices",
+                COALESCE(SUM(o."totalAmount"), 0)               AS "totalRevenue",
+                COALESCE(SUM(o."paidAmount"), 0)                AS "totalPaid"
+            FROM "Order" o
+            LEFT JOIN "Customer" cs ON o."customerId" = cs."id"
+            ${whereClause}
+        `);
+
+        const totalRows: any = await prisma.$queryRawUnsafe(`
+            SELECT COUNT(*) AS cnt FROM (
+                SELECT o."customerId"
+                FROM "Order" o
+                LEFT JOIN "Customer" cs ON o."customerId" = cs."id"
+                ${whereClause}
+                GROUP BY o."customerId"
+            ) sub
+        `);
+
+        const data: any = await prisma.$queryRawUnsafe(`
+            SELECT
+                cs."id"                                         AS "customerId",
+                cs."name"                                       AS "customerName",
+                cs."phone"                                      AS "phone",
+                COUNT(o.id)                                     AS "totalOrders",
+                COALESCE(SUM(o."totalAmount"), 0)               AS "totalRevenue",
+                COALESCE(SUM(o."paidAmount"), 0)                AS "totalPaid",
+                COALESCE(SUM(o."totalAmount" - o."paidAmount"), 0) AS "totalDue",
+                MAX(o."orderDate")                              AS "lastPurchaseDate"
+            FROM "Order" o
+            LEFT JOIN "Customer" cs ON o."customerId" = cs."id"
+            ${whereClause}
+            GROUP BY cs."id", cs."name", cs."phone"
+            ORDER BY MAX(o."orderDate") DESC
+            LIMIT ${pageSize} OFFSET ${offset}
+        `);
+
+        const safeData = data.map((row: any) => ({
+            customerId:       Number(row.customerId),
+            customerName:     row.customerName ?? "",
+            phone:            row.phone ?? "",
+            totalOrders:      Number(row.totalOrders ?? 0),
+            totalRevenue:     Number(row.totalRevenue ?? 0),
+            totalPaid:        Number(row.totalPaid ?? 0),
+            totalDue:         Number(row.totalDue ?? 0),
+            lastPurchaseDate: row.lastPurchaseDate ?? null,
+        }));
+
+        res.status(200).json({
+            data: safeData,
+            total: Number(totalRows[0]?.cnt ?? 0),
+            summary: {
+                totalCustomers: Number(summaryRows[0]?.totalCustomers ?? 0),
+                totalInvoices:  Number(summaryRows[0]?.totalInvoices  ?? 0),
+                totalRevenue:   Number(summaryRows[0]?.totalRevenue   ?? 0),
+                totalPaid:      Number(summaryRows[0]?.totalPaid      ?? 0),
+            },
+        });
+    } catch (error) {
+        logger.error("Error in getCustomerPurchaseReport:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 };

@@ -42410,3 +42410,15 @@ Please make sure your database server is running at `db:5432`.
 2026-05-08 16:30:48 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
 2026-05-08 16:31:07 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
 2026-05-08 16:35:05 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-08 16:35:17 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-08 17:02:15 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-09 08:15:12 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-09 08:39:13 info: CEQ applyPayloadEffects NON_TRACKED [APPLY] variantId=32 branchId=1 delta=-305 
+2026-05-09 08:39:13 info: CEQ applyPayloadEffects TRACKED [APPLY] assetId=112 variantId=31 branchId=1 delta=-1 
+2026-05-09 10:58:37 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-09 10:58:59 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-09 10:59:14 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-09 10:59:22 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-09 11:05:11 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-09 11:12:38 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-09 11:42:34 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 

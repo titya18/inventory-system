@@ -9,10 +9,10 @@ import Pagination from "../components/Pagination";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowUpZA, faArrowDownAZ } from '@fortawesome/free-solid-svg-icons';
 import { CustomerType } from "@/data_types/types";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import VisibleColumnsSelector from "@/components/VisibleColumnsSelector";
 import ExportDropdown from "@/components/ExportDropdown";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Eye } from "lucide-react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -48,6 +48,7 @@ const sortFields: Record<string, string> = {
 
 export const Customer = () => {
 // const Customer: React.FC = () => {
+    const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
     const [customers, setCustomers] = useState<CustomerType[]>([]);
     const [selectCustomer, setSelectCustomer] = useState<CustomerType | null>(null);
@@ -267,6 +268,11 @@ export const Customer = () => {
                                                             {visibleCols.includes("Actions") && (
                                                                 <td className="text-center">
                                                                     <div className="flex gap-2">
+                                                                        {hasPermission('Customer-Purchase-Report') &&
+                                                                            <button type="button" className="hover:text-primary" onClick={() => rows.id && navigate(`/customer/${rows.id}`)} title="View">
+                                                                                <Eye color="#6366f1" />
+                                                                            </button>
+                                                                        }
                                                                         {hasPermission('Customer-Edit') &&
                                                                             <button type="button" className="hover:text-warning" onClick={() => handleEditClick(rows)} title="Edit">
                                                                                 <Pencil color="green" />

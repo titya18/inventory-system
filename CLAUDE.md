@@ -338,9 +338,19 @@ Backend: `stockAdjustmentController.ts` builds a `reasonMap` keyed by `productVa
 - Request branch requests stock from another branch
 - Approval creates transfer movements
 
-### Stock Return (Return to Supplier)
-- Outbound movement from branch (negative)
-- Consumes FIFO batches; reduces stock and clears cost layers
+### Purchase Return (Return to Supplier) — formerly "Stock Return"
+- Renamed from "Stock Return" to "Purchase Return" throughout (sidebar, list page, form, reports)
+- Ref format: `PRE-XXXXX` (globally unique, not branch-scoped)
+- **Requires linking a Purchase Order** (RECEIVED or COMPLETED status only, filtered by selected branch)
+- Supplier auto-fills from the linked PO (read-only)
+- Items auto-load from the PO; user can remove items they don't want to return
+- Already-returned quantities (from prior approved returns for same PO) are subtracted — remaining qty is pre-filled; fully-returned items are hidden
+- Serial tracking: **MANUAL mode only** — no Auto Assign option for purchase returns
+- `getReturnedQtyByPurchase` endpoint: `GET /api/stockreturn/returned-qty?purchaseId=X` → `{ [variantId]: returnedBaseQty }` for all APPROVED returns linked to that PO
+- Stock effect: DECREMENT (not increment — original bug was incrementing stock on return)
+- FIFO: consumes existing batches (creates `type: "RETURN"` movements), does NOT add new layers
+- `supplierId` (required) + `purchaseId` (optional FK) added to `StockReturns` model (migration `20260507022511`)
+- Files: `stockReturnController.ts`, `stockReturnRoute.ts`, `StockReturnForm.tsx`, `StockReturn.tsx`, `Sidebar.tsx`
 
 ### Sale Return (Customer Returns)
 - Customer returns goods → inbound movement (positive)
@@ -570,6 +580,8 @@ Full-featured Point-of-Sale interface at `/pos`. Separate from the main invoice 
 | **Customer Equipment Report** | Equipment assigned to customers — summary cards (Total/Active/Returned/Sold/Rented/Installed), filters (date range, status, assignType, branch, search), serial + non-tracked item display, export; requires `Customer-Equipment-Report` permission |
 | **Top Selling Products Report** | Products ranked by qty sold — filters: date range, branch, category, search; sortable by qty/revenue/COGS/profit/orders; summary cards (total qty, revenue, COGS, net profit); rank medals 🥇🥈🥉; margin % per row. Route `/reportTopSellingProducts`, permission `Top-Selling-Products-Report` |
 | **Top Sales Person Report** | Staff ranked by total sales — filters: date range, branch; sortable by total sales/order count/avg sale value; summary cards (people, orders, total sales); progress bar showing share of total; first/last sale dates. Route `/reportTopSalesPerson`, permission `Top-Sales-Person-Report`. **Avg Sale Value** = Total Sales ÷ Orders (measures upselling ability and discount discipline) |
+| **Customer Purchase Report** | Customers ranked by purchase activity — summary cards (Total Customers, Total Invoices, Total Revenue, Total Paid), filters (date range, branch, search), per-customer drill-down modal showing all their invoices, invoice items drill-down (closes list modal, opens items modal, reopens list on close). Route `/reportCustomerPurchase`, permission `Customer-Purchase-Report`. Eye icon on invoice row → shows items table with product/service name, variant, qty, unit, price, total, grand total/paid/due footer. |
+| **Purchase Return Report** | Formerly "Return Report" — renamed to match the Purchase Return feature. Detail modal now shows serial numbers (`returnedSerials` resolved from `trackedPayload.selectedIds` in `getStockReturnById`). |
 
 ### Profit Report Logic
 - **Gross Profit**: `SUM(OrderItem.total - OrderItem.cogs)` — all approved invoices
@@ -608,7 +620,7 @@ Full-featured Point-of-Sale interface at `/pos`. Separate from the main invoice 
 | stockController | `/api/stock` | Stock summary, low stock, valuation, `/serials` (per-variant serial lookup), `/asset-report` (paginated asset item report) |
 | stockAdjustmentController | `/api/stockadjustment` | Create/approve adjustments, FIFO |
 | stockRequestController | `/api/stockrequest` | Inter-branch requests |
-| stockReturnController | `/api/stockreturn` | Return to supplier |
+| stockReturnController | `/api/stockreturn` | Purchase Return (return goods to supplier); new: `GET /returned-qty?purchaseId=X` returns already-returned qty per variant |
 | stockTransferController | `/api/stocktransfer` | Inter-branch transfers, FIFO cost |
 | supplierController | `/api/supplier` | CRUD suppliers |
 | unitController | `/api/unit` | CRUD units, manage conversions |
@@ -624,7 +636,7 @@ Full-featured Point-of-Sale interface at `/pos`. Separate from the main invoice 
 | `branch/` | Branch management |
 | `brand/` | Brand CRUD |
 | `category/` | Product category management |
-| `customer/` | Customer list and details |
+| `customer/` | Customer list (`Customer.tsx`) + profile detail page (`CustomerView.tsx` at `/customer/:id` — 3 tabs: Overview, Purchase History, Equipment) |
 | `customerequipment/` | Equipment assignment — list, create, view, edit; serial history modal |
 | `dashboard/` | Overview metrics + summary cards |
 | `expense/` | Expense entry and list |
@@ -637,7 +649,7 @@ Full-featured Point-of-Sale interface at `/pos`. Separate from the main invoice 
 | `product_variant/` | Variant creation (SKU, barcode, pricing, units) |
 | `purchase/` | Purchase order workflow |
 | `quotation/` | Quotation management |
-| `report/` | 15 report pages |
+| `report/` | 17 report pages (added `ReportCustomer.tsx` for Customer Purchase Report) |
 | `role/` | Role + permission management |
 | `service/` | Non-inventory service items |
 | `setting/` | System settings |
@@ -805,6 +817,13 @@ Full-featured Point-of-Sale interface at `/pos`. Separate from the main invoice 
 | 77 | CEQ swap Replace button not shown for SR-linked serials (status TRANSFERRED) — only `isUnlockedBySoldInvoice` was checked | `CustomerEquipmentForm.tsx` — Replace button condition updated to also show when `isFromLinkedSR` is true (both create and edit sections) |
 | 78 | CEQ auto-fill from invoice used `baseQty` for quantity instead of `unitQty` — 2 boxes auto-filled as 1220 (base qty in meters) | `CustomerEquipmentForm.tsx` `selectOrder` + `selectSr` — quantity now uses `unitQty ?? baseQty` so invoice/SR sale unit quantity is used |
 | 79 | Qty input between − and + buttons was unreadable on small screens — `width: '40%'` shrunk the container too narrow | `InvoiceForm.tsx` + `QuotationForm.tsx` + `PurchaseForm.tsx` — removed `width: '40%'`; buttons are now `h-9 w-9 shrink-0`; input is `w-14 min-w-0`; container uses `minWidth: 120` |
+| 80 | Stock Return controller was fundamentally wrong — used `increment` (added stock) instead of `decrement` (removed stock) when returning goods to supplier; also used `addReturnStockLayer` (FIFO add) instead of consuming FIFO batches | `stockReturnController.ts` — full rewrite: correct FIFO consumption (`type: "RETURN"` movements), `decrement` on Stocks, `supplierId`/`purchaseId` added, ref format `PRE-XXXXX`, global sequence |
+| 81 | Transfer/Request/Purchase Return report detail modals showed no serial numbers — `transferredSerials` was returned by transfer controller but not displayed; request and return controllers didn't resolve serials at all | `ReportTransfer.tsx` + `ReportRequest.tsx` + `ReportReturn.tsx` — added "Serial Numbers" column; `stockRequestController.getStockRequestById` now resolves `processedSerials`; `stockReturnController.getStockReturnById` now resolves `returnedSerials` |
+| 82 | Purchase Return form showed "Select unit" for all items — `getPurchaseByid` returns `productvariants.baseUnit` and `products.unitConversions` but not a `unitOptions` array; `getVariantUnits()` returned empty | `StockReturnForm.tsx` — added `buildUnitOptionsFromPODetail()` that reads `productvariants.baseUnit` + `products.unitConversions`; embeds computed `unitOptions` into the variant object so the row dropdown is populated |
+| 83 | Purchase Return showed full PO qty even when some items were already returned — no check against prior approved returns | `stockReturnController.ts` — added `getReturnedQtyByPurchase` endpoint; `StockReturnForm.tsx` calls it in parallel with `getPurchaseByid`; subtracts already-returned base qty per variant; fully-returned items removed from list; `+` button capped at remaining qty |
+| 84 | Invoice items detail modal appeared behind the parent modal in Customer Purchase Report — nested portals inside Layout stacking context | `ReportCustomer.tsx` — changed UX to swap modals: clicking eye closes customer invoices modal (state saved), opens invoice items; closing items restores customer modal. No z-index stacking needed |
+| 85 | `getAllPurchases` had no branchId or status filter — couldn't filter POs by branch for Purchase Return form | `purchaseController.ts` — added `branchId` query param filter and `receivedOnly=1` flag (restricts to RECEIVED/COMPLETED); `api/purchase.ts` updated with optional params |
+| 86 | `TrackedItemsPickerModal` always showed Auto/Manual radio buttons — purchase returns should only allow manual serial selection | `TrackedItemsPickerModal.tsx` — added `manualOnly` prop; when true: hides Auto radio, always shows serial list; `StockReturnForm.tsx` passes `manualOnly={true}` and `mode="MANUAL"` |
 
 ---
 

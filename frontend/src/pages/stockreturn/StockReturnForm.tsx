@@ -152,16 +152,6 @@ const StockReturnForm: React.FC = () => {
         return normalized.filter((item, i, arr) => arr.findIndex((x) => x.unitId === item.unitId) === i);
     };
 
-    const getDefaultUnitData = (variant: ProductVariantType | null | undefined) => {
-        const units = getVariantUnits(variant);
-        const defaultUnit = units.find((u) => u.isBaseUnit) || units[0] || null;
-        return {
-            unitId: defaultUnit?.unitId ?? null,
-            unitName: defaultUnit?.unitName ?? "",
-            operationValue: Number(defaultUnit?.operationValue ?? 1) || 1,
-            operator: defaultUnit?.operator ?? "*",
-        };
-    };
 
     const calculateBaseQty = (unitQty: number | string | null | undefined, operationValue: number, operator: string = "*") => {
         const qty = Number(unitQty ?? 0);
@@ -229,12 +219,13 @@ const StockReturnForm: React.FC = () => {
 
             setReturnDetails(
                 (returnData.returnDetails || []).map((detail) => {
-                    let serialSelectionMode: "AUTO" | "MANUAL" = "AUTO";
+                    const trackingType = ((detail.productvariants as any)?.trackingType ?? "NONE") as "NONE" | "ASSET_ONLY" | "MAC_ONLY" | "ASSET_AND_MAC";
+                    // Tracked products always use MANUAL selection for purchase returns
+                    let serialSelectionMode: "AUTO" | "MANUAL" = trackingType !== "NONE" ? "MANUAL" : "AUTO";
                     let selectedTrackedItemIds: number[] = [];
                     if (detail.trackedPayload) {
                         try {
                             const parsed = JSON.parse(detail.trackedPayload);
-                            serialSelectionMode = parsed.mode ?? "AUTO";
                             selectedTrackedItemIds = parsed.selectedIds ?? [];
                         } catch { /* ignore */ }
                     }
@@ -244,7 +235,7 @@ const StockReturnForm: React.FC = () => {
                         unitQty: detail.unitQty ?? 1,
                         baseQty: detail.baseQty ?? detail.quantity ?? 1,
                         quantity: detail.quantity ?? Number(detail.baseQty ?? 1),
-                        trackingType: (detail.productvariants as any)?.trackingType ?? "NONE",
+                        trackingType,
                         serialSelectionMode,
                         selectedTrackedItemIds,
                         selectedTrackedItems: [],
@@ -498,8 +489,7 @@ const StockReturnForm: React.FC = () => {
             for (const row of returnDetails) {
                 if (
                     formData.StatusType === "APPROVED" &&
-                    row.trackingType && row.trackingType !== "NONE" &&
-                    row.serialSelectionMode === "MANUAL"
+                    row.trackingType && row.trackingType !== "NONE"
                 ) {
                     const productName = row.products?.name || `Product #${row.productVariantId}`;
                     const requiredQty = Math.round(Number(row.baseQty ?? 0));
@@ -797,31 +787,18 @@ const StockReturnForm: React.FC = () => {
                                                         {detail.trackingType && detail.trackingType !== "NONE" && (() => {
                                                             const selectedCount = detail.selectedTrackedItemIds?.length ?? 0;
                                                             const maxQty = Math.round(Number(detail.baseQty ?? 0));
-                                                            const isManual = detail.serialSelectionMode === "MANUAL";
-                                                            if (selectedCount > 0) {
-                                                                return (
-                                                                    <button type="button" onClick={() => setTrackedModalIndex(index)}
-                                                                        className="btn btn-xs mb-1"
-                                                                        style={{ backgroundColor: isManual ? "#f59e0b" : "#22c55e", color: "white" }}>
-                                                                        {selectedCount}/{maxQty} Serial(s)
-                                                                    </button>
-                                                                );
-                                                            } else if (isManual) {
-                                                                return (
-                                                                    <button type="button" onClick={() => setTrackedModalIndex(index)}
-                                                                        className="btn btn-xs mb-1 btn-outline-primary">
-                                                                        + Select Serial
-                                                                    </button>
-                                                                );
-                                                            } else {
-                                                                return (
-                                                                    <button type="button" onClick={() => setTrackedModalIndex(index)}
-                                                                        className="btn btn-xs mb-1"
-                                                                        style={{ backgroundColor: "#06b6d4", color: "white" }}>
-                                                                        Auto Assign
-                                                                    </button>
-                                                                );
-                                                            }
+                                                            return selectedCount > 0 ? (
+                                                                <button type="button" onClick={() => setTrackedModalIndex(index)}
+                                                                    className="btn btn-xs"
+                                                                    style={{ backgroundColor: "#f59e0b", color: "white" }}>
+                                                                    {selectedCount}/{maxQty} Serial(s)
+                                                                </button>
+                                                            ) : (
+                                                                <button type="button" onClick={() => setTrackedModalIndex(index)}
+                                                                    className="btn btn-xs btn-outline-primary">
+                                                                    + Select Serial
+                                                                </button>
+                                                            );
                                                         })()}
                                                     </td>
 
@@ -885,7 +862,8 @@ const StockReturnForm: React.FC = () => {
                         variantId={detail.productVariantId}
                         branchId={Number(detail.branchId ?? branchId ?? 0)}
                         existingItemId={detail.id || null}
-                        mode={detail.serialSelectionMode ?? "AUTO"}
+                        mode="MANUAL"
+                        manualOnly={true}
                         selectedIds={detail.selectedTrackedItemIds ?? []}
                         onSave={(mode, ids, items) => {
                             setReturnDetails((prev) =>

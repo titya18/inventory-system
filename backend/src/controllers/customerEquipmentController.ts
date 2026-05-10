@@ -46,12 +46,13 @@ const itemInclude = {
 // ── GET ALL (paginated + search) ────────────────────────────────────────────
 export const getAllCustomerEquipments = async (req: Request, res: Response): Promise<void> => {
     try {
-        const pageSize         = getQueryNumber(req.query.pageSize, 10)!;
-        const pageNumber       = getQueryNumber(req.query.page, 1)!;
-        const searchTerm       = getQueryString(req.query.searchTerm, "")!.trim();
-        const statusFilter     = getQueryString(req.query.status, "")!;
-        const branchIdFilter   = getQueryNumber(req.query.branchId, 0)!;
-        const assignTypeFilter = getQueryString(req.query.assignType, "")!;
+        const pageSize           = getQueryNumber(req.query.pageSize, 10)!;
+        const pageNumber         = getQueryNumber(req.query.page, 1)!;
+        const searchTerm         = getQueryString(req.query.searchTerm, "")!.trim();
+        const statusFilter       = getQueryString(req.query.status, "")!;
+        const branchIdFilter     = getQueryNumber(req.query.branchId, 0)!;
+        const assignTypeFilter   = getQueryString(req.query.assignType, "")!;
+        const customerIdFilter   = getQueryNumber(req.query.customerId, 0)!;
         const offset = (pageNumber - 1) * pageSize;
 
         const loggedInUser = req.user;
@@ -65,9 +66,10 @@ export const getAllCustomerEquipments = async (req: Request, res: Response): Pro
             where.branchId = branchIdFilter;
         }
 
-        if (statusFilter === "ACTIVE")   where.returnedAt = null;
-        if (statusFilter === "RETURNED") where.returnedAt = { not: null };
-        if (assignTypeFilter)            where.assignType = assignTypeFilter as any;
+        if (statusFilter === "ACTIVE")    where.returnedAt = null;
+        if (statusFilter === "RETURNED")  where.returnedAt = { not: null };
+        if (assignTypeFilter)             where.assignType = assignTypeFilter as any;
+        if (customerIdFilter > 0)         where.customerId = customerIdFilter;
 
         if (searchTerm) {
             where.OR = [

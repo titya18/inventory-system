@@ -12,6 +12,7 @@ interface TrackedItemsPickerModalProps {
     mode: "AUTO" | "MANUAL";
     selectedIds: number[];
     orderId?: number | null; // when set: show invoice serials + IN_STOCK serials
+    manualOnly?: boolean;   // hide Auto option (e.g. purchase return)
     onSave: (mode: "AUTO" | "MANUAL", ids: number[], items: ProductTrackedItemType[]) => void;
 }
 
@@ -24,6 +25,7 @@ const TrackedItemsPickerModal: React.FC<TrackedItemsPickerModalProps> = ({
     mode: initialMode,
     selectedIds: initialSelectedIds,
     orderId,
+    manualOnly = false,
     onSave,
 }) => {
     const [mode, setMode] = useState<"AUTO" | "MANUAL">(initialMode);
@@ -114,22 +116,24 @@ const TrackedItemsPickerModal: React.FC<TrackedItemsPickerModalProps> = ({
 
                 {/* Scrollable body */}
                 <div className="overflow-y-auto flex-grow px-5 py-4">
-                    {/* AUTO / MANUAL toggle */}
-                    <div className="mb-4 flex gap-6">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" className="form-radio" checked={mode === "AUTO"}
-                                onChange={() => { setMode("AUTO"); setSelectedIds([]); }} />
-                            <span className="text-sm">Auto (system assigns)</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" className="form-radio" checked={mode === "MANUAL"}
-                                onChange={() => setMode("MANUAL")} />
-                            <span className="text-sm">Manual (choose exact)</span>
-                        </label>
-                    </div>
+                    {/* AUTO / MANUAL toggle — hidden when manualOnly */}
+                    {!manualOnly && (
+                        <div className="mb-4 flex gap-6">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" className="form-radio" checked={mode === "AUTO"}
+                                    onChange={() => { setMode("AUTO"); setSelectedIds([]); }} />
+                                <span className="text-sm">Auto (system assigns)</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" className="form-radio" checked={mode === "MANUAL"}
+                                    onChange={() => setMode("MANUAL")} />
+                                <span className="text-sm">Manual (choose exact)</span>
+                            </label>
+                        </div>
+                    )}
 
                     {/* Serial list */}
-                    {mode === "MANUAL" && (
+                    {(mode === "MANUAL" || manualOnly) && (
                         <div className="rounded-md border border-indigo-200 bg-indigo-50 px-3 py-3">
                             <p className="text-sm font-semibold mb-2">
                                 {orderId ? "Serials (invoice + available)" : "Available Serials in Branch"}
