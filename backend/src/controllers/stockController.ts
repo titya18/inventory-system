@@ -1084,6 +1084,87 @@ export const getAssetReport = async (req: Request, res: Response) => {
   }
 };
 
+// GET /api/stock/asset-history/:assetItemId — full history (sales + CEQ assignments)
+export const getAssetSaleHistory = async (req: Request, res: Response) => {
+  try {
+    const assetItemId = Number(req.params.assetItemId);
+
+    // 1. Sales invoice history
+    const saleRows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT
+         o.id AS "refId",
+         o.ref AS "ref",
+         o."orderDate" AS "date",
+         o.status AS "status",
+         cs.name AS "customerName",
+         cs.phone AS "customerPhone",
+         NULL AS "returnedAt",
+         NULL AS "assignType",
+         b.name AS "branchName"
+       FROM "OrderItemAssetItem" oiai
+       JOIN "OrderItem" oi ON oi.id = oiai."orderItemId"
+       JOIN "Order" o ON o.id = oi."orderId"
+       LEFT JOIN "Customer" cs ON cs.id = o."customerId"
+       LEFT JOIN "Branch" b ON b.id = o."branchId"
+       WHERE oiai."productAssetItemId" = $1
+       ORDER BY o."orderDate" DESC`,
+      assetItemId
+    );
+
+    // 2. Customer Equipment assignment history
+    const ceqRows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT
+         ce.id AS "refId",
+         ce.ref AS "ref",
+         ce."assignedAt" AS "date",
+         ce."assignType" AS "status",
+         cs.name AS "customerName",
+         cs.phone AS "customerPhone",
+         ce."returnedAt",
+         ce."assignType",
+         b.name AS "branchName"
+       FROM "CustomerEquipmentItem" cei
+       JOIN "CustomerEquipment" ce ON ce.id = cei."customerEquipmentId"
+       LEFT JOIN "Customer" cs ON cs.id = ce."customerId"
+       LEFT JOIN "Branch" b ON b.id = ce."branchId"
+       WHERE cei."productAssetItemId" = $1
+       ORDER BY ce."assignedAt" DESC`,
+      assetItemId
+    );
+
+    const sales = saleRows.map((r) => ({
+      type: "SALE" as const,
+      ref: r.ref,
+      date: r.date,
+      status: r.status,
+      customerName: r.customerName || "Walk-in",
+      customerPhone: r.customerPhone || null,
+      returnedAt: null,
+      branchName: r.branchName || null,
+    }));
+
+    const ceqs = ceqRows.map((r) => ({
+      type: "CEQ" as const,
+      ref: r.ref,
+      date: r.date,
+      status: r.assignType,
+      customerName: r.customerName || "—",
+      customerPhone: r.customerPhone || null,
+      returnedAt: r.returnedAt || null,
+      branchName: r.branchName || null,
+    }));
+
+    // Merge and sort by date descending
+    const all = [...sales, ...ceqs].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    res.json(all);
+  } catch {
+    res.status(500).json({ message: "Failed to load asset history" });
+  }
+};
+
 export const getLowStockAlerts = async (req: Request, res: Response): Promise<void> => {
   try {
     const branchId = req.query.branchId ? Number(req.query.branchId) : null;

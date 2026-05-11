@@ -205,6 +205,25 @@ export const getAssetReport = async (
   return response.json();
 };
 
+export interface AssetSaleHistoryItem {
+  type: "SALE" | "CEQ";
+  ref: string;
+  date: string;
+  status: string;
+  customerName: string;
+  customerPhone: string | null;
+  returnedAt: string | null;
+  branchName: string | null;
+}
+
+export const getAssetSaleHistory = async (assetItemId: number): Promise<AssetSaleHistoryItem[]> => {
+  const response = await fetch(`${API_BASE_URL}/api/stock/asset-history/${assetItemId}`, {
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to load asset history");
+  return response.json();
+};
+
 export interface StockAlertItem {
   variantId: number;
   productName: string;

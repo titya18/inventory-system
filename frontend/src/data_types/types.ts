@@ -391,6 +391,12 @@ export interface AssetReportRow {
     productName: string;
     branchId: number;
     branchName: string;
+    soldOrderId: number | null;
+    soldOrderRef: string | null;
+    soldOrderDate: string | null;
+    soldCustomerId: number | null;
+    soldCustomerName: string | null;
+    soldCustomerPhone: string | null;
 }
 
 export interface PurchaseType {

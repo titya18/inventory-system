@@ -309,6 +309,35 @@ Invoice:   PENDING → APPROVED → COMPLETED
 
 ---
 
+## Stock Notification Alert (Bell Icon)
+
+Real-time low-stock alerts via Socket.IO + REST polling, shown in the header bell icon.
+
+### Architecture
+- **Backend emit**: `checkAndEmitStockAlert(prisma, variantId, branchId)` in `utils/stockAlert.ts` — called after stock decrements in sale/adjustment/transfer/request/return controllers (outside transaction, fire-and-forget)
+- **Socket singleton**: `backend/src/lib/socket.ts` — `setIO(io)` called in `server.ts`; `getIO()` used in `stockAlert.ts`
+- **REST endpoint**: `GET /api/stock/low-stock-alerts` — `getLowStockAlerts` in `stockController.ts`
+- **Frontend hook**: `useStockAlerts` in `frontend/src/hooks/useStockAlerts.ts` — fetches on mount, polls every 5 min, listens to `stock:low-alert` socket event
+- **Header bell**: `Header.tsx` — amber `BellRing` when alerts > 0, red badge count, dropdown list with dismiss + "View All" / "Go to Stock Summary" links (both → `/low-stock`)
+
+### Filtering Rules (Bell + Stock Low Report must match)
+- Only variants with `stockAlert > 0` (threshold configured)
+- Only active products: `p."isActive" = 1` (SmallInt, NOT boolean — `= true` silently fails in PostgreSQL)
+- Only non-deleted: `p."deletedAt" IS NULL AND pv."deletedAt" IS NULL`
+- All users see all branches (no branch lock) — optional `branchId` query param for filtering
+
+### Dashboard Low Stock Alert Widget
+- Shown only to: ADMIN always; USER with `Stock-Low-Report` permission
+- Uses fixed threshold (default 5) via `getDashboardLowStockProducts`, NOT `stockAlert` field
+- Same active/deleted filters applied
+
+### Dashboard Section Permissions
+- **Financial sections** (SummaryCards, SalesLineChart, SalesBarChart, SalesPieChart, TopSellingProducts): ADMIN only (`hasFinancialAccess = roleType === "ADMIN"`)
+- **Low Stock Alert**: ADMIN or `Stock-Low-Report` permission
+- **No permission at all**: shows "Welcome to Your Dashboard — no permission" message
+
+---
+
 ## Stock Operations
 
 ### Stock Adjustment
@@ -824,6 +853,13 @@ Full-featured Point-of-Sale interface at `/pos`. Separate from the main invoice 
 | 84 | Invoice items detail modal appeared behind the parent modal in Customer Purchase Report — nested portals inside Layout stacking context | `ReportCustomer.tsx` — changed UX to swap modals: clicking eye closes customer invoices modal (state saved), opens invoice items; closing items restores customer modal. No z-index stacking needed |
 | 85 | `getAllPurchases` had no branchId or status filter — couldn't filter POs by branch for Purchase Return form | `purchaseController.ts` — added `branchId` query param filter and `receivedOnly=1` flag (restricts to RECEIVED/COMPLETED); `api/purchase.ts` updated with optional params |
 | 86 | `TrackedItemsPickerModal` always showed Auto/Manual radio buttons — purchase returns should only allow manual serial selection | `TrackedItemsPickerModal.tsx` — added `manualOnly` prop; when true: hides Auto radio, always shows serial list; `StockReturnForm.tsx` passes `manualOnly={true}` and `mode="MANUAL"` |
+| 87 | `getLowStockAlerts` used `p."isActive" = true` but `Products.isActive` is `SmallInt` — PostgreSQL silently excluded all rows, causing bell to show 0 alerts | `stockController.ts` — changed to `p."isActive" = 1` |
+| 88 | Stock bell and Stock Low Report showed different counts — bell locked non-admin users to their own branch; report had no `stockAlert > 0` / inactive / deleted filters | `stockController.ts` — bell branch lock removed; `lowStockReport` count + data queries now filter `pv."stockAlert" > 0`, `pv."deletedAt" IS NULL`, `p."isActive" = 1`, `p."deletedAt" IS NULL` |
+| 89 | All 14 report endpoints in `reportController.ts` locked non-admin users to `loggedInUser.branchId` — users with permissions couldn't see data from other branches | `reportController.ts` — removed all 19 branch-lock blocks; non-admin users now see all branches by default with optional `branchId` query param filter; also removed `createdBy = loggedInUser.id` restrictions |
+| 90 | `buildBranchFilter` utility always forced non-admin to `{ branchId: user.branchId }` — affected `lowStockReport`, `stockMovementReport`, `stockValuationReport`, `assetReport` | `utils/branchFilter.ts` — non-admin users now get same treatment as admin (optional branchId filter, no forced lock) |
+| 91 | `getDashboardLowStockProducts` locked non-admin users to their branch and had no inactive/deleted product filters | `reportController.ts` — removed `effectiveBranchId` branch lock; added `pv."deletedAt" IS NULL`, `p."isActive" = 1 AND p."deletedAt" IS NULL` to both branch-mode and all-branches queries |
+| 92 | Dashboard blocked all `roleType === "USER"` users regardless of permissions — users with `Stock-Low-Report` saw "no permission" instead of the Low Stock Alert | `Dashboard.tsx` — `hasFinancialAccess = roleType === "ADMIN"` (financial sections admin-only); `hasLowStockAccess = ADMIN \|\| Stock-Low-Report permission`; "no permission" only when user has neither |
+| 93 | `SalesPieChart` showed blank chart with legend when all values were 0 or profit was negative — Recharts pie doesn't support zero/negative slices | `SalesPieChart.tsx` — filter out zero and negative values before passing to Recharts; show "No data for selected period" placeholder when no positive values remain; each data item carries its own color to survive filtering |
 
 ---
 

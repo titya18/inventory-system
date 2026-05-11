@@ -8,6 +8,7 @@ import {
     stockValuationReport,
     getSerialsByVariant,
     getAssetReport,
+    getAssetSaleHistory,
     getLowStockAlerts
 } from "../controllers/stockController";
 
@@ -20,5 +21,6 @@ router.get("/movements", authorize(["Stock-Movement-Report"]), stockMovementRepo
 router.get("/valuation", authorize(["Stock-Valuation-Report"]), stockValuationReport);
 router.get("/serials", authorize(["Stock-Summary-Report"]), getSerialsByVariant);
 router.get("/asset-report", authorize(["Serial-Number-Report"]), getAssetReport);
+router.get("/asset-history/:assetItemId", getAssetSaleHistory);
 router.get("/low-stock-alerts", getLowStockAlerts);
 export default router;
