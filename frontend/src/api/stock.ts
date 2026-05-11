@@ -204,3 +204,21 @@ export const getAssetReport = async (
   if (!response.ok) throw new Error("Error fetching asset report");
   return response.json();
 };
+
+export interface StockAlertItem {
+  variantId: number;
+  productName: string;
+  productType: string;
+  branchId: number;
+  branchName: string;
+  currentQty: number;
+  threshold: number;
+}
+
+export const getLowStockAlerts = async (): Promise<StockAlertItem[]> => {
+  const response = await fetch(`${API_BASE_URL}/api/stock/low-stock-alerts`, {
+    credentials: "include",
+  });
+  if (!response.ok) throw new Error("Failed to fetch stock alerts");
+  return response.json();
+};

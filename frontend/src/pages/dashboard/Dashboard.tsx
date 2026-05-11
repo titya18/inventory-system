@@ -11,7 +11,14 @@ import Filters from "../components/dashboard/Filters";
 import { useAppContext } from "@/hooks/useAppContext";
 
 const DashboardPage = () => {
-  const { user } = useAppContext();
+  const { user, hasPermission } = useAppContext();
+
+  const hasFinancialAccess = user?.roleType === "ADMIN";
+
+  const hasLowStockAccess =
+    user?.roleType === "ADMIN" || hasPermission("Stock-Low-Report");
+
+  const hasAnyPermission = hasFinancialAccess || hasLowStockAccess;
 
   const [filters, setFilters] = useState({
     startDate: dayjs().startOf("month").format("YYYY-MM-DD"),
@@ -33,7 +40,7 @@ const DashboardPage = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen p-6">
-      {user?.roleType === "USER" ? (
+      {!hasAnyPermission ? (
         <div className="relative flex items-center justify-center" style={{ minHeight: "calc(70vh - 2rem)" }}>
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             <div className="absolute top-0 left-0 w-96 h-96 bg-purple-300 rounded-full blur-3xl opacity-30 animate-float-slow translate-x-[-25%] translate-y-[-25%]"></div>
@@ -80,77 +87,84 @@ const DashboardPage = () => {
         <div className="max-w-7xl mx-auto space-y-8">
           <div className="flex flex-col gap-2">
             <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
-            <p className="text-sm text-gray-500">
-              Monitor sales, profit, receivable, payable, purchases and returns
-            </p>
+            {hasFinancialAccess && (
+              <p className="text-sm text-gray-500">
+                Monitor sales, profit, receivable, payable, purchases and returns
+              </p>
+            )}
           </div>
 
-          <Filters filters={filters} onChange={setFilters} />
+          {hasFinancialAccess && <Filters filters={filters} onChange={setFilters} />}
 
           {isLoading ? (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-                {Array.from({ length: 8 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="h-32 rounded-2xl bg-white animate-pulse border border-gray-100"
-                  />
-                ))}
-              </div>
-
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <div className="h-[420px] rounded-2xl bg-white animate-pulse border border-gray-100" />
-                <div className="h-[420px] rounded-2xl bg-white animate-pulse border border-gray-100" />
-              </div>
-
-              <div className="h-[420px] rounded-2xl bg-white animate-pulse border border-gray-100" />
-
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <div className="h-[420px] rounded-2xl bg-white animate-pulse border border-gray-100" />
-                <div className="h-[420px] rounded-2xl bg-white animate-pulse border border-gray-100" />
-              </div>
+              {hasFinancialAccess && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+                    {Array.from({ length: 8 }).map((_, index) => (
+                      <div key={index} className="h-32 rounded-2xl bg-white animate-pulse border border-gray-100" />
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <div className="h-[420px] rounded-2xl bg-white animate-pulse border border-gray-100" />
+                    <div className="h-[420px] rounded-2xl bg-white animate-pulse border border-gray-100" />
+                  </div>
+                  <div className="h-[420px] rounded-2xl bg-white animate-pulse border border-gray-100" />
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <div className="h-[420px] rounded-2xl bg-white animate-pulse border border-gray-100" />
+                    <div className="h-[420px] rounded-2xl bg-white animate-pulse border border-gray-100" />
+                  </div>
+                </>
+              )}
+              {hasLowStockAccess && (
+                <div className="h-[200px] rounded-2xl bg-white animate-pulse border border-gray-100" />
+              )}
             </>
           ) : (
             <>
-              <SummaryCards
-                invoices={data.invoices.data?.summary}
-                purchases={data.purchases.data?.summary}
-                quotations={data.quotations.data?.summary}
-                saleReturns={data.saleReturns.data?.summary}
-                payments={data.payments.data?.summary}
-              />
+              {hasFinancialAccess && (
+                <>
+                  <SummaryCards
+                    invoices={data.invoices.data?.summary}
+                    purchases={data.purchases.data?.summary}
+                    quotations={data.quotations.data?.summary}
+                    saleReturns={data.saleReturns.data?.summary}
+                    payments={data.payments.data?.summary}
+                  />
 
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <SalesLineChart invoices={data.invoices.data?.data || []} />
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <SalesLineChart invoices={data.invoices.data?.data || []} />
+                    <SalesBarChart
+                      purchases={data.purchases.data?.data || []}
+                      startDate={filters.startDate}
+                      endDate={filters.endDate}
+                      groupBy={groupBy}
+                      setGroupBy={setGroupBy}
+                      growth={data.purchases.data?.growth ?? null}
+                    />
+                  </div>
 
-                <SalesBarChart
-                  purchases={data.purchases.data?.data || []}
-                  startDate={filters.startDate}
-                  endDate={filters.endDate}
-                  groupBy={groupBy}
-                  setGroupBy={setGroupBy}
-                  growth={data.purchases.data?.growth ?? null}
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <SalesPieChart
+                      sales={{ totalAmount: data.invoices.data?.summary?.totalAmount ?? 0 }}
+                      profit={{ totalAmount: data.invoices.data?.summary?.totalProfit ?? 0 }}
+                      purchases={{ totalAmount: data.purchases.data?.summary?.grandTotalAmount ?? 0 }}
+                      saleReturns={{ totalAmount: data.saleReturns.data?.summary?.totalAmount ?? 0 }}
+                    />
+                    <TopSellingProducts
+                      products={data.topSellingProducts.data?.data || []}
+                    />
+                  </div>
+                </>
+              )}
+
+              {hasLowStockAccess && (
+                <LowStockAlert
+                  products={data.lowStockProducts.data?.data || []}
+                  mode={data.lowStockProducts.data?.mode || "all"}
+                  threshold={data.lowStockProducts.data?.threshold || 5}
                 />
-              </div>
-
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <SalesPieChart
-                  sales={{ totalAmount: data.invoices.data?.summary?.totalAmount ?? 0 }}
-                  profit={{ totalAmount: data.invoices.data?.summary?.totalProfit ?? 0 }}
-                  purchases={{ totalAmount: data.purchases.data?.summary?.grandTotalAmount ?? 0 }}
-                  saleReturns={{ totalAmount: data.saleReturns.data?.summary?.totalAmount ?? 0 }}
-                />
-
-                <TopSellingProducts
-                  products={data.topSellingProducts.data?.data || []}
-                />
-              </div>
-
-              <LowStockAlert
-                products={data.lowStockProducts.data?.data || []}
-                mode={data.lowStockProducts.data?.mode || "all"}
-                threshold={data.lowStockProducts.data?.threshold || 5}
-              />
+              )}
             </>
           )}
         </div>

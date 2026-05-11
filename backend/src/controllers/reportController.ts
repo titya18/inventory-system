@@ -83,18 +83,8 @@ export const getAllReportInvoices = async (
 
     conditions.push(Prisma.sql`rd."deletedAt" IS NULL`);
 
-    if (loggedInUser.roleType === "ADMIN") {
-      if (branchId) {
-        conditions.push(Prisma.sql`rd."branchId" = ${branchId}`);
-      }
-    } else {
-      if (!loggedInUser.branchId) {
-        res.status(403).json({ message: "Branch not assigned." });
-        return;
-      }
-
-      conditions.push(Prisma.sql`rd."branchId" = ${loggedInUser.branchId}`);
-      conditions.push(Prisma.sql`rd."createdBy" = ${loggedInUser.id}`);
+    if (branchId) {
+      conditions.push(Prisma.sql`rd."branchId" = ${branchId}`);
     }
 
     if (startDate && endDate) {
@@ -430,16 +420,8 @@ export const getAllCancelReportInvoices = async (
 
     conditions.push(Prisma.sql`rd."status" = 'CANCELLED'::"OrderStatus"`);
 
-    if (loggedInUser.roleType === "ADMIN") {
-      if (branchId) {
-        conditions.push(Prisma.sql`rd."branchId" = ${branchId}`);
-      }
-    } else {
-      if (!loggedInUser.branchId) {
-        res.status(403).json({ message: "Branch not assigned." });
-        return;
-      }
-      conditions.push(Prisma.sql`rd."branchId" = ${loggedInUser.branchId}`);
+    if (branchId) {
+      conditions.push(Prisma.sql`rd."branchId" = ${branchId}`);
     }
 
     if (startDate && endDate) {
@@ -683,16 +665,8 @@ export const getAllPaymentInvoices = async (
 
     const conditions: Prisma.Sql[] = [];
 
-    if (loggedInUser.roleType === "ADMIN") {
-      if (branchId) {
-        conditions.push(Prisma.sql`o."branchId" = ${branchId}`);
-      }
-    } else {
-      if (!loggedInUser.branchId) {
-        res.status(403).json({ message: "Branch not assigned." });
-        return;
-      }
-      conditions.push(Prisma.sql`o."branchId" = ${loggedInUser.branchId}`);
+    if (branchId) {
+      conditions.push(Prisma.sql`o."branchId" = ${branchId}`);
     }
 
     if (safeSaleType) {
@@ -915,16 +889,8 @@ export const getAllReportQuotations = async (
 
     conditions.push(Prisma.sql`qt."deletedAt" IS NULL`);
 
-    if (loggedInUser.roleType === "ADMIN") {
-      if (branchId) {
-        conditions.push(Prisma.sql`qt."branchId" = ${branchId}`);
-      }
-    } else {
-      if (!loggedInUser.branchId) {
-        res.status(403).json({ message: "Branch not assigned." });
-        return;
-      }
-      conditions.push(Prisma.sql`qt."branchId" = ${loggedInUser.branchId}`);
+    if (branchId) {
+      conditions.push(Prisma.sql`qt."branchId" = ${branchId}`);
     }
 
     if (startDate && endDate) {
@@ -1163,16 +1129,8 @@ export const getAllReportPurchases = async (
 
     conditions.push(Prisma.sql`pc."deletedAt" IS NULL`);
 
-    if (loggedInUser.roleType === "ADMIN") {
-      if (branchId) {
-        conditions.push(Prisma.sql`pc."branchId" = ${branchId}`);
-      }
-    } else {
-      if (!loggedInUser.branchId) {
-        res.status(403).json({ message: "Branch not assigned." });
-        return;
-      }
-      conditions.push(Prisma.sql`pc."branchId" = ${loggedInUser.branchId}`);
+    if (branchId) {
+      conditions.push(Prisma.sql`pc."branchId" = ${branchId}`);
     }
 
     if (startDate && endDate) {
@@ -1283,14 +1241,8 @@ export const getAllReportPurchases = async (
 
       const previousConditions: Prisma.Sql[] = [];
 
-      if (loggedInUser.roleType === "ADMIN") {
-        if (branchId) {
-          previousConditions.push(Prisma.sql`pc."branchId" = ${branchId}`);
-        }
-      } else if (loggedInUser.branchId) {
-        previousConditions.push(
-          Prisma.sql`pc."branchId" = ${loggedInUser.branchId}`
-        );
+      if (branchId) {
+        previousConditions.push(Prisma.sql`pc."branchId" = ${branchId}`);
       }
 
       previousConditions.push(
@@ -1499,16 +1451,8 @@ export const getAllPaymentPurchases = async (
 
     const conditions: Prisma.Sql[] = [];
 
-    if (loggedInUser.roleType === "ADMIN") {
-      if (branchId) {
-        conditions.push(Prisma.sql`o."branchId" = ${branchId}`);
-      }
-    } else {
-      if (!loggedInUser.branchId) {
-        res.status(403).json({ message: "Branch not assigned." });
-        return;
-      }
-      conditions.push(Prisma.sql`o."branchId" = ${loggedInUser.branchId}`);
+    if (branchId) {
+      conditions.push(Prisma.sql`o."branchId" = ${branchId}`);
     }
 
     if (safeStatus) {
@@ -1703,17 +1647,8 @@ export const getAllReportAdjustments = async (
         const params: any[] = [];
         const whereParts: string[] = ['1=1'];
 
-        if (loggedInUser.roleType === "ADMIN") {
-            if (branchId) {
-                params.push(branchId);
-                whereParts.push(`sam."branchId" = $${params.length}`);
-            }
-        } else {
-            if (!loggedInUser.branchId) {
-                res.status(403).json({ message: "Branch not assigned." });
-                return;
-            }
-            params.push(loggedInUser.branchId);
+        if (branchId) {
+            params.push(branchId);
             whereParts.push(`sam."branchId" = $${params.length}`);
         }
 
@@ -1941,17 +1876,8 @@ export const getAllReportTransfers = async (
         const params: any[] = [];
         const whereParts: string[] = ['1=1'];
 
-        if (loggedInUser.roleType === "ADMIN") {
-            if (branchId) {
-                params.push(branchId);
-                whereParts.push(`sts."branchId" = $${params.length}`);
-            }
-        } else {
-            if (!loggedInUser.branchId) {
-                res.status(403).json({ message: "Branch not assigned." });
-                return;
-            }
-            params.push(loggedInUser.branchId);
+        if (branchId) {
+            params.push(branchId);
             whereParts.push(`sts."branchId" = $${params.length}`);
         }
 
@@ -2179,17 +2105,8 @@ export const getAllReportRequests = async (
         const params: any[] = [];
         const whereParts: string[] = ['1=1'];
 
-        if (loggedInUser.roleType === "ADMIN") {
-            if (branchId) {
-                params.push(branchId);
-                whereParts.push(`srq."branchId" = $${params.length}`);
-            }
-        } else {
-            if (!loggedInUser.branchId) {
-                res.status(403).json({ message: "Branch not assigned." });
-                return;
-            }
-            params.push(loggedInUser.branchId);
+        if (branchId) {
+            params.push(branchId);
             whereParts.push(`srq."branchId" = $${params.length}`);
         }
 
@@ -2416,17 +2333,8 @@ export const getAllReportReturns = async (
         const params: any[] = [];
         const whereParts: string[] = ['1=1'];
 
-        if (loggedInUser.roleType === "ADMIN") {
-            if (branchId) {
-                params.push(branchId);
-                whereParts.push(`srt."branchId" = $${params.length}`);
-            }
-        } else {
-            if (!loggedInUser.branchId) {
-                res.status(403).json({ message: "Branch not assigned." });
-                return;
-            }
-            params.push(loggedInUser.branchId);
+        if (branchId) {
+            params.push(branchId);
             whereParts.push(`srt."branchId" = $${params.length}`);
         }
 
@@ -2662,15 +2570,7 @@ export const getAllReportExpenses = async (
         /* BRANCH RESTRICTION                                 */
         /* -------------------------------------------------- */
         let branchRestriction = "";
-        if (loggedInUser.roleType === "ADMIN") {
-            if (branchId) branchRestriction = `AND exp."branchId" = ${branchId}`;
-        } else {
-            if (!loggedInUser.branchId) {
-                res.status(403).json({ message: "Branch not assigned." });
-                return;
-            }
-            branchRestriction = `AND exp."branchId" = ${loggedInUser.branchId}`;
-        }
+        if (branchId) branchRestriction = `AND exp."branchId" = ${branchId}`;
 
         /* -------------------------------------------------- */
         /* COMMON FILTERS                                     */
@@ -2816,15 +2716,7 @@ export const getAllReportIncomes = async (
         /* BRANCH RESTRICTION                                 */
         /* -------------------------------------------------- */
         let branchRestriction = "";
-        if (loggedInUser.roleType === "ADMIN") {
-            if (branchId) branchRestriction = `AND inc."branchId" = ${branchId}`;
-        } else {
-            if (!loggedInUser.branchId) {
-                res.status(403).json({ message: "Branch not assigned." });
-                return;
-            }
-            branchRestriction = `AND inc."branchId" = ${loggedInUser.branchId}`;
-        }
+        if (branchId) branchRestriction = `AND inc."branchId" = ${branchId}`;
 
         /* -------------------------------------------------- */
         /* COMMON FILTERS                                     */
@@ -2969,16 +2861,8 @@ export const getAllReportSalesReturns = async (
 
     conditions.push(Prisma.sql`sr."deletedAt" IS NULL`);
 
-    if (loggedInUser.roleType === "ADMIN") {
-      if (branchId) {
-        conditions.push(Prisma.sql`sr."branchId" = ${branchId}`);
-      }
-    } else {
-      if (!loggedInUser.branchId) {
-        res.status(403).json({ message: "Branch not assigned." });
-        return;
-      }
-      conditions.push(Prisma.sql`sr."branchId" = ${loggedInUser.branchId}`);
+    if (branchId) {
+      conditions.push(Prisma.sql`sr."branchId" = ${branchId}`);
     }
 
     if (startDate && endDate) {
@@ -3212,16 +3096,8 @@ export const getDashboardTopSellingProducts = async (
         }
 
         let branchRestriction = "";
-        if (loggedInUser.roleType === "ADMIN") {
-            if (branchId) {
-                branchRestriction = `AND o."branchId" = ${branchId}`;
-            }
-        } else {
-            if (!loggedInUser.branchId) {
-                res.status(403).json({ message: "Branch not assigned." });
-                return;
-            }
-            branchRestriction = `AND o."branchId" = ${loggedInUser.branchId}`;
+        if (branchId) {
+            branchRestriction = `AND o."branchId" = ${branchId}`;
         }
 
         const dateFilter =
@@ -3319,21 +3195,13 @@ export const getDashboardLowStockProducts = async (
             return;
         }
 
-        const isAdmin = loggedInUser.roleType === "ADMIN";
-        const effectiveBranchId = isAdmin ? branchId : loggedInUser.branchId;
-
-        if (!isAdmin && !loggedInUser.branchId) {
-            res.status(403).json({ message: "Branch not assigned." });
-            return;
-        }
-
         let data: any[] = [];
         let mode: "branch" | "all" = "all";
 
         // ==============================
         // BRANCH MODE
         // ==============================
-        if (effectiveBranchId) {
+        if (branchId) {
             mode = "branch";
 
             data = await prisma.$queryRawUnsafe(`
@@ -3351,14 +3219,12 @@ export const getDashboardLowStockProducts = async (
                 ) AS branch
                 FROM "Stocks" s
                 INNER JOIN "ProductVariants" pv
-                ON s."productVariantId" = pv.id
+                ON s."productVariantId" = pv.id AND pv."deletedAt" IS NULL
                 INNER JOIN "Products" p
-                ON pv."productId" = p.id
+                ON pv."productId" = p.id AND p."isActive" = 1 AND p."deletedAt" IS NULL
                 INNER JOIN "Branch" b
                 ON s."branchId" = b.id
-                WHERE 1=1
-                AND s."branchId" = ${effectiveBranchId}
-                AND pv."isActive" = 1
+                WHERE s."branchId" = ${branchId}
                 AND COALESCE(s.quantity, 0) <= ${threshold}
                 ORDER BY
                 COALESCE(s.quantity, 0) ASC,
@@ -3383,11 +3249,10 @@ export const getDashboardLowStockProducts = async (
                 COALESCE(SUM(s.quantity), 0) AS "currentStock"
                 FROM "Stocks" s
                 INNER JOIN "ProductVariants" pv
-                ON s."productVariantId" = pv.id
+                ON s."productVariantId" = pv.id AND pv."deletedAt" IS NULL
                 INNER JOIN "Products" p
-                ON pv."productId" = p.id
+                ON pv."productId" = p.id AND p."isActive" = 1 AND p."deletedAt" IS NULL
                 WHERE 1=1
-                AND pv."isActive" = 1
                 GROUP BY
                 pv.id,
                 p.id,
@@ -3461,20 +3326,8 @@ export const profitReport = async (req: Request, res: Response) => {
         /* BRANCH RESTRICTION       */
         /* ------------------------ */
         let branchRestriction = "";
-        if (loggedInUser.roleType === "ADMIN") {
-            if (branchId) {
-                branchRestriction = `AND o."branchId" = ${Number(branchId)}`;
-            }
-        } else {
-            if (!loggedInUser.branchId) {
-                res.status(403).json({ message: "Branch not assigned." });
-                return;
-            }
-
-            branchRestriction = `
-                AND o."branchId" = ${Number(loggedInUser.branchId)}
-                AND o."createdBy" = ${Number(loggedInUser.id)}
-            `;
+        if (branchId) {
+            branchRestriction = `AND o."branchId" = ${Number(branchId)}`;
         }
 
         let dateCondition = "";
@@ -3721,9 +3574,7 @@ export const getCustomerEquipmentReport = async (req: Request, res: Response): P
         const where: any = {};
 
         // Branch scoping
-        if (loggedInUser.roleType === "USER" && loggedInUser.branchId) {
-            where.branchId = loggedInUser.branchId;
-        } else if (branchIdFilter) {
+        if (branchIdFilter) {
             where.branchId = branchIdFilter;
         }
 
@@ -3936,12 +3787,7 @@ export const getTopSellingProductsReport = async (
         const offset = (pageNumber - 1) * pageSize;
 
         let branchFilter = "";
-        if (loggedInUser.roleType === "ADMIN") {
-            if (branchId) branchFilter = `AND o."branchId" = ${branchId}`;
-        } else {
-            if (!loggedInUser.branchId) { res.status(403).json({ message: "Branch not assigned." }); return; }
-            branchFilter = `AND o."branchId" = ${loggedInUser.branchId}`;
-        }
+        if (branchId) branchFilter = `AND o."branchId" = ${branchId}`;
 
         const dateFilter     = startDate && endDate ? `AND o."orderDate"::date BETWEEN '${startDate}' AND '${endDate}'` : "";
         const categoryFilter = categoryId ? `AND cat.id = ${categoryId}` : "";
@@ -4069,12 +3915,7 @@ export const getTopSalesPersonReport = async (
         const offset = (pageNumber - 1) * pageSize;
 
         let branchFilter = "";
-        if (loggedInUser.roleType === "ADMIN") {
-            if (branchId) branchFilter = `AND o."branchId" = ${branchId}`;
-        } else {
-            if (!loggedInUser.branchId) { res.status(403).json({ message: "Branch not assigned." }); return; }
-            branchFilter = `AND o."branchId" = ${loggedInUser.branchId} AND o."createdBy" = ${loggedInUser.id}`;
-        }
+        if (branchId) branchFilter = `AND o."branchId" = ${branchId}`;
 
         const dateFilter   = startDate && endDate ? `AND o."orderDate"::date BETWEEN '${startDate}' AND '${endDate}'` : "";
         const rawSortField = sortField ?? "totalSales";
@@ -4182,12 +4023,7 @@ export const getCustomerPurchaseReport = async (req: Request, res: Response): Pr
             `o."customerId" IS NOT NULL`,
         ];
 
-        if (loggedInUser.roleType === "ADMIN") {
-            if (branchIdFilter) conditions.push(`o."branchId" = ${branchIdFilter}`);
-        } else {
-            if (!loggedInUser.branchId) { res.status(403).json({ message: "Branch not assigned." }); return; }
-            conditions.push(`o."branchId" = ${loggedInUser.branchId}`);
-        }
+        if (branchIdFilter) conditions.push(`o."branchId" = ${branchIdFilter}`);
 
         if (startDate) conditions.push(`o."orderDate"::date >= '${startDate}'::date`);
         if (endDate)   conditions.push(`o."orderDate"::date <= '${endDate}'::date`);

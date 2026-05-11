@@ -330,8 +330,8 @@ export const lowStockReport = async (req: Request, res: Response) => {
           pv.id,
           s."branchId"
         FROM "Stocks" s
-        JOIN "ProductVariants" pv ON s."productVariantId" = pv.id
-        JOIN "Products" p ON pv."productId" = p.id
+        JOIN "ProductVariants" pv ON s."productVariantId" = pv.id AND pv."deletedAt" IS NULL AND pv."stockAlert" > 0
+        JOIN "Products" p ON pv."productId" = p.id AND p."isActive" = 1 AND p."deletedAt" IS NULL
         WHERE (
           p.name ILIKE $1
           OR pv.name ILIKE $1
@@ -387,8 +387,8 @@ export const lowStockReport = async (req: Request, res: Response) => {
         (uu."firstName" || ' ' || uu."lastName") AS "updatedByName"
 
       FROM "Stocks" s
-      JOIN "ProductVariants" pv ON s."productVariantId" = pv.id
-      JOIN "Products" p ON pv."productId" = p.id
+      JOIN "ProductVariants" pv ON s."productVariantId" = pv.id AND pv."deletedAt" IS NULL AND pv."stockAlert" > 0
+      JOIN "Products" p ON pv."productId" = p.id AND p."isActive" = 1 AND p."deletedAt" IS NULL
       JOIN "Branch" b ON s."branchId" = b.id
       LEFT JOIN "Units" u ON pv."baseUnitId" = u.id
 
@@ -1081,5 +1081,45 @@ export const getAssetReport = async (req: Request, res: Response) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Failed to load asset report" });
+  }
+};
+
+export const getLowStockAlerts = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const branchId = req.query.branchId ? Number(req.query.branchId) : null;
+    const branchFilter = branchId ? `AND s."branchId" = ${branchId}` : "";
+
+    const rows: any[] = await prisma.$queryRawUnsafe(`
+      SELECT
+        pv.id AS "variantId",
+        p.name AS "productName",
+        pv."productType",
+        s."branchId",
+        b.name AS "branchName",
+        COALESCE(s.quantity, 0) AS "currentQty",
+        pv."stockAlert" AS "threshold"
+      FROM "Stocks" s
+      INNER JOIN "ProductVariants" pv ON s."productVariantId" = pv.id AND pv."stockAlert" > 0
+      INNER JOIN "Products" p ON pv."productId" = p.id AND p."isActive" = 1 AND p."deletedAt" IS NULL
+      INNER JOIN "Branch" b ON s."branchId" = b.id
+      WHERE s.quantity <= pv."stockAlert"
+        AND pv."deletedAt" IS NULL
+      ${branchFilter}
+      ORDER BY s.quantity ASC, pv."stockAlert" DESC
+    `);
+
+    res.json(
+      rows.map((r) => ({
+        variantId: Number(r.variantId),
+        productName: r.productName,
+        productType: r.productType,
+        branchId: Number(r.branchId),
+        branchName: r.branchName,
+        currentQty: Number(r.currentQty),
+        threshold: Number(r.threshold),
+      }))
+    );
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch low stock alerts" });
   }
 };

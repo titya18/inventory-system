@@ -190,14 +190,15 @@ const SalesPieChart = ({
   const safePurchases = Number(purchases?.totalAmount ?? 0);
   const safeSaleReturns = Number(saleReturns?.totalAmount ?? 0);
 
-  const data = [
-    { name: "Sales", value: safeSales },
-    { name: "Profit", value: safeProfit },
-    { name: "Purchases", value: safePurchases },
-    { name: "Sale Returns", value: safeSaleReturns },
+  const allData = [
+    { name: "Sales", value: safeSales, color: "#3B82F6" },
+    { name: "Profit", value: safeProfit, color: "#10B981" },
+    { name: "Purchases", value: safePurchases, color: "#EF4444" },
+    { name: "Sale Returns", value: safeSaleReturns, color: "#F59E0B" },
   ];
 
-  const colors = ["#3B82F6", "#10B981", "#EF4444", "#F59E0B"];
+  const data = allData.filter((d) => d.value > 0);
+  const colors = data.map((d) => d.color);
   const total = data.reduce((sum, item) => sum + item.value, 0);
   const RADIAN = Math.PI / 180;
 
@@ -263,39 +264,48 @@ const SalesPieChart = ({
         </p>
       </div>
 
-      <ResponsiveContainer width="100%" height={360}>
-        <PieChart>
-          <Tooltip content={renderCustomTooltip} />
-          <Legend
-            verticalAlign="bottom"
-            align="center"
-            iconSize={12}
-            formatter={(value) => (
-              <span className="text-gray-700 text-sm font-medium">{value}</span>
-            )}
-          />
-
-          <Pie
-            data={data}
-            dataKey="value"
-            nameKey="name"
-            outerRadius={130}
-            innerRadius={72}
-            paddingAngle={3}
-            label={renderCustomizedLabel}
-            isAnimationActive
-          >
-            {data.map((entry, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={colors[index % colors.length]}
-                stroke="#fff"
-                strokeWidth={2}
-              />
-            ))}
-          </Pie>
-        </PieChart>
-      </ResponsiveContainer>
+      {total === 0 ? (
+        <div className="flex flex-col items-center justify-center h-[360px] text-gray-400">
+          <svg className="w-16 h-16 mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+          </svg>
+          <p className="text-sm font-medium">No data for selected period</p>
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={360}>
+          <PieChart>
+            <Tooltip content={renderCustomTooltip} />
+            <Legend
+              verticalAlign="bottom"
+              align="center"
+              iconSize={12}
+              formatter={(value) => (
+                <span className="text-gray-700 text-sm font-medium">{value}</span>
+              )}
+            />
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="name"
+              outerRadius={130}
+              innerRadius={72}
+              paddingAngle={3}
+              label={renderCustomizedLabel}
+              isAnimationActive
+            >
+              {data.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.color}
+                  stroke="#fff"
+                  strokeWidth={2}
+                />
+              ))}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 };

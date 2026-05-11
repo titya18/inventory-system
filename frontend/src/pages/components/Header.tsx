@@ -1,18 +1,19 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { useTranslation } from 'react-i18next';
-import { useLanguage } from '../../contexts/LanguageContext';
 import { useAppContext } from '../../hooks/useAppContext';
+import { useStockAlerts } from '../../hooks/useStockAlerts';
 import SignOutButton from "./SignOutbutton";
+import { Bell, BellRing } from "lucide-react";
 
-type ActiveDiv = 'div1' | 'div2' | null;
+type ActiveDiv = 'div1' | 'div2' | 'bell' | null;
 const Header: React.FC = () => {
     // const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    const { t } = useTranslation();
-    const { language, setLanguage } = useLanguage();
+    // const { t } = useTranslation();
+    // const { language, setLanguage } = useLanguage();
 
     const { toggleSidebar, isLoggedIn, user } = useAppContext();
+    const { alerts, count, dismiss } = useStockAlerts();
 
     const handleClick = () => {
         toggleSidebar();
@@ -213,6 +214,74 @@ const Header: React.FC = () => {
                             </div> */}
                             {/* End Flag Option */}
                             
+                            {/* Stock Alert Bell */}
+                            {isLoggedIn && (
+                                <div className="relative flex-shrink-0">
+                                    <button
+                                        type="button"
+                                        className="relative flex items-center justify-center rounded-full bg-white-light/40 p-2 hover:bg-white-light/90 hover:text-primary dark:bg-dark/40 dark:hover:bg-dark/60"
+                                        onClick={() => toggleActiveDiv('bell')}
+                                    >
+                                        {count > 0 ? <BellRing size={20} className="text-warning" /> : <Bell size={20} />}
+                                        {count > 0 && (
+                                            <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-danger text-white text-[10px] font-bold px-1">
+                                                {count > 99 ? "99+" : count}
+                                            </span>
+                                        )}
+                                    </button>
+
+                                    {activeDiv === 'bell' && (
+                                        <div className="absolute ltr:right-0 rtl:left-0 top-12 z-50 w-80 rounded-xl shadow-xl bg-white dark:bg-[#0e1726] border border-gray-200 dark:border-gray-700 overflow-hidden">
+                                            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-[#121c2c] border-b border-gray-200 dark:border-gray-700">
+                                                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                                                    Stock Alerts {count > 0 && <span className="ml-1 text-danger">({count})</span>}
+                                                </span>
+                                                <Link to="/low-stock" onClick={() => setActiveDiv(null)} className="text-xs text-primary hover:underline">View All</Link>
+                                            </div>
+
+                                            <div className="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
+                                                {alerts.length === 0 ? (
+                                                    <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                                                        <Bell size={28} className="mb-2 opacity-40" />
+                                                        <p className="text-xs">No low stock alerts</p>
+                                                    </div>
+                                                ) : alerts.map((alert) => (
+                                                    <div key={`${alert.variantId}-${alert.branchId}`} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5">
+                                                        <div className="flex-shrink-0 mt-0.5 w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center">
+                                                            <BellRing size={14} className="text-warning" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{alert.productName}</p>
+                                                            <p className="text-xs text-gray-500">{alert.branchName}</p>
+                                                            <div className="flex items-center gap-1 mt-1">
+                                                                <span className="text-xs font-semibold text-danger">{alert.currentQty}</span>
+                                                                <span className="text-xs text-gray-400">/ {alert.threshold} threshold</span>
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => dismiss(alert.variantId, alert.branchId)}
+                                                            className="flex-shrink-0 text-gray-300 hover:text-danger transition-colors"
+                                                            title="Dismiss"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {alerts.length > 0 && (
+                                                <div className="px-4 py-2 bg-gray-50 dark:bg-[#121c2c] border-t border-gray-200 dark:border-gray-700 text-center">
+                                                    <Link to="/low-stock" onClick={() => setActiveDiv(null)} className="text-xs text-primary hover:underline font-medium">
+                                                        Go to Stock Summary →
+                                                    </Link>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Start Profile Option */}
                             <div className="dropdown flex-shrink-0" x-data="dropdown">
                                 <button className="group relative" onClick={() => toggleActiveDiv('div2')}>

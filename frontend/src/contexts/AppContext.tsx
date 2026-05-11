@@ -42,7 +42,7 @@ export const AppContext = createContext<AppContextType | undefined>(undefined);
 // Falls back to VITE_API_URL so local dev needs no extra config.
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || "http://localhost:4000";
 
-const socket = io(SOCKET_URL, {
+export const socket = io(SOCKET_URL, {
   path: "/socket.io",
   transports: ["websocket"],
 });

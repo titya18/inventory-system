@@ -42106,3 +42106,11 @@ Please make sure your database server is running at `db:5432`.
     at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
     at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
     at async verifyToken (D:\Citylink-Inventory-claude\backend\src\middlewares\auth.ts:55:22)
+2026-05-11 10:39:20 error: Error upserting product: Serial Number already exists: M-002 Error: Serial Number already exists: M-002
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:974:23)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertProduct (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:792:20)
+2026-05-11 10:39:31 error: Error upserting product: Serial Number already exists: M-003 Error: Serial Number already exists: M-003
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:974:23)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertProduct (D:\Citylink-Inventory-claude\backend\src\controllers\productController.ts:792:20)

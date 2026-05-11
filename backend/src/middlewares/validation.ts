@@ -154,7 +154,6 @@ export const validateQuotationRequest = [
 ]
 
 export const validateInvoiceRequest = [
-    body("customerId").notEmpty().withMessage("Customer must be required"),
     body("orderDate").notEmpty().withMessage("Quotation date must be required"),
     // Conditional validation for branchId based on roleType
     body("branchId")

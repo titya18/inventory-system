@@ -6,6 +6,7 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { getQueryNumber, getQueryString } from "../utils/request";
 import { Decimal } from "@prisma/client/runtime/library";
+import { checkAndEmitStockAlert } from "../utils/stockAlert";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -130,6 +131,7 @@ export const upsertRequest = async (req: Request, res: Response): Promise<void> 
     const { branchId, StatusType, note, requestDetails, requestDate, orderId } = req.body;
 
     try {
+        const reqAlertsToCheck: { variantId: number; branchId: number }[] = [];
         const result = await prisma.$transaction(async (tx) => {
             const loggedInUser = req.user;
             if (!loggedInUser) {
@@ -316,6 +318,8 @@ export const upsertRequest = async (req: Request, res: Response): Promise<void> 
                             },
                         });
 
+                        reqAlertsToCheck.push({ variantId: Number(detail.productVariantId), branchId: Number(branchId) });
+
                         await tx.stockMovements.create({
                             data: {
                                 productVariantId: Number(detail.productVariantId),
@@ -423,6 +427,9 @@ export const upsertRequest = async (req: Request, res: Response): Promise<void> 
             return requestData;
         });
 
+        for (const alert of reqAlertsToCheck) {
+            checkAndEmitStockAlert(prisma, alert.variantId, alert.branchId).catch(() => {});
+        }
         res.status(id ? 200 : 201).json(result);
     } catch (error) {
         logger.error("Error creating/updating stock request:", error);

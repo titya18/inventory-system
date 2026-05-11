@@ -8,6 +8,7 @@ import { getQueryNumber, getQueryString } from "../utils/request";
 import { Decimal } from "@prisma/client/runtime/library";
 import { computeBaseQty } from "../utils/uom";
 import { consumeFifoForTransfer } from "../utils/consumeFifoForTransfer";
+import { checkAndEmitStockAlert } from "../utils/stockAlert";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -130,6 +131,7 @@ export const upsertTransfer = async (req: Request, res: Response): Promise<void>
   const { fromBranchId, toBranchId, StatusType, note, transferDetails, transferDate } = req.body;
 
   try {
+    const transferAlertsToCheck: { variantId: number; branchId: number }[] = [];
     const result = await prisma.$transaction(async (tx) => {
       const loggedInUser = req.user;
       if (!loggedInUser) {
@@ -312,6 +314,8 @@ export const upsertTransfer = async (req: Request, res: Response): Promise<void>
             },
           });
 
+          transferAlertsToCheck.push({ variantId: Number(detail.productVariantId), branchId: Number(fromBranchId) });
+
           // 2b) handle tracked serial items
           const variant = await tx.productVariants.findUnique({
             where: { id: Number(detail.productVariantId) },
@@ -424,6 +428,9 @@ export const upsertTransfer = async (req: Request, res: Response): Promise<void>
       return transfer;
     });
 
+    for (const alert of transferAlertsToCheck) {
+      checkAndEmitStockAlert(prisma, alert.variantId, alert.branchId).catch(() => {});
+    }
     res.status(id ? 200 : 201).json(result);
   } catch (error) {
     logger.error("Error creating/updating transfer:", error);

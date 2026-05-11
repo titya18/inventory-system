@@ -9,6 +9,7 @@ import timezone from "dayjs/plugin/timezone";
 import { getQueryNumber, getQueryString } from "../utils/request";
 import { computeBaseQty } from "../utils/uom";
 import { consumeFifoForSale } from "../utils/consumeFifoForSale";
+import { checkAndEmitStockAlert } from "../utils/stockAlert";
 
 import { createVatSyncLog } from "../services/vatSyncLog.service";
 import { syncVatOrderToTarget } from "../services/syncVatOrderToTarget.service";
@@ -206,6 +207,7 @@ export const upsertInvoice = async (req: Request, res: Response): Promise<void> 
   } = req.body;
 
   try {
+    const alertsToCheck: { variantId: number; branchId: number }[] = [];
     const result = await prisma.$transaction(async (tx) => {
       const loggedInUser = req.user;
       if (!loggedInUser) {
@@ -541,6 +543,8 @@ export const upsertInvoice = async (req: Request, res: Response): Promise<void> 
             },
           });
 
+          alertsToCheck.push({ variantId: item.productVariantId, branchId: invoice.branchId });
+
           // ✅ ADD HERE START
           if (variant?.trackingType !== "NONE") {
             for (const link of selectedAssetRows) {
@@ -573,6 +577,9 @@ export const upsertInvoice = async (req: Request, res: Response): Promise<void> 
       });
     });
 
+    for (const alert of alertsToCheck) {
+      checkAndEmitStockAlert(prisma, alert.variantId, alert.branchId).catch(() => {});
+    }
     res.status(id ? 200 : 201).json(result);
   } catch (error) {
     logger.error("Error creating/updating invoice:", error);
@@ -1042,6 +1049,7 @@ export const approveInvoice = async (req: Request, res: Response): Promise<void>
   const orderId = id ? Number(Array.isArray(id) ? id[0] : id) : 0;
 
   try {
+    const approveAlertsToCheck: { variantId: number; branchId: number }[] = [];
     const result = await prisma.$transaction(async (tx) => {
       const loggedInUser = req.user;
       if (!loggedInUser) {
@@ -1119,6 +1127,8 @@ export const approveInvoice = async (req: Request, res: Response): Promise<void>
             updatedBy: loggedInUser.id,
           },
         });
+
+        approveAlertsToCheck.push({ variantId: item.productVariantId, branchId: invoice.branchId });
       }
 
       return await tx.order.update({
@@ -1136,6 +1146,9 @@ export const approveInvoice = async (req: Request, res: Response): Promise<void>
       });
     });
 
+    for (const alert of approveAlertsToCheck) {
+      checkAndEmitStockAlert(prisma, alert.variantId, alert.branchId).catch(() => {});
+    }
     res.status(200).json(result);
   } catch (error) {
     logger.error("Error approve invoice:", error);

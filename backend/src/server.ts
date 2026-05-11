@@ -4,6 +4,7 @@ import { Server as SocketIOServer } from "socket.io";
 import app from "./app"; // Import the Express app
 import { startVatSyncRetryJob } from "./jobs/vatSyncRetry.job";
 import { startExchangeRateSyncJob } from "./jobs/exchangeRateSync.job";
+import { setIO } from "./lib/socket";
 
 // I used socket io for real time update user role permission that effect sidebar componen or other components
 // For Socket IO
@@ -16,6 +17,7 @@ const io = new SocketIOServer(server, {
     credentials: true,
   },
 });
+setIO(io);
 
 // Socket IO Events
 io.on("connection", (socket) => {

@@ -12,6 +12,7 @@ import {
   addPositiveAdjustmentLayer,
   resolveCostPerBaseUnit,
 } from "../utils/consumeFifoForAdjustment";
+import { checkAndEmitStockAlert } from "../utils/stockAlert";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -131,6 +132,7 @@ export const upsertAdjustment = async (req: Request, res: Response): Promise<voi
   const { branchId, AdjustMentType, StatusType, note, adjustmentDetails, adjustDate } = req.body;
 
   try {
+    const adjAlertsToCheck: { variantId: number; branchId: number }[] = [];
     const result = await prisma.$transaction(async (tx) => {
       const loggedInUser = req.user;
       if (!loggedInUser) {
@@ -422,6 +424,8 @@ export const upsertAdjustment = async (req: Request, res: Response): Promise<voi
               },
             });
 
+            adjAlertsToCheck.push({ variantId: Number(detail.productVariantId), branchId: Number(branchId) });
+
             // Handle tracked items for NEGATIVE adjustment
             const trackedDataNeg = trackedMap.get(Number(detail.productVariantId));
             if (trackedDataNeg?.type === "SELECT" && Array.isArray(trackedDataNeg.selectedIds) && trackedDataNeg.selectedIds.length > 0) {
@@ -455,6 +459,9 @@ export const upsertAdjustment = async (req: Request, res: Response): Promise<voi
       return adjustment;
     });
 
+    for (const alert of adjAlertsToCheck) {
+      checkAndEmitStockAlert(prisma, alert.variantId, alert.branchId).catch(() => {});
+    }
     res.status(id ? 200 : 201).json(result);
   } catch (error) {
     logger.error("Error creating/updating adjustment:", error);
