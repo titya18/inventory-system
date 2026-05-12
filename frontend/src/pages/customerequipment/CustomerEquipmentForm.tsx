@@ -118,6 +118,8 @@ const CustomerEquipmentForm: React.FC = () => {
 
     // Header fields
     const [customerId, setCustomerId] = useState<number | "">("");
+    const [customerSearch, setCustomerSearch] = useState("");
+    const [showCustomerDrop, setShowCustomerDrop] = useState(false);
     const [branchId, setBranchId]     = useState<number | "">(user?.branchId ?? "");
     const [assignType, setAssignType] = useState<AssignType>("INSTALLED");
     const [assignedAt, setAssignedAt] = useState(dayjs().format("YYYY-MM-DD"));
@@ -1141,18 +1143,42 @@ const CustomerEquipmentForm: React.FC = () => {
 
                 <form onSubmit={handleSubmit}>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-                        {/* Customer */}
-                        <div>
+                        {/* Customer — searchable */}
+                        <div className="relative">
                             <label>Customer <span className="text-danger">*</span></label>
-                            <select className="form-select" value={customerId} onChange={(e) => setCustomerId(Number(e.target.value))}>
-                                <option value="">Select customer...</option>
-                                {customers.map((c) => (
-                                    <option key={c.id} value={c.id}>{c.name} — {c.phone}</option>
-                                ))}
-                            </select>
+                            <input
+                                type="text"
+                                className="form-input"
+                                placeholder="Search customer by name or phone..."
+                                value={showCustomerDrop ? customerSearch : (customers.find(c => c.id === customerId) ? `${customers.find(c => c.id === customerId)!.name} — ${customers.find(c => c.id === customerId)!.phone}` : "")}
+                                onFocus={() => { setShowCustomerDrop(true); setCustomerSearch(""); }}
+                                onChange={(e) => setCustomerSearch(e.target.value)}
+                                onBlur={() => setTimeout(() => setShowCustomerDrop(false), 150)}
+                                readOnly={!showCustomerDrop}
+                            />
+                            {showCustomerDrop && (
+                                <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-52 overflow-y-auto">
+                                    {customers.filter(c =>
+                                        !customerSearch || c.name.toLowerCase().includes(customerSearch.toLowerCase()) || (c.phone || "").includes(customerSearch)
+                                    ).length === 0 ? (
+                                        <div className="px-3 py-2 text-sm text-gray-400">No customers found</div>
+                                    ) : customers.filter(c =>
+                                        !customerSearch || c.name.toLowerCase().includes(customerSearch.toLowerCase()) || (c.phone || "").includes(customerSearch)
+                                    ).map(c => (
+                                        <div
+                                            key={c.id}
+                                            className={`px-3 py-2 cursor-pointer hover:bg-blue-50 text-sm flex justify-between ${customerId === c.id ? "bg-blue-50 font-medium" : ""}`}
+                                            onMouseDown={() => { setCustomerId(c.id!); setShowCustomerDrop(false); setCustomerSearch(""); }}
+                                        >
+                                            <span>{c.name}</span>
+                                            <span className="text-gray-400 text-xs">{c.phone}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
-                        {/* Branch (read-only — items are branch-specific) */}
+                        {/* Branch (read-only in edit — items are branch-specific) */}
                         <div>
                             <label>Branch</label>
                             <p className="form-input bg-gray-50 dark:bg-[#1c2e4a] text-gray-500 cursor-not-allowed">{d.branch?.name}</p>
@@ -1717,15 +1743,39 @@ const CustomerEquipmentForm: React.FC = () => {
 
             <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-                    {/* Customer */}
-                    <div>
+                    {/* Customer — searchable */}
+                    <div className="relative">
                         <label>Customer <span className="text-danger">*</span></label>
-                        <select className="form-select" value={customerId} onChange={(e) => setCustomerId(Number(e.target.value))}>
-                            <option value="">Select customer...</option>
-                            {customers.map((c) => (
-                                <option key={c.id} value={c.id}>{c.name} — {c.phone}</option>
-                            ))}
-                        </select>
+                        <input
+                            type="text"
+                            className="form-input"
+                            placeholder="Search customer by name or phone..."
+                            value={showCustomerDrop ? customerSearch : (customers.find(c => c.id === customerId) ? `${customers.find(c => c.id === customerId)!.name} — ${customers.find(c => c.id === customerId)!.phone}` : "")}
+                            onFocus={() => { setShowCustomerDrop(true); setCustomerSearch(""); }}
+                            onChange={(e) => setCustomerSearch(e.target.value)}
+                            onBlur={() => setTimeout(() => setShowCustomerDrop(false), 150)}
+                            readOnly={!showCustomerDrop}
+                        />
+                        {showCustomerDrop && (
+                            <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-52 overflow-y-auto">
+                                {customers.filter(c =>
+                                    !customerSearch || c.name.toLowerCase().includes(customerSearch.toLowerCase()) || (c.phone || "").includes(customerSearch)
+                                ).length === 0 ? (
+                                    <div className="px-3 py-2 text-sm text-gray-400">No customers found</div>
+                                ) : customers.filter(c =>
+                                    !customerSearch || c.name.toLowerCase().includes(customerSearch.toLowerCase()) || (c.phone || "").includes(customerSearch)
+                                ).map(c => (
+                                    <div
+                                        key={c.id}
+                                        className={`px-3 py-2 cursor-pointer hover:bg-blue-50 text-sm flex justify-between ${customerId === c.id ? "bg-blue-50 font-medium" : ""}`}
+                                        onMouseDown={() => { setCustomerId(c.id!); setShowCustomerDrop(false); setCustomerSearch(""); }}
+                                    >
+                                        <span>{c.name}</span>
+                                        <span className="text-gray-400 text-xs">{c.phone}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Branch */}
@@ -1734,7 +1784,6 @@ const CustomerEquipmentForm: React.FC = () => {
                         <select
                             className="form-select"
                             value={branchId}
-                            disabled={user?.roleType === "USER"}
                             onChange={(e) => handleBranchChange(Number(e.target.value))}
                         >
                             <option value="">Select branch...</option>
