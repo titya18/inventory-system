@@ -42509,3 +42509,4 @@ Please make sure your database server is running at `db:5432`.
 2026-05-11 14:30:41 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
 2026-05-11 16:59:53 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
 2026-05-12 10:29:09 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-05-12 11:00:02 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
