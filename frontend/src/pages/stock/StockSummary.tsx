@@ -9,7 +9,6 @@ import ExportDropdown from "@/components/ExportDropdown";
 import { StockSummaryRow, BranchType } from "@/data_types/types";
 import * as apiClient from "@/api/stock";
 import { getAllBranches } from "@/api/branch";
-import { useAppContext } from "@/hooks/useAppContext";
 import dayjs from "dayjs";
 
 const columns = [
@@ -95,7 +94,6 @@ const StockSummary: React.FC = () => {
   const sortField = searchParams.get("sortField") || "productName";
   const sortOrder = searchParams.get("sortOrder") === "desc" ? "desc" : "asc";
 
-  const { user } = useAppContext();
 
   const updateParams = (params: Record<string, any>) => {
     const p = new URLSearchParams(searchParams.toString());
@@ -439,7 +437,7 @@ const StockSummary: React.FC = () => {
     {/* Serial Modal */}
     {serialModal && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="bg-white dark:bg-[#1b2e4b] rounded-lg shadow-xl w-full max-w-3xl mx-4 flex flex-col max-h-[85vh]">
+        <div className="bg-white dark:bg-[#1b2e4b] rounded-lg shadow-xl w-full max-w-3xl mx-4">
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b dark:border-gray-700">
             <div>
@@ -466,8 +464,8 @@ const StockSummary: React.FC = () => {
             ))}
           </div>
 
-          {/* Table */}
-          <div className="overflow-y-auto flex-1 px-5 py-3">
+          {/* Table — explicit max-height so scroll always works */}
+          <div className="overflow-y-auto px-5 py-3" style={{ maxHeight: "calc(85vh - 130px)" }}>
             {serialLoading ? (
               <p className="text-center text-sm text-gray-500 py-6">Loading...</p>
             ) : serialItems.length === 0 ? (
