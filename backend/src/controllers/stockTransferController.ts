@@ -22,9 +22,13 @@ export const getAllStockTransfer = async (req: Request, res: Response): Promise<
         const pageSize = getQueryNumber(req.query.pageSize, 10)!;
         const pageNumber = getQueryNumber(req.query.page, 1)!;
         const searchTerm = getQueryString(req.query.searchTerm, "")!.trim();
-        const rawSortField = getQueryString(req.query.sortField, "ref")!;
+        const rawSortField = getQueryString(req.query.sortField, "id")!;
         const sortField = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(rawSortField) ? rawSortField : "ref";
-        const sortOrder = getQueryString(req.query.sortOrder)?.toLowerCase() === "desc" ? "asc" : "desc";
+        const sortOrder =
+                getQueryString(req.query.sortOrder, "desc")!
+                    .toLowerCase() === "asc"
+                    ? "asc"
+                    : "desc";
         const offset = (pageNumber - 1) * pageSize;
 
         const loggedInUser = req.user;
@@ -114,7 +118,9 @@ export const getAllStockTransfer = async (req: Request, res: Response): Promise<
                     OR TO_CHAR(stf."approvedAt", 'DD / Mon / YYYY HH24:MI:SS') ILIKE $1
                     ${fullNameConditions ? `OR (${fullNameConditions})` : ""}
                 )
-            ORDER BY stf."${sortField}" ${sortOrder}
+            ORDER BY
+              stf."${sortField}" ${sortOrder},
+              stf.id DESC
             LIMIT $${params.length - 1} OFFSET $${params.length}
         `, ...params);
 

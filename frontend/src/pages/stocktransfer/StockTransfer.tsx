@@ -62,9 +62,9 @@ const StockTransfer: React.FC = () => {
     const search = searchParams.get("search") || "";
     const page = parseInt(searchParams.get("page") || "1", 10);
     const pageSize = parseInt(searchParams.get("pageSize") || "10", 10);
-    const sortField = searchParams.get("sortField") || "createdAt";
+    const sortField = searchParams.get("sortField") || "ref";
     const rawSortOrder = searchParams.get("sortOrder");
-    const sortOrder: "desc" | "asc" = rawSortOrder === "desc" ? "desc" : "asc";
+    const sortOrder: "desc" | "asc" = rawSortOrder === "desc" ? "asc" : "desc";
     const [total, setTotal] = useState(0);
     const [selected, setSelected] = useState<number[]>([]);
     const [visibleCols, setVisibleCols] = useState(columns);
