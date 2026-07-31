@@ -193,11 +193,14 @@ export const getAllPurchases = async (req: Request, res: Response): Promise<void
         const pageNumber = getQueryNumber(req.query.page, 1)!;
 
         const searchTerm = getQueryString(req.query.searchTerm, "")!.trim();
-        const rawSortField = getQueryString(req.query.sortField, "ref")!;
+        const rawSortField = getQueryString(req.query.sortField, "id")!;
         const sortField = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(rawSortField) ? rawSortField : "ref";
 
         const sortOrder =
-        getQueryString(req.query.sortOrder)?.toLowerCase() === "asc" ? "desc" : "asc";
+                getQueryString(req.query.sortOrder, "desc")!
+                    .toLowerCase() === "asc"
+                    ? "asc"
+                    : "desc";
 
         const offset = (pageNumber - 1) * pageSize;
 
