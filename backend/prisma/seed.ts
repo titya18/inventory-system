@@ -53,6 +53,7 @@ async function main() {
       { name: "POS" },
       { name: "Cash Session" },
       { name: "Company Settings" },
+      { name: "Package" },
     ],
   });
 
@@ -191,6 +192,7 @@ async function main() {
       { name: "Profit-Report", moduleId: 25 },
       { name: "Top-Selling-Products-Report", moduleId: 25 },
       { name: "Top-Sales-Person-Report", moduleId: 25 },
+      { name: "Package-Sales-Report", moduleId: 25 },
       { name: "Amount-Purchase-View", moduleId: 26 },
       { name: "Amount-Purchase-Edit", moduleId: 26 },
       { name: "Exchange-Rate-View", moduleId: 26 },
@@ -207,6 +209,10 @@ async function main() {
       { name: "Cash-Session-Report", moduleId: 29 },
       { name: "Company-Settings-View", moduleId: 30 },
       { name: "Company-Settings-Edit", moduleId: 30 },
+      { name: "Package-View", moduleId: 31 },
+      { name: "Package-Create", moduleId: 31 },
+      { name: "Package-Edit", moduleId: 31 },
+      { name: "Package-Delete", moduleId: 31 },
     ],
   });
 

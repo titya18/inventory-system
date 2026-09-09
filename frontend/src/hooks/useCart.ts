@@ -30,6 +30,24 @@ export interface POSProduct {
   productType?: string; // "New" | "SecondHand"
 }
 
+// A package component's sale-line data, pre-computed (per ONE package unit)
+// via the backend's /package/:id/explode endpoint at add-to-cart time.
+// Scaled by the cart line's quantity when building invoice items at payment.
+export interface PackageComponentSnapshot {
+  packageId: number;
+  productId: number;
+  productVariantId: number;
+  name: string;
+  sku: string | null;
+  trackingType: string;
+  unitId: number;
+  unitQty: number; // per ONE package
+  baseQty: number; // per ONE package
+  baseUnitName: string | null;
+  price: number;
+  total: number;   // per ONE package
+}
+
 export interface CartItem {
   product: POSProduct;
   quantity: number;
@@ -47,6 +65,15 @@ export interface CartItem {
   orderTax: number;       // tax percentage (e.g. 10 = 10%)
   discountType: "Fixed" | "%";
   discount: number;       // fixed amount or percentage
+
+  // Package (bundle) — set only when this cart line represents a Package.
+  // The line stays a single cart slot (own product.id, e.g. "pkg-12") so it
+  // never collides with a standalone product line of the same underlying
+  // variant; it's exploded into per-component invoice lines at payment time.
+  packageId?: number | null;
+  packageGroupId?: string | null;
+  packageName?: string | null;
+  packageComponents?: PackageComponentSnapshot[];
 }
 
 export interface HeldOrder {

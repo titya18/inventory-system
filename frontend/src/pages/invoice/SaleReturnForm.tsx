@@ -289,6 +289,28 @@ const SaleReturn: React.FC = () => {
 
   const totalReturnedAllTime = n(returnedGrandTotal) + n(returnGrandTotal);
 
+  // Assigns each distinct package a color so rows belonging to the same
+  // package are visually tied together (left border + tinted background) —
+  // rotates through a small palette in case an invoice has multiple packages.
+  const packageGroupColors = useMemo(() => {
+    const palette = [
+      { bg: "rgba(99,102,241,0.05)", border: "#6366f1" },  // indigo
+      { bg: "rgba(16,185,129,0.05)", border: "#10b981" },  // emerald
+      { bg: "rgba(245,158,11,0.05)", border: "#f59e0b" },  // amber
+      { bg: "rgba(236,72,153,0.05)", border: "#ec4899" },  // pink
+    ];
+    const map: Record<string, { bg: string; border: string }> = {};
+    let i = 0;
+    for (const d of invoiceDetails) {
+      const gid = (d as any).packageGroupId as string | null | undefined;
+      if (gid && !map[gid]) {
+        map[gid] = palette[i % palette.length];
+        i++;
+      }
+    }
+    return map;
+  }, [invoiceDetails]);
+
   // Returns how many display-units were already returned via CEQ for an invoice item
   const getCeqReturnedUnitQty = (item: InvoiceDetailType): number => {
     const ceqEntry = ceqReturnedMap[item.id];
@@ -347,6 +369,28 @@ const SaleReturn: React.FC = () => {
       }
 
       return clone;
+    });
+  };
+
+  // One-click convenience for the common case of returning an entire package
+  // at once. Each component still returns independently under the hood (a
+  // customer can always hand-adjust any line afterward to do a partial
+  // return instead) — this just fills every component in the group to its
+  // max returnable quantity in one action.
+  const returnWholePackageGroup = (groupId: string) => {
+    const groupItems = invoiceDetails.filter((d) => d.packageGroupId === groupId);
+
+    setReturnLines((prev) => {
+      const next = { ...prev };
+      for (const item of groupItems) {
+        const alreadyReturned = returnedSoFar[item.id] || 0;
+        const ceqReturned = getCeqReturnedUnitQty(item);
+        const soldQty = getLineQty(item);
+        const maxReturnable = Math.max(0, soldQty - alreadyReturned - ceqReturned);
+        if (maxReturnable <= 0) continue;
+        next[item.id] = buildReturnLineFromInvoiceItem(item, maxReturnable);
+      }
+      return next;
     });
   };
 
@@ -649,8 +693,18 @@ const SaleReturn: React.FC = () => {
                             "Base"
                           : null;
 
+                      const packageGroupId = (detail as any).packageGroupId as string | null | undefined;
+                      const packageName = (detail as any).packageName ?? (detail as any).package?.name ?? "package";
+                      const isFirstOfPackageGroup =
+                        !!packageGroupId &&
+                        invoiceDetails.findIndex((d) => (d as any).packageGroupId === packageGroupId) === index;
+                      const groupColor = packageGroupId ? packageGroupColors[packageGroupId] : null;
+
                       return (
-                        <tr key={index}>
+                        <tr
+                          key={index}
+                          style={groupColor ? { backgroundColor: groupColor.bg, borderLeft: `3px solid ${groupColor.border}` } : undefined}
+                        >
                           <td>{index + 1}</td>
 
                           <td>
@@ -668,6 +722,22 @@ const SaleReturn: React.FC = () => {
                                   : detail.services?.serviceCode}
                               </span>
                             </p>
+                            {packageGroupId && (
+                              <p className="text-xs text-center mt-1">
+                                <span className="badge bg-primary/10 text-primary">📦 Package component</span>
+                              </p>
+                            )}
+                            {isFirstOfPackageGroup && (
+                              <p className="text-center mt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => returnWholePackageGroup(packageGroupId!)}
+                                  className="text-xs text-primary underline"
+                                >
+                                  Return whole package: {packageName}
+                                </button>
+                              </p>
+                            )}
                             {detail.ItemType === "PRODUCT" && (
                               <p className="text-xs text-gray-500 text-center mt-1">
                                 Sold Unit: {soldUnitName}

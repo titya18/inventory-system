@@ -11,6 +11,7 @@ import { RefreshCw, XCircle, ShoppingCart, Banknote, CreditCard, Building2, Wall
 import { HeldOrdersModal } from "./HeldOrdersModal";
 import { OpenCashModal, getOpenCashSession } from "./OpenCashModal";
 import { CustomerPicker } from "./CustomerPicker";
+import { explodePackage } from "@/api/package";
 
 interface OrderSidebarProps {
   branchId: number;
@@ -27,17 +28,49 @@ export const OrderSidebar = ({ branchId }: OrderSidebarProps) => {
   const navigate = useNavigate();
   const { items, subtotal, grandTotal, clearCart, holdCurrentOrder, heldOrders, saleType, setSaleType, addItemWithConfig } = useCart();
 
-  const handleSaleTypeToggle = (type: "RETAIL" | "WHOLESALE") => {
+  const handleSaleTypeToggle = async (type: "RETAIL" | "WHOLESALE") => {
     if (type === saleType) return;
     setSaleType(type);
     // Reprice all items in the cart to the new sale type price
-    items.forEach((item) => {
+    for (const item of items) {
+      if (item.packageId) {
+        // Package lines need re-exploding: the allocated per-component prices
+        // are computed from each component's retail vs wholesale price, so a
+        // simple headline-price swap would leave stale component pricing that
+        // no longer sums to the new package total.
+        try {
+          const result = await explodePackage(item.packageId, 1, branchId, type);
+          addItemWithConfig({
+            ...item,
+            unitPrice: result.packagePrice,
+            packageName: result.packageName,
+            packageComponents: result.components.map((c) => ({
+              packageId: c.packageId,
+              productId: c.productId,
+              productVariantId: c.productVariantId,
+              name: c.name,
+              sku: c.sku,
+              trackingType: c.trackingType,
+              unitId: c.unitId,
+              unitQty: c.unitQty,
+              baseQty: c.baseQty,
+              baseUnitName: c.baseUnitName,
+              price: c.price,
+              total: c.total,
+            })),
+          });
+        } catch {
+          // Keep existing pricing if the re-explode fails (e.g. package deleted)
+        }
+        continue;
+      }
+
       const unit = item.product.unitOptions.find(u => u.unitId === item.unitId) ?? item.product.unitOptions[0];
       const newPrice = type === "WHOLESALE"
         ? (unit?.wholeSalePrice ?? item.product.wholeSalePrice)
         : (unit?.price ?? item.product.price);
       addItemWithConfig({ ...item, unitPrice: newPrice });
-    });
+    }
   };
   const [showHeldOrders, setShowHeldOrders] = useState(false);
   const [showOpenCash, setShowOpenCash] = useState(false);

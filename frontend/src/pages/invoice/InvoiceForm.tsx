@@ -3,11 +3,13 @@ import CustomerSearchInput from "@/components/CustomerSearchInput";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faSave, faCirclePlus } from "@fortawesome/free-solid-svg-icons";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
-import { BranchType, CustomerType, ProductVariantType, ProductType, ServiceType, InvoiceType, InvoiceDetailType } from "@/data_types/types";
+import { BranchType, CustomerType, ProductVariantType, ProductType, ServiceType, InvoiceType, InvoiceDetailType, PackageType } from "@/data_types/types";
 import { getAllBranches } from "@/api/branch";
 import { getAllCustomers } from "@/api/customer";
 import { searchProduct } from "@/api/searchProduct";
 import { searchService } from "@/api/searchService";
+import { getAllPackages, explodePackage } from "@/api/package";
+import { formatPackageShortageMessage } from "@/utils/packageStockMessage";
 import { getNextInvoiceRef, getAvailableTrackedItems } from "@/api/invoice";
 import { upsertInvoice, getInvoiceByid } from "@/api/invoice";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
@@ -47,6 +49,11 @@ const InvoiceForm: React.FC = () => {
     const [searchTermService, setSearchTermService] = useState("");
     const [productResults, setProductResults] = useState<ProductVariantType[]>([]);
     const [serviceResults, setServiceResults] = useState<ServiceType[]>([]);
+    const [packageSearchTerm, setPackageSearchTerm] = useState("");
+    const [packageResults, setPackageResults] = useState<PackageType[]>([]);
+    const [showPackageSuggestions, setShowPackageSuggestions] = useState(false);
+    const [isAddingPackage, setIsAddingPackage] = useState(false);
+    const [expandedPackageGroups, setExpandedPackageGroups] = useState<Set<string>>(new Set());
     const [invoiceDetails, setInvoiceDetails] = useState<InvoiceDetailType[]>([]);
     const [shipping, setShipping] = useState<number>(0);
     const [discount, setDiscount] = useState<number>(0);
@@ -271,6 +278,13 @@ const InvoiceForm: React.FC = () => {
 
                         serialSelectionMode: detail.serialSelectionMode ?? "AUTO",
                         branchId: invoiceData.branchId ?? null,
+
+                        // Package (bundle) traceability — backend returns the
+                        // related Package as a nested object; flatten its name
+                        // for the display-grouping logic below.
+                        // Prefer the frozen snapshot; fall back to the live
+                        // relation only for rows saved before this existed.
+                        packageName: detail.packageName ?? detail.package?.name ?? null,
                     };
                     });
 
@@ -793,6 +807,227 @@ const InvoiceForm: React.FC = () => {
         setShowSuggestionsService(false); // Hide suggestions
     };
 
+    const handlePackageSearch = async (term: string) => {
+        setPackageSearchTerm(term);
+        if (term.trim() === "") {
+            setPackageResults([]);
+            setShowPackageSuggestions(false);
+            return;
+        }
+        try {
+            const results = await getAllPackages(term);
+            setPackageResults(results);
+            setShowPackageSuggestions(true);
+        } catch (error) {
+            console.error("Error searching packages:", error);
+        }
+    };
+
+    // Explodes a Package into its component sale lines (allocated pricing from
+    // the backend). Each component still flows through the exact same
+    // FIFO/serial/return machinery as any manually added product line — this
+    // just builds the row data; callers decide whether to append (add) or
+    // replace an existing group (quantity change). Returns null (after
+    // toasting the reason) on failure/insufficient stock.
+    const buildPackageLines = async (
+        packageId: number,
+        qty: number,
+        branchId: number
+    ): Promise<{ lines: InvoiceDetailType[]; packageName: string } | null> => {
+        const saleType = (OrderSaleType as "RETAIL" | "WHOLESALE") || "RETAIL";
+        const result = await explodePackage(packageId, qty, branchId, saleType);
+
+        if (result.maxSellable !== null && result.maxSellable < qty) {
+            toast.error(formatPackageShortageMessage(result.packageName, result.shortages), { position: "top-right", autoClose: 6000 });
+            return null;
+        }
+
+        const newLines: InvoiceDetailType[] = [];
+        for (const comp of result.components) {
+            const matches = (await searchProduct(comp.sku || comp.name, branchId)) as ProductVariantType[];
+            const variant = matches.find((v) => Number(v.id) === Number(comp.productVariantId));
+            if (!variant) {
+                toast.error(`Could not load product data for "${comp.name}" — package not added`, { position: "top-right", autoClose: 3000 });
+                return null;
+            }
+
+            const selectedUnit = getSelectedUnitOption(variant, comp.unitId);
+            const draft: InvoiceDetailType = {
+                id: Date.now() + Math.floor(Math.random() * 1000000) + newLines.length,
+                orderItemId: null,
+                orderId: 0,
+                productId: variant.products?.id || comp.productId,
+                productVariantId: variant.id,
+                products: variant.products || null,
+                productvariants: variant,
+                services: null,
+                serviceId: 0,
+                ItemType: "PRODUCT",
+
+                unitId: comp.unitId,
+                unitQty: comp.unitQty,
+                baseQty: comp.baseQty,
+                unitName: selectedUnit?.unitName ?? null,
+                unitOptions: getVariantUnitOptions(variant),
+
+                quantity: comp.unitQty,
+
+                price: comp.price,
+                costPerBaseUnit: comp.baseQty > 0 ? (comp.price * comp.unitQty) / comp.baseQty : 0,
+
+                taxNet: 0,
+                taxMethod: "Include",
+                discount: 0,
+                discountMethod: "Fixed",
+
+                total: 0,
+                stocks: Number(
+                    Array.isArray(variant.stocks)
+                        ? (variant.stocks[0]?.quantity ?? 0)
+                        : ((variant as any).stocks?.quantity ?? 0)
+                ) || 0,
+
+                trackingType: (variant as any).trackingType ?? "NONE",
+                // Tracked package components must have the exact unit chosen
+                // by hand — never silently auto-assigned — so they default to
+                // MANUAL with nothing pre-selected. The row shows a warning
+                // badge and Save is blocked until this is resolved.
+                serialSelectionMode: ((variant as any).trackingType ?? "NONE") !== "NONE" ? "MANUAL" : "AUTO",
+                selectedTrackedItemIds: [],
+                selectedTrackedItems: [],
+
+                packageId: comp.packageId,
+                packageGroupId: comp.packageGroupId,
+                packageName: result.packageName,
+                packageQty: qty,
+            };
+            draft.total = calculateTotal(draft);
+            newLines.push(draft);
+        }
+
+        return { lines: newLines, packageName: result.packageName };
+    };
+
+    // Appends a package to the cart as one summary row (see grouping in the
+    // table render below) — the underlying component rows still exist in
+    // invoiceDetails for correct stock cutting, they're just collapsed in
+    // the UI and their price/qty can't be edited independently.
+    const handleAddPackage = async (pkg: PackageType) => {
+        const branchId = watch("branchId");
+        if (!branchId) {
+            toast.error("Select a branch first", { position: "top-right", autoClose: 2000 });
+            return;
+        }
+        if (!pkg.id) return;
+
+        setIsAddingPackage(true);
+        try {
+            const built = await buildPackageLines(pkg.id, 1, branchId);
+            if (!built) return;
+
+            const updatedDetails = [...invoiceDetails, ...built.lines];
+            setInvoiceDetails(updatedDetails);
+            setGrandTotal(sumTotal(updatedDetails));
+            toast.success(`Added package "${built.packageName}"`, { position: "top-right", autoClose: 2000 });
+        } catch (error: any) {
+            toast.error(error.message || "Error adding package", { position: "top-right", autoClose: 3000 });
+        } finally {
+            setIsAddingPackage(false);
+            setPackageSearchTerm("");
+            setShowPackageSuggestions(false);
+        }
+    };
+
+    // Changes how many of a package are being sold — re-explodes at the new
+    // quantity (re-validating stock) and replaces the whole group in place.
+    // Serial selections are reset since the required count per component may
+    // have changed.
+    const handleChangePackageQty = async (groupId: string, packageId: number, newQty: number) => {
+        if (newQty < 1) return;
+        const branchId = watch("branchId");
+        if (!branchId) return;
+
+        try {
+            const built = await buildPackageLines(packageId, newQty, branchId);
+            if (!built) return;
+
+            const firstIndex = invoiceDetails.findIndex((d) => d.packageGroupId === groupId);
+            if (firstIndex === -1) return;
+
+            const rest = invoiceDetails.filter((d) => d.packageGroupId !== groupId);
+            const updatedDetails = [
+                ...rest.slice(0, firstIndex),
+                ...built.lines,
+                ...rest.slice(firstIndex),
+            ];
+            setInvoiceDetails(updatedDetails);
+            setGrandTotal(sumTotal(updatedDetails));
+        } catch (error: any) {
+            toast.error(error.message || "Error updating package quantity", { position: "top-right", autoClose: 3000 });
+        }
+    };
+
+    const handleRemovePackageGroup = (groupId: string) => {
+        const updatedDetails = invoiceDetails.filter((d) => d.packageGroupId !== groupId);
+        setInvoiceDetails(updatedDetails);
+        setGrandTotal(sumTotal(updatedDetails));
+    };
+
+    const togglePackageGroupExpand = (groupId: string) => {
+        setExpandedPackageGroups((prev) => {
+            const next = new Set(prev);
+            if (next.has(groupId)) next.delete(groupId);
+            else next.add(groupId);
+            return next;
+        });
+    };
+
+    const detailNeedsSerial = (detail: InvoiceDetailType) =>
+        detail.ItemType === "PRODUCT" &&
+        !!detail.trackingType && detail.trackingType !== "NONE" &&
+        detail.serialSelectionMode === "MANUAL" &&
+        (detail.selectedTrackedItemIds?.length ?? 0) < Number(detail.unitQty ?? detail.quantity ?? 0);
+
+    // Groups invoiceDetails for display: package-sourced rows collapse into
+    // one summary entry (price/qty for the whole package, not per-component),
+    // everything else renders as a normal single row. invoiceDetails itself
+    // stays flat — this is display-only, the underlying rows are unchanged.
+    type DisplayRow =
+        | { type: "single"; detail: InvoiceDetailType; index: number }
+        | {
+              type: "packageGroup";
+              groupId: string;
+              packageId: number;
+              packageName: string;
+              packageQty: number;
+              components: { detail: InvoiceDetailType; index: number }[];
+          };
+
+    const buildDisplayRows = (): DisplayRow[] => {
+        const rows: DisplayRow[] = [];
+        const seenGroups = new Set<string>();
+        invoiceDetails.forEach((detail, index) => {
+            if (detail.packageGroupId) {
+                if (seenGroups.has(detail.packageGroupId)) return;
+                seenGroups.add(detail.packageGroupId);
+                const components = invoiceDetails
+                    .map((d, i) => ({ detail: d, index: i }))
+                    .filter((x) => x.detail.packageGroupId === detail.packageGroupId);
+                rows.push({
+                    type: "packageGroup",
+                    groupId: detail.packageGroupId,
+                    packageId: Number(detail.packageId),
+                    packageName: detail.packageName ?? "Package",
+                    packageQty: Number(detail.packageQty ?? 1),
+                    components,
+                });
+            } else {
+                rows.push({ type: "single", detail, index });
+            }
+        });
+        return rows;
+    };
+
     const handleOnSubmit = async (InvoiceDetailData: InvoiceDetailType) => {
         try {
             const isProduct = InvoiceDetailData.ItemType === "PRODUCT";
@@ -848,6 +1083,9 @@ const InvoiceForm: React.FC = () => {
                 selectedTrackedItemIds: InvoiceDetailData.selectedTrackedItemIds ?? [],
                 selectedTrackedItems: InvoiceDetailData.selectedTrackedItems ?? [],
                 branchId: InvoiceDetailData.branchId ?? watch("branchId"),
+
+                packageId: InvoiceDetailData.packageId ?? null,
+                packageGroupId: InvoiceDetailData.packageGroupId ?? null,
             };
 
             const existingIndex = findMatchingInvoiceLineIndex(invoiceDetails, newDetail);
@@ -1058,6 +1296,24 @@ const InvoiceForm: React.FC = () => {
     const onSubmit: SubmitHandler<InvoiceType> = async (formData) => {
         setIsLoading(true);
         try {
+            // Tracked lines (most commonly package components, which default to
+            // MANUAL with nothing pre-selected) must have their exact serial(s)
+            // chosen before the invoice can be saved at all — no silent AUTO
+            // fallback for these.
+            const unresolvedTracked = invoiceDetails.find((detail) =>
+                detail.ItemType === "PRODUCT" &&
+                detail.trackingType && detail.trackingType !== "NONE" &&
+                detail.serialSelectionMode === "MANUAL" &&
+                (detail.selectedTrackedItemIds?.length ?? 0) < Number(detail.unitQty ?? detail.quantity ?? 0)
+            );
+            if (unresolvedTracked) {
+                const needed = Number(unresolvedTracked.unitQty ?? unresolvedTracked.quantity ?? 0);
+                const have = unresolvedTracked.selectedTrackedItemIds?.length ?? 0;
+                toast.error(`"${unresolvedTracked.products?.name ?? "Product"}": select ${needed} serial number(s) — currently ${have} selected.`, { autoClose: 6000 });
+                setIsLoading(false);
+                return;
+            }
+
             // Stale serial check before saving (PENDING invoices only)
             if (formData.status === "PENDING") {
                 const branchIdVal = Number(formData.branchId ?? user?.branchId ?? 0);
@@ -1180,6 +1436,12 @@ const InvoiceForm: React.FC = () => {
             selectedTrackedItemIds: newDetail.selectedTrackedItemIds ?? [],
             selectedTrackedItems: newDetail.selectedTrackedItems ?? [],
             branchId: newDetail.branchId ?? (user?.roleType === "USER" ? user.branchId : watch("branchId")),
+
+            // Package (bundle) traceability — must survive into the edit modal
+            // so it can cap serial selection at the package's required qty,
+            // and back out again on save so the tag isn't lost after an edit.
+            packageId: newDetail.packageId ?? null,
+            packageGroupId: newDetail.packageGroupId ?? null,
         });
         setIsModalOpen(true);
     }
@@ -1438,6 +1700,58 @@ const InvoiceForm: React.FC = () => {
                                         )}
                                     </div>
                                 </div>
+
+                                <div className="mb-5">
+                                    <label>Package <span className="text-xs text-gray-500">(bundle — adds each component product at the allocated price)</span></label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder="Search Package by name, SKU, or barcode"
+                                            className="peer form-input bg-gray-100 placeholder:tracking-widest ltr:pl-9 ltr:pr-9 rtl:pl-9 rtl:pr-9 sm:bg-transparent ltr:sm:pr-4 rtl:sm:pl-4"
+                                            value={packageSearchTerm}
+                                            onChange={(e) => handlePackageSearch(e.target.value)}
+                                            disabled={isAddingPackage}
+                                        />
+                                        <button type="button" className="absolute inset-0 h-9 w-9 appearance-none peer-focus:text-primary ltr:right-auto rtl:left-auto">
+                                            <svg className="mx-auto" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="11.5" cy="11.5" r="9.5" stroke="currentColor" strokeWidth="1.5" opacity="0.5"></circle>
+                                                <path d="M18.5 18.5L22 22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    {showPackageSuggestions && packageResults.length > 0 && (
+                                        <ul
+                                            style={{
+                                                listStyle: "none",
+                                                border: "1px solid #ccc",
+                                                padding: 0,
+                                                margin: 0,
+                                                position: "absolute",
+                                                backgroundColor: "white",
+                                                zIndex: 10,
+                                                maxHeight: "200px",
+                                                overflowY: "auto",
+                                                width: "100%",
+                                                maxWidth: 480,
+                                            }}
+                                        >
+                                            {packageResults.map((pkg) => (
+                                                <li
+                                                    key={pkg.id}
+                                                    style={{ padding: "8px", cursor: "pointer", borderBottom: "1px solid #eee", display: "flex", alignItems: "center", gap: "8px" }}
+                                                    onClick={() => handleAddPackage(pkg)}
+                                                >
+                                                    {pkg.image && pkg.image.length > 0 ? (
+                                                        <img src={`${import.meta.env.VITE_API_URL}/${pkg.image[0]}`} alt="" style={{ width: 28, height: 28, objectFit: "cover", borderRadius: 4, flexShrink: 0 }} />
+                                                    ) : (
+                                                        <span>📦</span>
+                                                    )}
+                                                    <span>{pkg.name} {pkg.sku ? `- ${pkg.sku}` : ""} (${Number(pkg.packageRetailPrice).toFixed(2)}, {(pkg.items || []).length} item(s))</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
                             </div>}
                             <div className="dataTable-container">
                                 <table id="myTable1" className="whitespace-nowrap dataTable-table">
@@ -1458,15 +1772,136 @@ const InvoiceForm: React.FC = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {invoiceDetails.map((detail, index) => (
+                                        {buildDisplayRows().map((row, rIdx) => {
+                                            if (row.type === "packageGroup") {
+                                                const { groupId, packageId, packageName, packageQty, components } = row;
+                                                const groupTotal = components.reduce((sum, c) => sum + Number(c.detail.total || 0), 0);
+                                                const isExpanded = expandedPackageGroups.has(groupId);
+                                                const anyNeedsSerial = components.some((c) => detailNeedsSerial(c.detail));
+
+                                                return (
+                                                    <React.Fragment key={groupId}>
+                                                        <tr style={{ backgroundColor: "rgba(99,102,241,0.06)" }}>
+                                                            <td>{rIdx + 1}</td>
+                                                            <td>
+                                                                <p className="font-semibold">📦 {packageName}</p>
+                                                                <p className="text-xs text-gray-500">{components.length} component(s) — price fixed by package</p>
+                                                                {anyNeedsSerial && (
+                                                                    <p className="text-xs">
+                                                                        <span className="badge bg-danger/10 text-danger">⚠ Serial selection needed</span>
+                                                                    </p>
+                                                                )}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => togglePackageGroupExpand(groupId)}
+                                                                    className="text-xs text-primary underline mt-1"
+                                                                >
+                                                                    {isExpanded ? "Hide items" : "Show items"}
+                                                                </button>
+                                                            </td>
+                                                            <td>—</td>
+                                                            <td>
+                                                                <div className="inline-flex items-center" style={{ minWidth: 120 }}>
+                                                                    {!isApproved && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleChangePackageQty(groupId, packageId, packageQty - 1)}
+                                                                            disabled={packageQty <= 1}
+                                                                            className="flex items-center justify-center shrink-0 h-9 w-9 border border-r-0 border-danger bg-danger font-semibold text-white ltr:rounded-l-md rtl:rounded-r-md disabled:opacity-40"
+                                                                        >
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                                            </svg>
+                                                                        </button>
+                                                                    )}
+                                                                    <input type="text" value={packageQty} className={`form-input text-center w-14 min-w-0 ${isApproved ? "rounded-md bg-gray-100" : "rounded-none"}`} readOnly />
+                                                                    {!isApproved && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleChangePackageQty(groupId, packageId, packageQty + 1)}
+                                                                            className="flex items-center justify-center shrink-0 h-9 w-9 border border-l-0 border-warning bg-warning font-semibold text-white ltr:rounded-r-md rtl:rounded-l-md"
+                                                                        >
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                                            </svg>
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                            {statusValue == "PENDING" && <td>—</td>}
+                                                            <td>—</td>
+                                                            <td>—</td>
+                                                            <td>$ {groupTotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td>
+                                                            {!isApproved && (
+                                                                <td>
+                                                                    <button type="button" onClick={() => handleRemovePackageGroup(groupId)} className="hover:text-danger" title="Remove package">
+                                                                        <Trash2 color="red" />
+                                                                    </button>
+                                                                </td>
+                                                            )}
+                                                        </tr>
+                                                        {isExpanded && components.map(({ detail }) => {
+                                                            const needsSerial = detailNeedsSerial(detail);
+                                                            const isTracked = detail.trackingType && detail.trackingType !== "NONE";
+                                                            return (
+                                                                <tr key={detail.id} className="text-sm" style={{ backgroundColor: "rgba(99,102,241,0.02)" }}>
+                                                                    <td></td>
+                                                                    <td className="pl-6">
+                                                                        <p className="text-gray-600">
+                                                                            {detail.products?.name} ({detail.productvariants?.productType})
+                                                                        </p>
+                                                                        <p className="text-xs text-gray-400">
+                                                                            {Number(detail.unitQty ?? 0)} {detail.unitName || ""} · fixed by package recipe
+                                                                        </p>
+                                                                        {needsSerial && (
+                                                                            <p className="text-xs">
+                                                                                <span className="badge bg-danger/10 text-danger">
+                                                                                    ⚠ Select serial(s) — {detail.selectedTrackedItemIds?.length ?? 0}/{Number(detail.unitQty ?? detail.quantity ?? 0)}
+                                                                                </span>
+                                                                            </p>
+                                                                        )}
+                                                                        {isTracked && (
+                                                                            <button type="button" onClick={() => updateData(detail)} className="text-xs text-primary underline mt-1">
+                                                                                🔑 Select Serial
+                                                                            </button>
+                                                                        )}
+                                                                    </td>
+                                                                    <td>—</td>
+                                                                    <td>{Number(detail.unitQty ?? 0)}</td>
+                                                                    {statusValue == "PENDING" && <td>{detail.stocks}</td>}
+                                                                    <td>—</td>
+                                                                    <td>—</td>
+                                                                    <td>$ {Number(detail.total).toFixed(2)}</td>
+                                                                    {!isApproved && <td></td>}
+                                                                </tr>
+                                                            );
+                                                        })}
+                                                    </React.Fragment>
+                                                );
+                                            }
+
+                                            const { detail, index } = row;
+                                            return (
                                             <tr key={index}>
-                                                <td>{ index + 1 }</td>
+                                                <td>{ rIdx + 1 }</td>
                                                 <td>
                                                     <p>
                                                         {detail.ItemType === "PRODUCT"
                                                             ? `${detail.products?.name} (${detail.productvariants?.productType})`
                                                             : `${detail.services?.name}`}
                                                     </p>
+
+                                                    {detail.ItemType === "PRODUCT" &&
+                                                        detail.trackingType && detail.trackingType !== "NONE" &&
+                                                        detail.serialSelectionMode === "MANUAL" &&
+                                                        (detail.selectedTrackedItemIds?.length ?? 0) < Number(detail.unitQty ?? detail.quantity ?? 0) && (
+                                                        <p className="text-xs">
+                                                            <span className="badge bg-danger/10 text-danger">
+                                                                ⚠ Select serial(s) — {detail.selectedTrackedItemIds?.length ?? 0}/{Number(detail.unitQty ?? detail.quantity ?? 0)}
+                                                            </span>
+                                                        </p>
+                                                    )}
 
                                                     {detail.ItemType === "PRODUCT" && (
                                                         <>
@@ -1495,7 +1930,7 @@ const InvoiceForm: React.FC = () => {
                                                 </td>
                                                 <td>$&nbsp;
                                                     {
-                                                        detail.discountMethod === "Fixed" 
+                                                        detail.discountMethod === "Fixed"
                                                             ? Number(detail.price - detail.discount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
                                                             : Number(detail.price * ((100 - detail.discount) / 100)).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
                                                     }
@@ -1521,13 +1956,13 @@ const InvoiceForm: React.FC = () => {
                                                         )}
                                                     </div>
                                                 </td>
-                                                {statusValue == "PENDING" && 
+                                                {statusValue == "PENDING" &&
                                                     <td>{ detail.stocks }</td>
                                                 }
                                                 <td>$ {
-                                                        detail.discount <= 0 
+                                                        detail.discount <= 0
                                                             ? 0
-                                                            : detail.discountMethod === "Fixed" 
+                                                            : detail.discountMethod === "Fixed"
                                                                 ? Number(detail.discount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
                                                                 : Number(detail.price - (detail.price * ((100 - detail.discount) / 100))).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
                                                       }
@@ -1575,7 +2010,8 @@ const InvoiceForm: React.FC = () => {
                                                 </td>
                                                 )}
                                             </tr>
-                                        ))}
+                                            );
+                                        })}
                                     </tbody>
                                     <tfoot className="mt-5">
                                         <tr>
@@ -1678,11 +2114,16 @@ const InvoiceForm: React.FC = () => {
                 </div>
             </div>
 
-            <Modal 
+            <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSubmit={handleOnSubmit}
                 clickData={clickData}
+                excludeTrackedItemIds={
+                    invoiceDetails
+                        .filter((d) => d.id !== clickData?.id && d.productVariantId === clickData?.productVariantId)
+                        .flatMap((d) => d.selectedTrackedItemIds ?? [])
+                }
             />
 
             <CustomerModal 

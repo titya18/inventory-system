@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { useCart } from "@/hooks/useCart";
 import { getNextInvoiceRef, upsertInvoice, ApprovedInvoice, insertInvoicePayment } from "@/api/invoice";
-import { InvoiceType, InvoicePaymentType } from "@/data_types/types";
+import { InvoiceType, InvoicePaymentType, InvoiceDetailType } from "@/data_types/types";
 import { X, Loader2, ShoppingBag, XCircle, CheckCircle2, Delete } from "lucide-react";
 
 interface PaymentModalProps {
@@ -80,7 +80,38 @@ export const PaymentModal = ({
     setLoading(true);
     try {
       const ref = await getNextInvoiceRef(branchId);
-      const invoiceItems = items.map((item) => {
+      const invoiceItems: InvoiceDetailType[] = items.flatMap((item) => {
+        // Package lines explode into one invoice line per component, scaled
+        // by the cart quantity — each then flows through the exact same
+        // FIFO/serial machinery as any manually added product line.
+        if (item.packageId && item.packageComponents && item.packageComponents.length > 0) {
+          return item.packageComponents.map((comp): InvoiceDetailType => ({
+            id: 0, orderId: 0,
+            productId: comp.productId,
+            productVariantId: comp.productVariantId,
+            ItemType: "PRODUCT",
+            quantity: comp.unitQty * item.quantity,
+            unitQty: comp.unitQty * item.quantity,
+            baseQty: comp.baseQty * item.quantity,
+            unitId: comp.unitId,
+            price: comp.price,
+            taxNet: 0,
+            taxMethod: "Include",
+            discount: 0,
+            discountMethod: "Fixed",
+            total: comp.total * item.quantity,
+            costPerBaseUnit: 0,
+            stocks: 0,
+            serialSelectionMode: "AUTO",
+            selectedTrackedItemIds: [],
+            selectedTrackedItems: [],
+            trackingType: comp.trackingType as "NONE" | "ASSET_ONLY" | "MAC_ONLY" | "ASSET_AND_MAC" | undefined,
+            packageId: comp.packageId,
+            packageGroupId: item.packageGroupId,
+            packageName: item.packageName,
+          }));
+        }
+
         const unitQty = item.quantity;
         const baseQty = unitQty * (item.multiplier ?? 1);
         const discountType = item.discountType ?? "Fixed";
@@ -95,7 +126,7 @@ export const PaymentModal = ({
           ? afterDiscount * (1 + orderTaxRate / 100)
           : afterDiscount;
 
-        return {
+        return [{
           id: 0, orderId: 0,
           productId: item.product.productId,
           productVariantId: item.product.variantId,
@@ -114,7 +145,7 @@ export const PaymentModal = ({
           selectedTrackedItemIds: item.selectedTrackedItemIds ?? [],
           selectedTrackedItems: item.selectedTrackedItems ?? [],
           trackingType: item.product.trackingType as "NONE" | "ASSET_ONLY" | "MAC_ONLY" | "ASSET_AND_MAC" | undefined,
-        };
+        }];
       });
 
       const invoicePayload: InvoiceType = {

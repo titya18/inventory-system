@@ -13,6 +13,12 @@ interface TrackedItemsPickerModalProps {
     selectedIds: number[];
     orderId?: number | null; // when set: show invoice serials + IN_STOCK serials
     manualOnly?: boolean;   // hide Auto option (e.g. purchase return)
+    // Serial IDs already selected on OTHER lines of the same variant within
+    // this same sale (e.g. a package component line + a standalone line of
+    // the same tracked product). Purely a client-side concept — the backend
+    // has no notion of "other lines in this yet-unsaved cart" — so this is
+    // filtered here rather than passed to getAvailableTrackedItems.
+    excludeIds?: number[];
     onSave: (mode: "AUTO" | "MANUAL", ids: number[], items: ProductTrackedItemType[]) => void;
 }
 
@@ -26,6 +32,7 @@ const TrackedItemsPickerModal: React.FC<TrackedItemsPickerModalProps> = ({
     selectedIds: initialSelectedIds,
     orderId,
     manualOnly = false,
+    excludeIds = [],
     onSave,
 }) => {
     const [mode, setMode] = useState<"AUTO" | "MANUAL">(initialMode);
@@ -164,7 +171,8 @@ const TrackedItemsPickerModal: React.FC<TrackedItemsPickerModalProps> = ({
                                     {availableItems.map((item) => {
                                         const checked = selectedIds.includes(Number(item.id));
                                         const isInvoiceSerial = orderId && item.status === "SOLD";
-                                        const unavailable = !orderId && item.status !== "IN_STOCK";
+                                        const usedOnOtherLine = !checked && excludeIds.includes(Number(item.id));
+                                        const unavailable = (!orderId && item.status !== "IN_STOCK") || usedOnOtherLine;
                                         return (
                                             <label
                                                 key={item.id}
@@ -193,10 +201,13 @@ const TrackedItemsPickerModal: React.FC<TrackedItemsPickerModalProps> = ({
                                                         {isInvoiceSerial && (
                                                             <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-green-100 text-green-700">✓ From invoice</span>
                                                         )}
-                                                        {!isInvoiceSerial && item.status === "IN_STOCK" && (
+                                                        {!isInvoiceSerial && item.status === "IN_STOCK" && !usedOnOtherLine && (
                                                             <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">IN_STOCK</span>
                                                         )}
-                                                        {unavailable && (
+                                                        {usedOnOtherLine && (
+                                                            <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">⚠ Already selected on another line in this sale</span>
+                                                        )}
+                                                        {!usedOnOtherLine && unavailable && (
                                                             <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-red-100 text-red-600">⚠ {item.status} — no longer available</span>
                                                         )}
                                                     </div>

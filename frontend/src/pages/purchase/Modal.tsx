@@ -10,6 +10,7 @@ interface ModalProps {
   onClose: () => void;
   onSubmit: (payload: PurchaseDetailType) => Promise<void> | void;
   clickData?: ({ id: number | undefined } & Partial<PurchaseDetailType>) | null;
+  requireSerials?: boolean;
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -17,6 +18,7 @@ const Modal: React.FC<ModalProps> = ({
   onClose,
   onSubmit,
   clickData,
+  requireSerials = false,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [trackedRows, setTrackedRows] = useState<ProductTrackedItemType[]>([]);
@@ -149,19 +151,21 @@ const Modal: React.FC<ModalProps> = ({
       isTrackedProduct
         ? initialTrackedRows.length > 0
           ? initialTrackedRows
-          : Array.from({ length: Math.max(0, Math.round(initialBaseQty)) }, () => ({
+          : requireSerials
+          ? Array.from({ length: Math.max(0, Math.round(initialBaseQty)) }, () => ({
               branchId: currentBranchId,
               assetCode: "",
               macAddress: "",
               serialNumber: "",
             }))
+          : []
         : []
     );
     setTrackedRowErrors({});
     setTrackedFormError("");
 
     prevUnitIdRef.current = initialUnitId;
-  }, [isOpen, clickData, reset, baseUnitId, unitOptions, currentBranchId, isTrackedProduct]);
+  }, [isOpen, clickData, reset, baseUnitId, unitOptions, currentBranchId, isTrackedProduct, requireSerials]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -230,11 +234,13 @@ const Modal: React.FC<ModalProps> = ({
   const selectedOperationValue = Number(selectedUnit?.operationValue ?? 1);
 
   const baseQtyPreview = useMemo(() => {
-    return isTrackedProduct ? trackedRows.length : computeBaseQtyLocal(wUnitId, wUnitQty);
-  }, [isTrackedProduct, trackedRows.length, wUnitId, wUnitQty]);
+    return isTrackedProduct && requireSerials
+      ? trackedRows.length
+      : computeBaseQtyLocal(wUnitId, wUnitQty);
+  }, [isTrackedProduct, requireSerials, trackedRows.length, wUnitId, wUnitQty]);
 
   useEffect(() => {
-    if (!isOpen || !isTrackedProduct || !wUnitId) return;
+    if (!isOpen || !isTrackedProduct || !requireSerials || !wUnitId) return;
 
     const nextBaseQty = trackedRows.length;
     const nextUnitQty =
@@ -243,7 +249,7 @@ const Modal: React.FC<ModalProps> = ({
     setValue("unitQty", nextUnitQty, { shouldDirty: true, shouldValidate: true });
     setValue("quantity", nextUnitQty as any, { shouldDirty: true, shouldValidate: true });
     setValue("baseQty", nextBaseQty as any, { shouldDirty: true, shouldValidate: true });
-  }, [isOpen, isTrackedProduct, wUnitId, trackedRows.length, selectedOperationValue, setValue]);
+  }, [isOpen, isTrackedProduct, requireSerials, wUnitId, trackedRows.length, selectedOperationValue, setValue]);
 
   useEffect(() => {
     const run = async () => {
@@ -386,13 +392,15 @@ const Modal: React.FC<ModalProps> = ({
       const cost = toNumber(data.cost);
       const taxNet = toNumber(data.taxNet);
       const discount = toNumber(data.discount);
-      const baseQty = isTrackedProduct ? trackedRows.length : computeBaseQtyLocal(unitId, Number((data as any).unitQty ?? 0));
-      const unitQty = isTrackedProduct
+      const baseQty = isTrackedProduct && requireSerials
+        ? trackedRows.length
+        : computeBaseQtyLocal(unitId, Number((data as any).unitQty ?? 0));
+      const unitQty = isTrackedProduct && requireSerials
         ? (selectedOperationValue > 0 ? Number((trackedRows.length / selectedOperationValue).toFixed(4)) : 0)
         : Number((data as any).unitQty ?? 0);
       const costPerBaseUnit = computeCostPerBaseUnitLocal(unitId, cost);
 
-      if (isTrackedProduct) {
+      if (isTrackedProduct && requireSerials) {
         if (trackedRows.length <= 0) {
           setTrackedFormError("Tracked products need at least one serial row.");
           return;
@@ -411,6 +419,23 @@ const Modal: React.FC<ModalProps> = ({
         if (Object.keys(nextTrackedRowErrors).length > 0) {
           setTrackedRowErrors(nextTrackedRowErrors);
           setTrackedFormError("Please complete the required serial number fields.");
+          return;
+        }
+      } else if (isTrackedProduct && !requireSerials) {
+        const nextTrackedRowErrors: Record<number, { serialNumber?: string }> = {};
+
+        trackedRows.forEach((item, index) => {
+          const hasAnyValue = !!(item.serialNumber?.trim() || item.assetCode?.trim() || item.macAddress?.trim());
+          if (hasAnyValue && !item.serialNumber?.trim()) {
+            nextTrackedRowErrors[index] = {
+              serialNumber: `Row ${index + 1}: Serial Number is required.`,
+            };
+          }
+        });
+
+        if (Object.keys(nextTrackedRowErrors).length > 0) {
+          setTrackedRowErrors(nextTrackedRowErrors);
+          setTrackedFormError("Please complete the required serial number fields, or remove the row.");
           return;
         }
       }
@@ -555,14 +580,19 @@ const Modal: React.FC<ModalProps> = ({
                   </label>
                   <input
                     type="number"
-                    step={isTrackedProduct ? "1" : "0.0001"}
+                    step={isTrackedProduct && requireSerials ? "1" : "0.0001"}
                     className="form-input"
-                    disabled={isTrackedProduct}
+                    disabled={isTrackedProduct && requireSerials}
                     {...register("unitQty", { required: true, valueAsNumber: true })}
                   />
-                  {isTrackedProduct && (
+                  {isTrackedProduct && requireSerials && (
                     <p className="text-xs text-gray-500 mt-1">
                       Qty is auto-calculated from tracked serial rows.
+                    </p>
+                  )}
+                  {isTrackedProduct && !requireSerials && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Serial numbers can be entered later when the stock is received.
                     </p>
                   )}
                 </div>
@@ -593,7 +623,7 @@ const Modal: React.FC<ModalProps> = ({
                 </div>
               </div>
 
-              {isTrackedProduct && (
+              {isTrackedProduct && requireSerials && (
                 <div className="mb-5 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-3">
                   <label className="font-semibold block mb-2">Tracked Receive Details</label>
                   <p className="text-xs text-gray-600">
@@ -605,15 +635,28 @@ const Modal: React.FC<ModalProps> = ({
                 </div>
               )}
 
+              {isTrackedProduct && !requireSerials && (
+                <div className="mb-5 rounded-md border border-amber-200 bg-amber-50 px-3 py-3">
+                  <label className="font-semibold block mb-2">Serial Numbers Not Required Yet</label>
+                  <p className="text-xs text-gray-600">
+                    This product is tracked, but serial numbers aren't required until this purchase is marked <strong>Received</strong>. You can enter them now if the supplier already provided them, or leave this blank and fill them in later.
+                  </p>
+                </div>
+              )}
+
               {isTrackedProduct && (
                 <div className="mb-5 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-3">
                   <label className="font-semibold block mb-3">
-                    Receive {trackedRows.length} Tracked Item{trackedRows.length === 1 ? "" : "s"}
+                    {requireSerials
+                      ? `Receive ${trackedRows.length} Tracked Item${trackedRows.length === 1 ? "" : "s"}`
+                      : `Serial Numbers (${trackedRows.length}/${Math.max(0, Math.round(baseQtyPreview))} entered, optional)`}
                   </label>
 
                   {trackedRows.length === 0 && (
                     <p className="text-sm text-gray-500 mb-3">
-                      Add one row per actual device/item being received.
+                      {requireSerials
+                        ? "Add one row per actual device/item being received."
+                        : "No serials entered yet — that's fine, you can add them when the stock arrives."}
                     </p>
                   )}
 
@@ -697,10 +740,16 @@ const Modal: React.FC<ModalProps> = ({
                     type="button"
                     className="btn btn-outline-primary"
                     onClick={addTrackedRow}
+                    disabled={!requireSerials && trackedRows.length >= Math.round(baseQtyPreview)}
                   >
                     <FontAwesomeIcon icon={faPlus} className="mr-1" />
                     Add Item
                   </button>
+                  {!requireSerials && trackedRows.length >= Math.round(baseQtyPreview) && baseQtyPreview > 0 && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      All {Math.round(baseQtyPreview)} units have a serial entered.
+                    </p>
+                  )}
                 </div>
               )}
 

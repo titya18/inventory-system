@@ -1,4 +1,4 @@
-import { InvoicePaymentType, InvoiceType, ProductTrackedItemType } from "../data_types/types";
+import { InvoicePaymentType, InvoiceType, ProductTrackedItemType, BlockedTrackedItemReason } from "../data_types/types";
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 export const upsertInvoice = async (invoiceData: InvoiceType): Promise<InvoiceType> => {
@@ -210,6 +210,40 @@ export const getAvailableTrackedItems = async (
   if (!response.ok) {
     const errorResponse = await response.json();
     throw new Error(errorResponse.message || "Error fetching tracked items");
+  }
+
+  return response.json();
+};
+
+// Explains why a physically IN_STOCK serial isn't showing up in
+// getAvailableTrackedItems above (e.g. still claimed by a non-returned
+// Customer Equipment record).
+export const getBlockedTrackedItemReasons = async (
+  productVariantId: number,
+  branchId: number,
+  orderItemId?: number | null,
+  selectedIds?: number[]
+): Promise<BlockedTrackedItemReason[]> => {
+  const params = new URLSearchParams({
+    productVariantId: String(productVariantId),
+    branchId: String(branchId),
+  });
+
+  if (orderItemId && orderItemId > 0) {
+    params.append("orderItemId", String(orderItemId));
+  }
+  if (selectedIds && selectedIds.length > 0) {
+    params.append("selectedIds", selectedIds.join(","));
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/invoice/tracked-items/blocked?${params.toString()}`,
+    { credentials: "include" }
+  );
+
+  if (!response.ok) {
+    const errorResponse = await response.json();
+    throw new Error(errorResponse.message || "Error fetching blocked tracked item reasons");
   }
 
   return response.json();

@@ -4101,3 +4101,216 @@ export const getCustomerPurchaseReport = async (req: Request, res: Response): Pr
     }
 };
 
+// ─── Package Sales Report ────────────────────────────────────────────────────
+// A package sale explodes into N component OrderItem rows sharing one
+// packageGroupId (see CLAUDE.md "Package (Bundle) Sales"). This report first
+// collapses each packageGroupId back into a single "package sale instance"
+// (summing its components' total/cogs), then aggregates those instances by
+// packageId/packageName — so "times sold" counts actual package sales, not
+// component line items.
+export const getPackageSalesReport = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const loggedInUser = req.user;
+        if (!loggedInUser) { res.status(401).json({ message: "Unauthenticated." }); return; }
+
+        const startDate  = req.query.startDate  as string | undefined;
+        const endDate    = req.query.endDate    as string | undefined;
+        const branchId   = req.query.branchId   ? parseInt(req.query.branchId as string, 10)   : null;
+        const search     = req.query.search     as string | undefined;
+        const pageSize   = req.query.pageSize   ? parseInt(req.query.pageSize as string, 10)   : 20;
+        const pageNumber = req.query.pageNumber ? parseInt(req.query.pageNumber as string, 10) : 1;
+        const sortField  = req.query.sortField  as string | undefined;
+        const sortOrder  = (req.query.sortOrder as string ?? "DESC").toUpperCase() === "ASC" ? "ASC" : "DESC";
+
+        const offset = (pageNumber - 1) * pageSize;
+
+        let branchFilter = "";
+        if (branchId) branchFilter = `AND o."branchId" = ${branchId}`;
+
+        const dateFilter   = startDate && endDate ? `AND o."orderDate"::date BETWEEN '${startDate}' AND '${endDate}'` : "";
+        const rawSortField = sortField ?? "totalQtySold";
+        const sortCol      = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(rawSortField) ? rawSortField : "totalQtySold";
+        const safeSrch     = (search ?? "").replace(/'/g, "''");
+        const searchFilter = search ? `AND p.name ILIKE '%${safeSrch}%'` : "";
+
+        const orderByMap: Record<string, string> = {
+            timesSold:     `COUNT(*)`,
+            totalQtySold:  `COALESCE(SUM("packageQty"),0)`,
+            totalRevenue:  `COALESCE(SUM("groupTotal"),0)`,
+            totalCogs:     `COALESCE(SUM("groupCogs"),0)`,
+            totalProfit:   `COALESCE(SUM("groupTotal") - SUM("groupCogs"),0)`,
+        };
+        const orderByExpr = orderByMap[sortCol] ?? orderByMap["totalQtySold"];
+
+        // Group purely by packageId — NOT by the per-row packageName snapshot.
+        // That snapshot exists to freeze what a *specific past sale* showed
+        // (correct for printed docs/history), but it means older sales made
+        // before the snapshot existed have packageName = NULL, which would
+        // otherwise fragment the same package into a separate report row.
+        // The display name here is looked up live from Package instead.
+        const groupsCte = `
+            WITH package_groups AS (
+                SELECT
+                    oi."packageGroupId"                     AS "groupId",
+                    MAX(oi."packageId")                     AS "packageId",
+                    COALESCE(MAX(oi."packageQty"), 1)       AS "packageQty",
+                    SUM(oi.total)                           AS "groupTotal",
+                    SUM(COALESCE(oi.cogs, 0))               AS "groupCogs"
+                FROM "OrderItem" oi
+                INNER JOIN "Order" o ON oi."orderId" = o.id
+                WHERE oi."packageGroupId" IS NOT NULL
+                  AND o.status IN ('APPROVED', 'COMPLETED')
+                  ${branchFilter}
+                  ${dateFilter}
+                GROUP BY oi."packageGroupId"
+            )
+        `;
+
+        const data: any = await prisma.$queryRawUnsafe(`
+            ${groupsCte}
+            SELECT
+                pg."packageId"                                      AS "packageId",
+                COALESCE(p.name, 'Deleted Package')                 AS "packageName",
+                COUNT(*)                                            AS "timesSold",
+                COALESCE(SUM(pg."packageQty"), 0)                  AS "totalQtySold",
+                COALESCE(SUM(pg."groupTotal"), 0)                  AS "totalRevenue",
+                COALESCE(SUM(pg."groupCogs"), 0)                   AS "totalCogs",
+                COALESCE(SUM(pg."groupTotal") - SUM(pg."groupCogs"), 0) AS "totalProfit"
+            FROM package_groups pg
+            LEFT JOIN "Package" p ON p.id = pg."packageId"
+            WHERE 1=1 ${searchFilter}
+            GROUP BY pg."packageId", p.name
+            ORDER BY ${orderByExpr} ${sortOrder}
+            LIMIT ${pageSize} OFFSET ${offset}
+        `);
+
+        const totalRows: any = await prisma.$queryRawUnsafe(`
+            ${groupsCte}
+            SELECT COUNT(*) AS cnt FROM (
+                SELECT pg."packageId"
+                FROM package_groups pg
+                LEFT JOIN "Package" p ON p.id = pg."packageId"
+                WHERE 1=1 ${searchFilter}
+                GROUP BY pg."packageId", p.name
+            ) sub
+        `);
+
+        const summaryRows: any = await prisma.$queryRawUnsafe(`
+            ${groupsCte}
+            SELECT
+                COUNT(*)                                           AS "timesSold",
+                COALESCE(SUM(pg."packageQty"), 0)                  AS "totalQtySold",
+                COALESCE(SUM(pg."groupTotal"), 0)                  AS "totalRevenue",
+                COALESCE(SUM(pg."groupCogs"), 0)                   AS "totalCogs"
+            FROM package_groups pg
+            LEFT JOIN "Package" p ON p.id = pg."packageId"
+            WHERE 1=1 ${searchFilter}
+        `);
+
+        const safeData = data.map((row: any, idx: number) => ({
+            rank:         offset + idx + 1,
+            packageId:    row.packageId !== null ? Number(row.packageId) : null,
+            packageName:  row.packageName ?? "—",
+            timesSold:    Number(row.timesSold    ?? 0),
+            totalQtySold: Number(row.totalQtySold ?? 0),
+            totalRevenue: Number(row.totalRevenue ?? 0),
+            totalCogs:    Number(row.totalCogs    ?? 0),
+            totalProfit:  Number(row.totalProfit  ?? 0),
+        }));
+
+        res.status(200).json({
+            data: safeData,
+            total: Number(totalRows[0]?.cnt ?? 0),
+            summary: {
+                timesSold:    Number(summaryRows[0]?.timesSold    ?? 0),
+                totalQtySold: Number(summaryRows[0]?.totalQtySold ?? 0),
+                totalRevenue: Number(summaryRows[0]?.totalRevenue ?? 0),
+                totalCogs:    Number(summaryRows[0]?.totalCogs    ?? 0),
+                totalProfit:  Number(summaryRows[0]?.totalRevenue ?? 0) - Number(summaryRows[0]?.totalCogs ?? 0),
+            },
+        });
+    } catch (error) {
+        logger.error("Error in getPackageSalesReport:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// ─── Package Sales Report — drill-down ───────────────────────────────────────
+// One row per individual sale instance (packageGroupId) for a single
+// packageId — what the aggregate row on getPackageSalesReport is made of.
+export const getPackageSaleInstances = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const loggedInUser = req.user;
+        if (!loggedInUser) { res.status(401).json({ message: "Unauthenticated." }); return; }
+
+        const packageId = parseInt(req.params.packageId, 10);
+        if (!packageId || isNaN(packageId)) {
+            res.status(400).json({ message: "A valid packageId is required" });
+            return;
+        }
+
+        const startDate = req.query.startDate as string | undefined;
+        const endDate   = req.query.endDate   as string | undefined;
+        const branchId  = req.query.branchId  ? parseInt(req.query.branchId as string, 10) : null;
+
+        let branchFilter = "";
+        if (branchId) branchFilter = `AND o."branchId" = ${branchId}`;
+        const dateFilter = startDate && endDate ? `AND o."orderDate"::date BETWEEN '${startDate}' AND '${endDate}'` : "";
+
+        const pkg = await prisma.package.findUnique({ where: { id: packageId }, select: { name: true } });
+
+        const rows: any = await prisma.$queryRawUnsafe(`
+            SELECT
+                oi."packageGroupId"                                AS "groupId",
+                MAX(o.id)                                          AS "orderId",
+                MAX(o.ref)                                         AS "orderRef",
+                MAX(o."orderDate")                                 AS "orderDate",
+                MAX(b.name)                                        AS "branchName",
+                MAX(c.name)                                        AS "customerName",
+                COALESCE(MAX(oi."packageQty"), 1)                  AS "qty",
+                SUM(oi.total)                                      AS "revenue",
+                SUM(COALESCE(oi.cogs, 0))                          AS "cogs"
+            FROM "OrderItem" oi
+            INNER JOIN "Order" o      ON oi."orderId" = o.id
+            LEFT  JOIN "Branch" b     ON o."branchId" = b.id
+            LEFT  JOIN "Customer" c   ON o."customerId" = c.id
+            WHERE oi."packageId" = ${packageId}
+              AND o.status IN ('APPROVED', 'COMPLETED')
+              ${branchFilter}
+              ${dateFilter}
+            GROUP BY oi."packageGroupId"
+            ORDER BY MAX(o."orderDate") DESC, MAX(o.id) DESC
+        `);
+
+        const safeData = rows.map((row: any) => {
+            const revenue = Number(row.revenue ?? 0);
+            const cogs = Number(row.cogs ?? 0);
+            return {
+                orderId: Number(row.orderId),
+                orderRef: row.orderRef,
+                orderDate: row.orderDate,
+                branchName: row.branchName ?? "—",
+                customerName: row.customerName ?? "Walk-in",
+                qty: Number(row.qty ?? 1),
+                revenue,
+                cogs,
+                profit: revenue - cogs,
+            };
+        });
+
+        res.status(200).json({
+            packageName: pkg?.name ?? "Deleted Package",
+            data: safeData,
+        });
+    } catch (error) {
+        logger.error("Error in getPackageSaleInstances:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+

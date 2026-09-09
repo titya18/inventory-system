@@ -87,6 +87,12 @@ export const validateBrandRequest = [
     handleValidationErrors
 ];
 
+export const validatePackageRequest = [
+    body("name").notEmpty().withMessage("Package name must be required"),
+    body("packageRetailPrice").notEmpty().withMessage("Package retail price must be required"),
+    handleValidationErrors
+];
+
 export const validateProductRequest = [
     body("categoryId").notEmpty().withMessage("Category must be required"),
     body("name").notEmpty().withMessage("Name must be required"),

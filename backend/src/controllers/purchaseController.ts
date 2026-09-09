@@ -38,12 +38,14 @@ const normalizePurchaseTrackedItems = ({
   branchId,
   expectedQty,
   productLabel,
+  strict,
 }: {
   trackedItems: any[];
   trackingType: "NONE" | "ASSET_ONLY" | "MAC_ONLY" | "ASSET_AND_MAC";
   branchId: number;
   expectedQty: number;
   productLabel: string;
+  strict: boolean;
 }): PurchaseTrackedItemInput[] => {
   if (trackingType === "NONE") {
     return [];
@@ -63,9 +65,15 @@ const normalizePurchaseTrackedItems = ({
       serialNumber: item?.serialNumber?.trim() || null,
     }));
 
-  if (cleaned.length !== expectedQty) {
+  if (strict) {
+    if (cleaned.length !== expectedQty) {
+      throw new Error(
+        `Tracked product ${productLabel} requires exactly ${expectedQty} serial entr${expectedQty === 1 ? "y" : "ies"}.`
+      );
+    }
+  } else if (cleaned.length > expectedQty) {
     throw new Error(
-      `Tracked product ${productLabel} requires exactly ${expectedQty} serial entr${expectedQty === 1 ? "y" : "ies"}.`
+      `Tracked product ${productLabel} has more serial entries (${cleaned.length}) than the ordered quantity (${expectedQty}).`
     );
   }
 
@@ -619,6 +627,7 @@ export const upsertPurchase = async (req: Request, res: Response): Promise<void>
             branchId: Number(branchId),
             expectedQty: Number(normalizedBase.baseQty ?? 0),
             productLabel: variant.barcode || String(variant.id),
+            strict: isReceivingNow,
           });
 
           return {

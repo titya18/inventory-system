@@ -303,6 +303,12 @@ export const upsertInvoice = async (req: Request, res: Response): Promise<void> 
             selectedTrackedItemIds: Array.isArray(detail.selectedTrackedItemIds)
               ? detail.selectedTrackedItemIds.map(Number)
               : [],
+
+            // Package (bundle) traceability only — has no effect on FIFO/stock.
+            packageId: detail.packageId ? Number(detail.packageId) : null,
+            packageGroupId: detail.packageGroupId ?? null,
+            packageQty: detail.packageQty ? new Decimal(detail.packageQty) : null,
+            packageName: detail.packageName ?? null,
           };
         })
       );
@@ -763,6 +769,7 @@ export const getInvoiceById = async (
                             productAssetItem: true,
                           },
                         },
+                        package: { select: { id: true, name: true } },
                     },
                 },
             },
@@ -1313,6 +1320,91 @@ export const getAvailableTrackedItems = async (req: Request, res: Response): Pro
     res.status(200).json(rows);
   } catch (error: any) {
     logger.error("Error fetching available tracked items:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Explains WHY a serial that's physically IN_STOCK doesn't show up in
+// getAvailableTrackedItems above — i.e. it's still claimed by a non-returned
+// Customer Equipment record. Kept as a separate, additive endpoint so the
+// existing tracked-items response shape (a plain array) never changes for
+// any of its other callers (Invoice/Quotation/StockAdjustment/etc).
+export const getBlockedTrackedItemReasons = async (req: Request, res: Response): Promise<void> => {
+  const { productVariantId, branchId, orderItemId, selectedIds: selectedIdsParam } = req.query;
+
+  try {
+    const variantId = Number(productVariantId);
+    const branchIdNum = Number(branchId);
+    const orderItemIdNum = orderItemId ? Number(orderItemId) : 0;
+
+    const extraSelectedIds: number[] = selectedIdsParam
+      ? String(selectedIdsParam).split(",").map(Number).filter((n) => n > 0)
+      : [];
+
+    if (!variantId || !branchIdNum) {
+      res.status(400).json({ message: "productVariantId and branchId are required" });
+      return;
+    }
+
+    let selectedIds: number[] = [];
+    if (orderItemIdNum && Number.isInteger(orderItemIdNum) && orderItemIdNum > 0 && orderItemIdNum <= 2147483647) {
+      const selectedRows = await prisma.orderItemAssetItem.findMany({
+        where: { orderItemId: orderItemIdNum },
+        select: { productAssetItemId: true },
+      });
+      selectedIds = selectedRows.map((row) => row.productAssetItemId);
+    }
+
+    const ceqAssigned = await prisma.customerEquipmentItem.findMany({
+      where: {
+        productAssetItemId: { not: null },
+        customerEquipment: { returnedAt: null },
+      },
+      select: {
+        productAssetItemId: true,
+        customerEquipment: { select: { ref: true } },
+      },
+    });
+
+    const ceqRefByAssetId = new Map<number, string>();
+    for (const row of ceqAssigned) {
+      if (row.productAssetItemId !== null) {
+        ceqRefByAssetId.set(row.productAssetItemId, row.customerEquipment.ref);
+      }
+    }
+
+    const blockedIds = [...ceqRefByAssetId.keys()].filter(
+      (id) => !selectedIds.includes(id) && !extraSelectedIds.includes(id)
+    );
+
+    if (blockedIds.length === 0) {
+      res.status(200).json([]);
+      return;
+    }
+
+    // Only report ones that are physically IN_STOCK for this variant+branch —
+    // that's the confusing case (Stocks table says available, picker doesn't).
+    const rows = await prisma.productAssetItem.findMany({
+      where: {
+        id: { in: blockedIds },
+        productVariantId: variantId,
+        branchId: branchIdNum,
+        status: "IN_STOCK",
+      },
+      select: { id: true, serialNumber: true, assetCode: true, macAddress: true },
+    });
+
+    const result = rows.map((r) => ({
+      id: r.id,
+      serialNumber: r.serialNumber,
+      assetCode: r.assetCode,
+      macAddress: r.macAddress,
+      reason: `Reserved via Customer Equipment ${ceqRefByAssetId.get(r.id)}`,
+    }));
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    logger.error("Error fetching blocked tracked item reasons:", error);
     res.status(500).json({ message: error.message });
   }
 };

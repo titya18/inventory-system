@@ -66,6 +66,8 @@ const PurchaseForm: React.FC = () => {
         isSimpleUser &&
         purchaseAuthorizeAmount > 0 &&
         Number(grandTotal) > Number(purchaseAuthorizeAmount);
+    const requireSerialsForTrackedLines =
+        statusValue === "RECEIVED" || statusValue === "COMPLETED";
 
     const fetchBranches = useCallback(async () => {
         setIsLoading(true);
@@ -982,6 +984,36 @@ const PurchaseForm: React.FC = () => {
                 imagesToDelete: imagesToDelete
             }
 
+            const isFirstTimeReceiving =
+                (formData.status === "RECEIVED" || formData.status === "COMPLETED") &&
+                initialDbStatusRef.current !== "RECEIVED" &&
+                initialDbStatusRef.current !== "COMPLETED";
+
+            if (isFirstTimeReceiving) {
+                const incompleteLine = purchaseDetails.find((detail: any) => {
+                    const trackingType = detail.trackingType ?? detail.productvariants?.trackingType ?? "NONE";
+                    if (trackingType === "NONE") return false;
+
+                    const expectedQty = Math.round(Number(detail.baseQty ?? 0));
+                    const enteredQty = (detail.selectedTrackedItems ?? []).filter(
+                        (item: any) => item?.serialNumber?.trim()
+                    ).length;
+
+                    return enteredQty !== expectedQty;
+                });
+
+                if (incompleteLine) {
+                    const expectedQty = Math.round(Number((incompleteLine as any).baseQty ?? 0));
+                    const enteredQty = ((incompleteLine as any).selectedTrackedItems ?? []).filter(
+                        (item: any) => item?.serialNumber?.trim()
+                    ).length;
+                    const productLabel = (incompleteLine as any).products?.name || "This product";
+                    throw new Error(
+                        `${productLabel}: ${enteredQty} of ${expectedQty} serials entered — edit the line to finish before receiving.`
+                    );
+                }
+            }
+
             if (isSimpleUser) {
                 if (formData.status === "APPROVED") {
                     throw new Error("Simple users cannot approve purchases. Please use Pending or Requested.");
@@ -1573,11 +1605,12 @@ const PurchaseForm: React.FC = () => {
                 </div>
             </div>
 
-            <Modal 
+            <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSubmit={handleOnSubmit}
                 clickData={clickData}
+                requireSerials={requireSerialsForTrackedLines}
             />
 
             <SupplierModal 

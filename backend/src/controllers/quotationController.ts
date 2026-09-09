@@ -263,6 +263,17 @@ export const upsertQuotation = async (req: Request, res: Response): Promise<void
                         quantity: Number(detail.unitQty ?? detail.quantity ?? 0),
                         serialSelectionMode,
                         trackedPayload: JSON.stringify({ mode: serialSelectionMode, selectedIds: selectedTrackedItemIds }),
+
+                        // Package (bundle) traceability only — has no effect on FIFO/stock.
+                        // This is a nested create (under Quotations.create/update), so
+                        // Prisma's "checked" input type wants the relation (package:
+                        // connect), not the raw packageId scalar.
+                        package: detail.packageId
+                            ? { connect: { id: Number(detail.packageId) } }
+                            : undefined,
+                        packageGroupId: detail.packageGroupId ?? null,
+                        packageQty: detail.packageQty ? new Decimal(detail.packageQty) : null,
+                        packageName: detail.packageName ?? null,
                         selectedAssetItems:
                             serialSelectionMode === "MANUAL" && selectedTrackedItemIds.length > 0
                                 ? {
@@ -417,6 +428,7 @@ export const getQuotationById = async (req: Request, res: Response): Promise<voi
                 productAssetItem: true,
               },
             },
+            package: { select: { id: true, name: true } },
           },
         },
       },
@@ -665,6 +677,17 @@ export const convertQuotationToOrder = async (req: Request, res: Response): Prom
                             unitQty: item.unitQty,
                             baseQty: item.baseQty,
                             serialSelectionMode: item.serialSelectionMode ?? "AUTO",
+
+                            // Package (bundle) traceability only — has no effect on FIFO/stock.
+                            // Nested create (under Order.create) — Prisma's "checked"
+                            // input type wants the relation (package: connect), not
+                            // the raw packageId scalar.
+                            package: item.packageId
+                                ? { connect: { id: item.packageId } }
+                                : undefined,
+                            packageGroupId: item.packageGroupId ?? undefined,
+                            packageQty: item.packageQty ?? undefined,
+                            packageName: item.packageName ?? undefined,
                         })),
                     },
                 },

@@ -14,7 +14,8 @@ import {
     approveInvoice,
     getNextInvoiceRef,
     declareInvoiceToVat,
-    getAvailableTrackedItems
+    getAvailableTrackedItems,
+    getBlockedTrackedItemReasons
 } from "../controllers/invoiceController";
 
 const router = express.Router();
@@ -22,6 +23,7 @@ const router = express.Router();
 router.use(verifyToken);
 router.route("/").get(getAllInvoices).post(validateInvoiceRequest, upsertInvoice);
 router.route("/tracked-items").get(verifyToken, getAvailableTrackedItems);
+router.route("/tracked-items/blocked").get(verifyToken, getBlockedTrackedItemReasons);
 router.route("/payment").post(authorize(["Sale-Payment"]), insertInvoicePayment);
 router.route("/payment/:id").get(getInvoicePaymentById);
 router.route("/payment-receipt/:id").get(verifyToken, getPaymentReceipt);

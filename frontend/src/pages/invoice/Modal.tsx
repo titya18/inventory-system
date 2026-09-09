@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSave, faClose } from "@fortawesome/free-solid-svg-icons";
 import { useForm } from "react-hook-form";
-import { getAvailableTrackedItems } from "@/api/invoice";
-import { InvoiceDetailType, ProductTrackedItemType } from "@/data_types/types";
+import { getAvailableTrackedItems, getBlockedTrackedItemReasons } from "@/api/invoice";
+import { InvoiceDetailType, ProductTrackedItemType, BlockedTrackedItemReason } from "@/data_types/types";
 import { truncateNumber } from "@/helper/numberFormat";
 
 interface ModalProps {
@@ -11,16 +11,27 @@ interface ModalProps {
   onClose: () => void;
   onSubmit: (payload: InvoiceDetailType) => Promise<void> | void;
   clickData?: Partial<InvoiceDetailType> | null;
+  // Serial IDs already selected on OTHER lines of the same variant in this
+  // same invoice (e.g. a package component line + a standalone line of the
+  // same tracked product) — blocked here so the same serial can't be picked
+  // twice within one unsaved sale.
+  excludeTrackedItemIds?: number[];
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, clickData }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, clickData, excludeTrackedItemIds = [] }) => {
   const [isLoading, setIsLoading] = useState(false);
   const prevUnitIdRef = useRef<number | null>(null);
+  // For a package-sourced line, the component quantity is fixed by the
+  // package's recipe — serial selection must not be allowed to inflate it.
+  // Captured once when the line opens (before the qty-follows-selection
+  // effect below can overwrite unitQty), null for ordinary product lines.
+  const requiredPackageQtyRef = useRef<number | null>(null);
 
   const [availableTrackedItems, setAvailableTrackedItems] = useState<ProductTrackedItemType[]>([]);
   const [selectedTrackedIds, setSelectedTrackedIds] = useState<number[]>([]);
   const [serialSelectionMode, setSerialSelectionMode] = useState<"AUTO" | "MANUAL">("AUTO");
   const [isLoadingTracked, setIsLoadingTracked] = useState(false);
+  const [blockedReasons, setBlockedReasons] = useState<BlockedTrackedItemReason[]>([]);
 
   const {
     register,
@@ -92,6 +103,10 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, clickData }) =
         : []
     );
 
+    requiredPackageQtyRef.current = (clickData as any)?.packageId
+      ? Number((clickData as any)?.unitQty ?? clickData.quantity ?? 0) || null
+      : null;
+
     if (clickData.ItemType === "PRODUCT") {
       const initialUnitId =
         Number(
@@ -124,6 +139,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, clickData }) =
     const run = async () => {
       if (!isOpen || !isTrackedProduct) {
         setAvailableTrackedItems([]);
+        setBlockedReasons([]);
         return;
       }
 
@@ -140,9 +156,28 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, clickData }) =
           orderItemId || null
         );
         setAvailableTrackedItems(rows);
+
+        // If the Stocks table shows more on hand than the picker actually
+        // returns, something (e.g. an un-returned Customer Equipment claim)
+        // is silently withholding a serial — surface why instead of just
+        // showing a confusing lower count.
+        const inStockCount = rows.filter((r) => r.status === "IN_STOCK").length;
+        const rawStock = Number(clickData?.stocks ?? 0);
+        if (rawStock > inStockCount) {
+          try {
+            const reasons = await getBlockedTrackedItemReasons(variantId, currentBranchId, orderItemId || null);
+            setBlockedReasons(reasons);
+          } catch (err) {
+            console.error(err);
+            setBlockedReasons([]);
+          }
+        } else {
+          setBlockedReasons([]);
+        }
       } catch (error) {
         console.error(error);
         setAvailableTrackedItems([]);
+        setBlockedReasons([]);
       } finally {
         setIsLoadingTracked(false);
       }
@@ -230,9 +265,16 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, clickData }) =
   }, [isProduct, unitQtyValue, watch, priceValue, discountMethod, discountValue, taxMethod, taxValue]);
 
   const toggleTrackedItem = (id: number) => {
-    setSelectedTrackedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    setSelectedTrackedIds((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((x) => x !== id);
+      }
+      const cap = requiredPackageQtyRef.current;
+      if (cap !== null && prev.length >= cap) {
+        return prev; // package recipe caps this component's quantity — checkboxes are also disabled once reached
+      }
+      return [...prev, id];
+    });
   };
 
   const handleFormSubmit = async (data: InvoiceDetailType) => {
@@ -306,6 +348,9 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, clickData }) =
           soldOrderItemId: x.soldOrderItemId ?? null,
         })),
         branchId: currentBranchId,
+
+        packageId: clickData?.packageId ?? null,
+        packageGroupId: clickData?.packageGroupId ?? null,
       };
 
       await onSubmit(payload);
@@ -355,10 +400,12 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, clickData }) =
                 <div>
                   <label>
                     {isProduct ? "Sale Price per Selected Unit" : "Service Price"} <span className="text-danger text-md">*</span>
+                    {clickData?.packageId && <span className="text-xs text-gray-500"> (fixed by package)</span>}
                   </label>
                   <input
                     type="text"
                     className="form-input w-full"
+                    disabled={!!clickData?.packageId}
                     {...register("price", { required: "Price is required" })}
                     onInput={(e: React.FormEvent<HTMLInputElement>) => {
                       const target = e.currentTarget;
@@ -383,6 +430,16 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, clickData }) =
                           : `${Number(clickData?.stocks ?? 0).toFixed(4)} ${baseUnitName}`
                       }
                     />
+                    {isTrackedProduct && blockedReasons.length > 0 && (
+                      <div className="mt-1.5 rounded bg-amber-50 border border-amber-200 px-2.5 py-1.5 text-xs text-amber-800">
+                        ⚠ {blockedReasons.length} unit{blockedReasons.length > 1 ? "s" : ""} in stock but not sellable here:
+                        <ul className="mt-1 ml-3 list-disc">
+                          {blockedReasons.map((b) => (
+                            <li key={b.id}>{b.serialNumber ?? b.assetCode ?? `#${b.id}`} — {b.reason}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div>
@@ -440,6 +497,13 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, clickData }) =
                     Choose Exact Serial Number(s)
                   </label>
 
+                  {requiredPackageQtyRef.current !== null && (
+                    <p className="text-xs text-indigo-700 mb-2">
+                      This package needs exactly <strong>{requiredPackageQtyRef.current}</strong> of this product — select {requiredPackageQtyRef.current} serial(s).
+                      {selectedTrackedIds.length >= requiredPackageQtyRef.current && " Limit reached; deselect one to change your pick."}
+                    </p>
+                  )}
+
                   {isLoadingTracked ? (
                     <p className="text-sm text-gray-500">Loading serials...</p>
                   ) : availableTrackedItems.length === 0 ? (
@@ -448,23 +512,34 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, clickData }) =
                     <div className="max-h-60 overflow-y-auto space-y-2">
                       {availableTrackedItems.map((item) => {
                         const checked = selectedTrackedIds.includes(Number(item.id));
+                        const usedOnOtherLine = !checked && excludeTrackedItemIds.includes(Number(item.id));
+                        const atCap = !checked &&
+                          requiredPackageQtyRef.current !== null &&
+                          selectedTrackedIds.length >= requiredPackageQtyRef.current;
+                        const disabled = usedOnOtherLine || atCap;
 
                         return (
                           <label
                             key={item.id}
-                            className={`flex items-start gap-3 p-3 rounded border cursor-pointer ${
-                              checked ? "bg-indigo-100 border-indigo-400" : "bg-white border-gray-200"
+                            className={`flex items-start gap-3 p-3 rounded border ${disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"} ${
+                              checked ? "bg-indigo-100 border-indigo-400" : usedOnOtherLine ? "bg-amber-50 border-amber-200" : "bg-white border-gray-200"
                             }`}
                           >
                             <input
                               type="checkbox"
                               checked={checked}
-                              onChange={() => toggleTrackedItem(Number(item.id))}
+                              disabled={disabled}
+                              onChange={() => !disabled && toggleTrackedItem(Number(item.id))}
                               className="mt-1"
                             />
 
                             <div className="text-sm">
-                              <div><strong>Serial:</strong> {item.serialNumber}</div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span><strong>Serial:</strong> {item.serialNumber}</span>
+                                {usedOnOtherLine && (
+                                    <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">⚠ Already selected on another line</span>
+                                )}
+                              </div>
                               {item.assetCode && <div><strong>Asset:</strong> {item.assetCode}</div>}
                               {item.macAddress && <div><strong>MAC:</strong> {item.macAddress}</div>}
                             </div>
@@ -480,8 +555,11 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, clickData }) =
                 <>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-5">
                     <div>
-                      <label>Sale Unit <span className="text-danger text-md">*</span></label>
-                      <select className="form-input" {...register("unitId", { required: "Unit is required" })}>
+                      <label>
+                        Sale Unit <span className="text-danger text-md">*</span>
+                        {clickData?.packageId && <span className="text-xs text-gray-500"> (fixed by package)</span>}
+                      </label>
+                      <select className="form-input" disabled={!!clickData?.packageId} {...register("unitId", { required: "Unit is required" })}>
                         {unitOptions.map((u: any) => (
                           <option key={u.id} value={u.id}>{u.name}</option>
                         ))}

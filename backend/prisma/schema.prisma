@@ -30,25 +30,25 @@ model Branch {
   creator User? @relation("BranchCreatedBy", fields: [createdBy], references: [id])
   updater User? @relation("BranchUpdatedBy", fields: [updatedBy], references: [id])
 
-  users            User[]
-  stocks           Stocks[]
-  purchase         Purchases[]
-  quotation        Quotations[]
-  order            Order[]
-  stockMovements   StockMovements[]
-  stockAdjustments StockAdjustments[]
-  stockRequests    StockRequests[]
-  stockReturns     StockReturns[]
-  stockTransfers   StockTransfers[]
-  expense          Expenses[]
-  income           Incomes[]
-  saleReturn       SaleReturns[]
+  users             User[]
+  stocks            Stocks[]
+  purchase          Purchases[]
+  quotation         Quotations[]
+  order             Order[]
+  stockMovements    StockMovements[]
+  stockAdjustments  StockAdjustments[]
+  stockRequests     StockRequests[]
+  stockReturns      StockReturns[]
+  stockTransfers    StockTransfers[]
+  expense           Expenses[]
+  income            Incomes[]
+  saleReturn        SaleReturns[]
   productAssetItems ProductAssetItem[]
 
-  outgoingTransfers StockTransfers[] @relation("FromBranch")
-  incomingTransfers  StockTransfers[]     @relation("ToBranch")
+  outgoingTransfers  StockTransfers[]    @relation("FromBranch")
+  incomingTransfers  StockTransfers[]    @relation("ToBranch")
   customerEquipments CustomerEquipment[]
-  cashSessions       CashSession[]        @relation("BranchCashSessions")
+  cashSessions       CashSession[]       @relation("BranchCashSessions")
 }
 
 model User {
@@ -200,6 +200,10 @@ model User {
   directPermissions UserPermission[] @relation("UserDirectPermissions")
   cashSessions      CashSession[]    @relation("UserCashSessions")
   openedSessions    CashSession[]    @relation("UserOpenedSessions")
+
+  createPackages Package[] @relation("PackageCreatedBy")
+  updatePackages Package[] @relation("PackageUpdatedBy")
+  deletePackages Package[] @relation("PackageDeletedBy")
 }
 
 model Role {
@@ -342,21 +346,22 @@ model Units {
   productVariants ProductVariants[]
 
   // ✅ NEW
-  purchaseDetails   PurchaseDetails[]
-  orderItems        OrderItem[]
-  quotationDetails  QuotationDetails[]
-  adjustmentDetails AdjustmentDetails[]
-  transferDetails   TransferDetails[]
-  requestDetails    RequestDetails[]
-  returnDetails     ReturnDetails[]
-  saleReturnItems   SaleReturnItems[]
-  baseOfVariants    ProductVariants[]       @relation("BaseUnit")
-  convFrom          ProductUnitConversion[] @relation("ConvFromUnit")
-  convTo            ProductUnitConversion[] @relation("ConvToUnit")
-  purchasePriceVariants ProductVariants[] @relation("PurchasePriceUnit")
-  retailPriceVariants ProductVariants[] @relation("ProductVariantRetailPriceUnit")
-  wholeSalePriceVariants ProductVariants[] @relation("ProductVariantWholeSalePriceUnit")
+  purchaseDetails        PurchaseDetails[]
+  orderItems             OrderItem[]
+  quotationDetails       QuotationDetails[]
+  adjustmentDetails      AdjustmentDetails[]
+  transferDetails        TransferDetails[]
+  requestDetails         RequestDetails[]
+  returnDetails          ReturnDetails[]
+  saleReturnItems        SaleReturnItems[]
+  baseOfVariants         ProductVariants[]       @relation("BaseUnit")
+  convFrom               ProductUnitConversion[] @relation("ConvFromUnit")
+  convTo                 ProductUnitConversion[] @relation("ConvToUnit")
+  purchasePriceVariants  ProductVariants[]       @relation("PurchasePriceUnit")
+  retailPriceVariants    ProductVariants[]       @relation("ProductVariantRetailPriceUnit")
+  wholeSalePriceVariants ProductVariants[]       @relation("ProductVariantWholeSalePriceUnit")
   customerEquipmentItems CustomerEquipmentItem[] @relation("CEQItemUnit")
+  packageItems           PackageItems[]
 }
 
 enum TrackingType {
@@ -407,7 +412,7 @@ model Products {
   returnDetails     ReturnDetails[]
   transferDetails   TransferDetails[]
   saleReturnItems   SaleReturnItems[]
-  assetItems        ProductAssetItem[] @relation("AssetItemProduct")
+  assetItems        ProductAssetItem[]  @relation("AssetItemProduct")
 
   // ✅ NEW
   unitConversions ProductUnitConversion[]
@@ -460,63 +465,63 @@ model VariantValue {
 
 // PRODUCT VARIANT (SKU)
 model ProductVariants {
-  id             Int       @id @default(autoincrement())
-  productId      Int
-  unitId         Int? // No need use because has baseUnitId
-  productType    String    @default("New") // New or SecondHand
-  sku            String
-  barcode        String?
-  stockAlert     Int?      @default(0) @db.SmallInt
-  name           String    @db.VarChar(200)
-  trackingType   TrackingType      @default(NONE)
-  image          String[]  @db.VarChar(200) // Array of image URLs or paths
-  purchasePrice  Decimal   @default(0.0000) @db.Decimal(10, 4)
-  
-  retailPrice            Decimal?  @db.Decimal(18, 4)
-  retailPriceUnitId      Int?      // ✅ NEW
+  id            Int          @id @default(autoincrement())
+  productId     Int
+  unitId        Int? // No need use because has baseUnitId
+  productType   String       @default("New") // New or SecondHand
+  sku           String
+  barcode       String?
+  stockAlert    Int?         @default(0) @db.SmallInt
+  name          String       @db.VarChar(200)
+  trackingType  TrackingType @default(NONE)
+  image         String[]     @db.VarChar(200) // Array of image URLs or paths
+  purchasePrice Decimal      @default(0.0000) @db.Decimal(10, 4)
 
-  wholeSalePrice         Decimal?  @db.Decimal(18, 4)
-  wholeSalePriceUnitId   Int?      // ✅ NEW
+  retailPrice       Decimal? @db.Decimal(18, 4)
+  retailPriceUnitId Int? // ✅ NEW
 
-  isActive       Int?      @default(1) @db.SmallInt
-  createdAt      DateTime  @default(now())
-  createdBy      Int?
-  updatedAt      DateTime  @updatedAt
-  updatedBy      Int?
-  deletedAt      DateTime?
-  deletedBy      Int?
+  wholeSalePrice       Decimal? @db.Decimal(18, 4)
+  wholeSalePriceUnitId Int? // ✅ NEW
+
+  isActive  Int?      @default(1) @db.SmallInt
+  createdAt DateTime  @default(now())
+  createdBy Int?
+  updatedAt DateTime  @updatedAt
+  updatedBy Int?
+  deletedAt DateTime?
+  deletedBy Int?
 
   creator User? @relation("ProductVariantsCreatedBy", fields: [createdBy], references: [id])
   updater User? @relation("ProductVariantsUpdatedBy", fields: [updatedBy], references: [id])
   deleter User? @relation("ProductVariantsDeletedBy", fields: [deletedBy], references: [id])
 
-  purchasePriceUnitId Int?   // ✅ NEW
+  purchasePriceUnitId Int? // ✅ NEW
   purchasePriceUnit   Units? @relation("PurchasePriceUnit", fields: [purchasePriceUnitId], references: [id])
 
-
-  retailPriceUnit        Units?    @relation("ProductVariantRetailPriceUnit", fields: [retailPriceUnitId], references: [id])      // ✅ NEW
-  wholeSalePriceUnit     Units?    @relation("ProductVariantWholeSalePriceUnit", fields: [wholeSalePriceUnitId], references: [id]) // ✅ NEW
+  retailPriceUnit    Units? @relation("ProductVariantRetailPriceUnit", fields: [retailPriceUnitId], references: [id]) // ✅ NEW
+  wholeSalePriceUnit Units? @relation("ProductVariantWholeSalePriceUnit", fields: [wholeSalePriceUnitId], references: [id]) // ✅ NEW
 
   // ✅ NEW: base unit (stock stored in this unit)
   baseUnitId Int?
   baseUnit   Units? @relation("BaseUnit", fields: [baseUnitId], references: [id])
 
-  products             Products               @relation(fields: [productId], references: [id])
-  units                Units?                 @relation(fields: [unitId], references: [id])
-  variantValues        VariantValue[]
-  productVariantValues ProductVariantValues[]
-  stocks               Stocks[]
-  purchaseDetails      PurchaseDetails[]
-  quotationDetails     QuotationDetails[]
-  stockMovements       StockMovements[]
-  orderItems           OrderItem[]
-  stockAdjustments     AdjustmentDetails[]
-  stockReturns         ReturnDetails[]
-  stockTransfers       TransferDetails[]
-  stockRequests        RequestDetails[]
-  saleReturnItems         SaleReturnItems[]
-  productAssetItems       ProductAssetItem[]
-  customerEquipmentItems  CustomerEquipmentItem[] @relation("CEQItemVariant")
+  products               Products                @relation(fields: [productId], references: [id])
+  units                  Units?                  @relation(fields: [unitId], references: [id])
+  variantValues          VariantValue[]
+  productVariantValues   ProductVariantValues[]
+  stocks                 Stocks[]
+  purchaseDetails        PurchaseDetails[]
+  quotationDetails       QuotationDetails[]
+  stockMovements         StockMovements[]
+  orderItems             OrderItem[]
+  stockAdjustments       AdjustmentDetails[]
+  stockReturns           ReturnDetails[]
+  stockTransfers         TransferDetails[]
+  stockRequests          RequestDetails[]
+  saleReturnItems        SaleReturnItems[]
+  productAssetItems      ProductAssetItem[]
+  customerEquipmentItems CustomerEquipmentItem[] @relation("CEQItemVariant")
+  packageItems           PackageItems[]
 
   @@unique([productType, sku])
   @@unique([productType, barcode])
@@ -553,17 +558,17 @@ model ProductAssetItem {
   createdBy        Int?
   updatedBy        Int?
 
-  productVariant   ProductVariants @relation(fields: [productVariantId], references: [id])
-  product          Products?       @relation("AssetItemProduct", fields: [productId], references: [id])
-  branch           Branch          @relation(fields: [branchId], references: [id])
-  orderItemLinks   OrderItemAssetItem[]
-  quotationDetailLinks    QuotationDetailAssetItem[]
-  customerEquipmentItems  CustomerEquipmentItem[]
+  productVariant         ProductVariants            @relation(fields: [productVariantId], references: [id])
+  product                Products?                  @relation("AssetItemProduct", fields: [productId], references: [id])
+  branch                 Branch                     @relation(fields: [branchId], references: [id])
+  orderItemLinks         OrderItemAssetItem[]
+  quotationDetailLinks   QuotationDetailAssetItem[]
+  customerEquipmentItems CustomerEquipmentItem[]
 
-  @@index([productVariantId, branchId, status])
   @@unique([productVariantId, assetCode])
   @@unique([productVariantId, macAddress])
   @@unique([productId, serialNumber])
+  @@index([productVariantId, branchId, status])
 }
 
 model Stocks {
@@ -583,6 +588,49 @@ model Stocks {
   branch         Branch          @relation(fields: [branchId], references: [id])
 
   @@unique([productVariantId, branchId])
+}
+
+// PACKAGE (BUNDLE) — sold as one catalog item, exploded into its component
+// products at sale time. Not branch-scoped, mirrors Products.
+model Package {
+  id                    Int       @id @default(autoincrement())
+  name                  String    @db.VarChar(200)
+  sku                   String?   @unique
+  barcode               String?   @unique
+  packageRetailPrice    Decimal   @db.Decimal(18, 4)
+  packageWholeSalePrice Decimal?  @db.Decimal(18, 4)
+  image                 String[]  @db.VarChar(200)
+  note                  String?   @db.VarChar(250)
+  isActive              Int?      @default(1) @db.SmallInt
+  createdAt             DateTime  @default(now())
+  createdBy             Int?
+  updatedAt             DateTime  @updatedAt
+  updatedBy             Int?
+  deletedAt             DateTime?
+  deletedBy             Int?
+
+  creator User? @relation("PackageCreatedBy", fields: [createdBy], references: [id])
+  updater User? @relation("PackageUpdatedBy", fields: [updatedBy], references: [id])
+  deleter User? @relation("PackageDeletedBy", fields: [deletedBy], references: [id])
+
+  items            PackageItems[]
+  orderItems       OrderItem[]
+  quotationDetails QuotationDetails[]
+}
+
+// PACKAGE BOM — components + quantities that make up a Package
+model PackageItems {
+  id               Int     @id @default(autoincrement())
+  packageId        Int
+  productVariantId Int
+  quantity         Decimal @db.Decimal(10, 4)
+  unitId           Int?
+
+  package        Package         @relation(fields: [packageId], references: [id])
+  productVariant ProductVariants @relation(fields: [productVariantId], references: [id])
+  unit           Units?          @relation(fields: [unitId], references: [id])
+
+  @@index([packageId])
 }
 
 model PaymentMethods {
@@ -724,7 +772,7 @@ model PurchaseDetails {
   stockMovements StockMovements[]
 
   // ✅ NEW
-  unit Units? @relation(fields: [unitId], references: [id])
+  unit              Units?                      @relation(fields: [unitId], references: [id])
   trackedDraftItems PurchaseDetailTrackedItem[]
 }
 
@@ -867,24 +915,35 @@ model QuotationDetails {
   serialSelectionMode String? @default("AUTO")
   trackedPayload      String? @db.Text
 
-  // ✅ NEW
-  unit Units? @relation(fields: [unitId], references: [id])
+  // Package (bundle) traceability — set only when this line was generated by
+  // exploding a Package at cart-build time. Purely for display grouping;
+  // has no effect on FIFO/serial/return logic. packageName is a frozen
+  // snapshot of the package's name at sale time — renaming or deleting the
+  // Package afterward must not change how historical sales are displayed.
+  packageId      Int?
+  packageGroupId String?  @db.VarChar(64)
+  packageQty     Decimal? @db.Decimal(10, 4)
+  packageName    String?  @db.VarChar(200)
 
-  quotations      Quotations       @relation(fields: [quotationId], references: [id])
-  products        Products?        @relation(fields: [productId], references: [id])
-  productvariants ProductVariants? @relation(fields: [productVariantId], references: [id])
-  services        Services?        @relation(fields: [serviceId], references: [id])
+  // ✅ NEW
+  unit    Units?   @relation(fields: [unitId], references: [id])
+  package Package? @relation(fields: [packageId], references: [id])
+
+  quotations         Quotations                 @relation(fields: [quotationId], references: [id])
+  products           Products?                  @relation(fields: [productId], references: [id])
+  productvariants    ProductVariants?           @relation(fields: [productVariantId], references: [id])
+  services           Services?                  @relation(fields: [serviceId], references: [id])
   selectedAssetItems QuotationDetailAssetItem[]
 }
 
 model QuotationDetailAssetItem {
-  id                 Int              @id @default(autoincrement())
+  id                 Int      @id @default(autoincrement())
   quotationDetailId  Int
   productAssetItemId Int
-  createdAt          DateTime         @default(now())
+  createdAt          DateTime @default(now())
 
-  quotationDetail    QuotationDetails @relation(fields: [quotationDetailId], references: [id], onDelete: Cascade)
-  productAssetItem   ProductAssetItem @relation(fields: [productAssetItemId], references: [id], onDelete: Cascade)
+  quotationDetail  QuotationDetails @relation(fields: [quotationDetailId], references: [id], onDelete: Cascade)
+  productAssetItem ProductAssetItem @relation(fields: [productAssetItemId], references: [id], onDelete: Cascade)
 
   @@unique([quotationDetailId, productAssetItemId])
   @@index([quotationDetailId])
@@ -996,7 +1055,7 @@ model Customer {
 
   quotations         Quotations[]
   saleReturn         SaleReturns[]
-  customerEquipments CustomerEquipment[]  // header-level relation (for backward compat on branch/customer)
+  customerEquipments CustomerEquipment[] // header-level relation (for backward compat on branch/customer)
 }
 
 model Order {
@@ -1032,9 +1091,9 @@ model Order {
   // =========================
   // SOURCE TRACKING FOR VAT SYNC
   // =========================
-  sourceSystem  String?        @db.VarChar(50)
+  sourceSystem  String? @db.VarChar(50)
   sourceOrderId Int?
-  sourceRef     String?        @db.VarChar(50)
+  sourceRef     String? @db.VarChar(50)
 
   creator  User? @relation("OrderCreatedBy", fields: [createdBy], references: [id])
   updater  User? @relation("OrderUpdatedBy", fields: [updatedBy], references: [id])
@@ -1084,26 +1143,37 @@ model OrderItem {
 
   serialSelectionMode String? @default("AUTO")
 
+  // Package (bundle) traceability — set only when this line was generated by
+  // exploding a Package at cart-build time. Purely for display grouping;
+  // has no effect on FIFO/serial/return logic. packageName is a frozen
+  // snapshot of the package's name at sale time — renaming or deleting the
+  // Package afterward must not change how historical sales are displayed.
+  packageId      Int?
+  packageGroupId String?  @db.VarChar(64)
+  packageQty     Decimal? @db.Decimal(10, 4)
+  packageName    String?  @db.VarChar(200)
+
   order           Order            @relation(fields: [orderId], references: [id])
   products        Products?        @relation(fields: [productId], references: [id])
   productvariants ProductVariants? @relation(fields: [productVariantId], references: [id])
   services        Services?        @relation(fields: [serviceId], references: [id])
 
   // ✅ NEW
-  unit Units? @relation(fields: [unitId], references: [id])
+  unit    Units?   @relation(fields: [unitId], references: [id])
+  package Package? @relation(fields: [packageId], references: [id])
 
-  stockMovements StockMovements[]
+  stockMovements     StockMovements[]
   selectedAssetItems OrderItemAssetItem[]
 }
 
 model OrderItemAssetItem {
-  id                 Int              @id @default(autoincrement())
+  id                 Int      @id @default(autoincrement())
   orderItemId        Int
   productAssetItemId Int
-  createdAt          DateTime         @default(now())
+  createdAt          DateTime @default(now())
 
-  orderItem          OrderItem        @relation(fields: [orderItemId], references: [id])
-  productAssetItem   ProductAssetItem @relation(fields: [productAssetItemId], references: [id])
+  orderItem        OrderItem        @relation(fields: [orderItemId], references: [id])
+  productAssetItem ProductAssetItem @relation(fields: [productAssetItemId], references: [id])
 
   @@unique([orderItemId, productAssetItemId])
   @@index([orderItemId])
@@ -1132,7 +1202,7 @@ model OrderOnPayments {
   // =========================
   // SOURCE TRACKING FOR VAT SYNC
   // =========================
-  sourceSystem    String?   @db.VarChar(50)
+  sourceSystem    String? @db.VarChar(50)
   sourcePaymentId Int?
 
   creator User? @relation("OrderOnPaymentsCreatedBy", fields: [createdBy], references: [id])
@@ -1148,18 +1218,18 @@ model OrderOnPayments {
 }
 
 model VatSyncLog {
-  id           Int      @id @default(autoincrement())
-  entityType   String   @db.VarChar(50)   // ORDER / PAYMENT
+  id           Int       @id @default(autoincrement())
+  entityType   String    @db.VarChar(50) // ORDER / PAYMENT
   entityId     Int
   orderId      Int?
-  sourceSystem String   @db.VarChar(50)
-  actionType   String   @db.VarChar(50)   // UPSERT_ORDER / UPSERT_PAYMENT / DELETE_PAYMENT
-  status       String   @db.VarChar(20)   // PENDING / DONE / FAILED
-  retryCount   Int      @default(0)
-  errorMessage String?  @db.VarChar(2000)
+  sourceSystem String    @db.VarChar(50)
+  actionType   String    @db.VarChar(50) // UPSERT_ORDER / UPSERT_PAYMENT / DELETE_PAYMENT
+  status       String    @db.VarChar(20) // PENDING / DONE / FAILED
+  retryCount   Int       @default(0)
+  errorMessage String?   @db.VarChar(2000)
   syncedAt     DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([status, retryCount])
   @@index([orderId])
@@ -1249,8 +1319,8 @@ model AdjustmentDetails {
   baseQty Decimal? @db.Decimal(10, 4)
   unit    Units?   @relation(fields: [unitId], references: [id])
 
-  cost            Decimal? @db.Decimal(10, 4)      // ✅ NEW
-  costPerBaseUnit Decimal? @db.Decimal(10, 4)      // ✅ NEW
+  cost            Decimal? @db.Decimal(10, 4) // ✅ NEW
+  costPerBaseUnit Decimal? @db.Decimal(10, 4) // ✅ NEW
   trackedPayload  String?  @db.Text
   reason          String?  @db.VarChar(20)
 
@@ -1331,18 +1401,18 @@ model StockRequests {
   updatedAt   DateTime?
   approvedAt  DateTime?
   approvedBy  Int?
-  orderId     Int?        // optional link to invoice — when set, no stock cut on approval
+  orderId     Int? // optional link to invoice — when set, no stock cut on approval
 
-  creator   User? @relation("RequestCreatedBy", fields: [createdBy], references: [id])
-  updater   User? @relation("RequestUpdatedBy", fields: [updatedBy], references: [id])
-  deleter   User? @relation("RequestDeletedBy", fields: [deletedBy], references: [id])
-  approver  User? @relation("RequestApprovedBy", fields: [approvedBy], references: [id])
-  requester User? @relation("RequestBy", fields: [requestBy], references: [id])
+  creator   User?  @relation("RequestCreatedBy", fields: [createdBy], references: [id])
+  updater   User?  @relation("RequestUpdatedBy", fields: [updatedBy], references: [id])
+  deleter   User?  @relation("RequestDeletedBy", fields: [deletedBy], references: [id])
+  approver  User?  @relation("RequestApprovedBy", fields: [approvedBy], references: [id])
+  requester User?  @relation("RequestBy", fields: [requestBy], references: [id])
   order     Order? @relation(fields: [orderId], references: [id])
 
-  branch              Branch              @relation(fields: [branchId], references: [id])
-  requestDetails      RequestDetails[]
-  customerEquipments  CustomerEquipment[]
+  branch             Branch              @relation(fields: [branchId], references: [id])
+  requestDetails     RequestDetails[]
+  customerEquipments CustomerEquipment[]
 }
 
 // Request ITEM DETAILS
@@ -1416,7 +1486,7 @@ model ReturnDetails {
   costPerBaseUnit Decimal? @db.Decimal(18, 6)
   trackedPayload  String?  @db.Text
 
-  unit    Units?   @relation(fields: [unitId], references: [id])
+  unit Units? @relation(fields: [unitId], references: [id])
 
   stockreturns    StockReturns     @relation(fields: [returnId], references: [id])
   products        Products?        @relation(fields: [productId], references: [id])
@@ -1551,42 +1621,42 @@ enum AssignType {
 }
 
 model CustomerEquipment {
-  id         Int        @id @default(autoincrement())
-  ref        String     @db.VarChar(50)
-  customerId Int
-  branchId   Int
-  assignType AssignType
-  assignedAt       DateTime
-  returnedAt       DateTime?
-  note             String?    @db.Text
-  orderId          Int?
-  stockRequestId   Int?       // optional link to stock request — when set, no stock cut
-  createdAt  DateTime   @default(now())
-  createdBy  Int?
-  updatedAt  DateTime?
-  updatedBy  Int?
+  id             Int        @id @default(autoincrement())
+  ref            String     @db.VarChar(50)
+  customerId     Int
+  branchId       Int
+  assignType     AssignType
+  assignedAt     DateTime
+  returnedAt     DateTime?
+  note           String?    @db.Text
+  orderId        Int?
+  stockRequestId Int? // optional link to stock request — when set, no stock cut
+  createdAt      DateTime   @default(now())
+  createdBy      Int?
+  updatedAt      DateTime?
+  updatedBy      Int?
 
-  customer       Customer       @relation(fields: [customerId], references: [id])
-  branch         Branch         @relation(fields: [branchId], references: [id])
-  order          Order?         @relation(fields: [orderId], references: [id])
-  stockRequest   StockRequests? @relation(fields: [stockRequestId], references: [id])
-  creator        User?          @relation("CEQCreatedBy", fields: [createdBy], references: [id])
-  updater        User?          @relation("CEQUpdatedBy", fields: [updatedBy], references: [id])
-  items          CustomerEquipmentItem[]
+  customer     Customer                @relation(fields: [customerId], references: [id])
+  branch       Branch                  @relation(fields: [branchId], references: [id])
+  order        Order?                  @relation(fields: [orderId], references: [id])
+  stockRequest StockRequests?          @relation(fields: [stockRequestId], references: [id])
+  creator      User?                   @relation("CEQCreatedBy", fields: [createdBy], references: [id])
+  updater      User?                   @relation("CEQUpdatedBy", fields: [updatedBy], references: [id])
+  items        CustomerEquipmentItem[]
 }
 
 model CustomerEquipmentItem {
   id                  Int  @id @default(autoincrement())
   customerEquipmentId Int
-  productAssetItemId  Int?           // set for tracked (serial) items
-  productVariantId    Int?           // set for non-tracked items
-  quantity            Int?           // quantity for non-tracked items
-  unitId              Int?           // display unit for non-tracked quantity
+  productAssetItemId  Int? // set for tracked (serial) items
+  productVariantId    Int? // set for non-tracked items
+  quantity            Int? // quantity for non-tracked items
+  unitId              Int? // display unit for non-tracked quantity
 
   customerEquipment CustomerEquipment @relation(fields: [customerEquipmentId], references: [id], onDelete: Cascade)
-  productAssetItem  ProductAssetItem?  @relation(fields: [productAssetItemId], references: [id])
-  productVariant    ProductVariants?   @relation("CEQItemVariant", fields: [productVariantId], references: [id])
-  unit              Units?             @relation("CEQItemUnit", fields: [unitId], references: [id])
+  productAssetItem  ProductAssetItem? @relation(fields: [productAssetItemId], references: [id])
+  productVariant    ProductVariants?  @relation("CEQItemVariant", fields: [productVariantId], references: [id])
+  unit              Units?            @relation("CEQItemUnit", fields: [unitId], references: [id])
 }
 
 model CompanySettings {
@@ -1604,24 +1674,24 @@ model CompanySettings {
 }
 
 model CashSession {
-  id             Int       @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   branchId       Int
-  shift          String?   @db.VarChar(50)
-  saleType       String?   @db.VarChar(20)
+  shift          String?  @db.VarChar(50)
+  saleType       String?  @db.VarChar(20)
   openedAt       DateTime
   closedAt       DateTime
   openedById     Int?
-  openingUSD     Decimal   @db.Decimal(10, 2)
+  openingUSD     Decimal  @db.Decimal(10, 2)
   openingKHR     Int
   exchangeRate   Int
-  totalSalesUSD  Decimal   @db.Decimal(10, 2)
-  cashSalesUSD   Decimal   @db.Decimal(10, 2)
-  actualCashUSD  Decimal   @db.Decimal(10, 2)
-  differenceUSD  Decimal   @db.Decimal(10, 2)
+  totalSalesUSD  Decimal  @db.Decimal(10, 2)
+  cashSalesUSD   Decimal  @db.Decimal(10, 2)
+  actualCashUSD  Decimal  @db.Decimal(10, 2)
+  differenceUSD  Decimal  @db.Decimal(10, 2)
   orderCount     Int
-  note           String?   @db.VarChar(500)
+  note           String?  @db.VarChar(500)
   paymentSummary Json
-  createdAt      DateTime  @default(now())
+  createdAt      DateTime @default(now())
   createdBy      Int?
 
   branch   Branch @relation("BranchCashSessions", fields: [branchId], references: [id])

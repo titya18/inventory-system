@@ -42679,3 +42679,2332 @@ Please make sure your database server is running at `localhost:5432`.
     at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
     at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
     at async signIn (D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:22)
+2026-07-31 20:17:46 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-07-31 22:03:44 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-05 21:22:19 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-05 21:26:31 error: Login error 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `db:5432`
+
+Please make sure your database server is running at `db:5432`. PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `db:5432`
+
+Please make sure your database server is running at `db:5432`.
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async signIn (D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:22)
+2026-08-05 21:27:29 error: Login error 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `db:5432`
+
+Please make sure your database server is running at `db:5432`. PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `db:5432`
+
+Please make sure your database server is running at `db:5432`.
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async signIn (D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:22)
+2026-08-05 21:30:00 error: Login error 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `db:5432`
+
+Please make sure your database server is running at `db:5432`. PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:40
+
+  47 export const signIn = async(req: Request, res: Response): Promise<void> => {
+  48     const { email, password } = req.body;
+  49     try {
+→ 50         const user = await prisma.user.findUnique(
+Can't reach database server at `db:5432`
+
+Please make sure your database server is running at `db:5432`.
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async signIn (D:\Citylink-Inventory-claude\backend\src\controllers\authController.ts:50:22)
+2026-08-05 21:30:32 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-05 21:31:57 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-10 08:45:07 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-10 17:03:21 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-11 10:34:56 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-11 14:02:14 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-11 14:43:20 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-11 14:58:44 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-11 15:09:16 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-11 15:09:44 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-11 15:09:59 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-11 15:10:15 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-11 15:43:45 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-11 15:43:52 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-11 16:08:09 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-11 16:08:18 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-11 16:08:23 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-12 09:30:52 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-12 10:06:18 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-12 10:06:27 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-12 10:13:36 info: CEQ return: skipping assetItem 83 — already IN_STOCK via Sale Return 
+2026-08-12 11:00:34 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-12 11:21:11 error: Error creating/updating invoice: Insufficient stock for barcode: 217000058816 Error: Insufficient stock for barcode: 217000058816
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:518:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:211:20)
+2026-08-12 11:21:37 error: Error creating/updating invoice: Insufficient stock for barcode: 217000058816 Error: Insufficient stock for barcode: 217000058816
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:518:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:211:20)
+2026-08-12 15:27:30 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-12 16:01:21 error: Error creating/updating quotation: 
+Invalid `tx.quotations.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:330:39
+
+  327         },
+  328     },
+  329 })
+→ 330 : await tx.quotations.create({
+        data: {
+          ref: "QR-00360",
+          branchId: 1,
+          customerId: 1,
+          quotationDate: new Date("2026-08-12T00:00:00.000Z"),
+          QuoteSaleType: "RETAIL",
+          taxRate: 0,
+          taxNet: 0,
+          discount: 0,
+          shipping: 0,
+          grandTotal: 122.0007,
+          status: "PENDING",
+          note: "",
+          updatedAt: new Date("2026-08-12T15:27:30.000Z"),
+          updatedBy: 1,
+          sentAt: null,
+          sentBy: null,
+          createdAt: new Date("2026-08-12T15:27:30.000Z"),
+          createdBy: 1,
+          quotationDetails: {
+            create: [
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("2"),
+                baseQty: new Prisma.Decimal("2"),
+                cost: new Prisma.Decimal("0.153"),
+                costPerBaseUnit: new Prisma.Decimal("0.0765"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("0.306"),
+                quantity: 2,
+                serialSelectionMode: "MANUAL",
+                trackedPayload: "{\"mode\":\"MANUAL\",\"selectedIds\":[338,339]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: null,
+                selectedAssetItems: {
+                  create: [
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 338
+                        }
+                      }
+                    },
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 339
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 1
+                  }
+                },
+                unitQty: new Prisma.Decimal("20"),
+                baseQty: new Prisma.Decimal("20"),
+                cost: new Prisma.Decimal("0.5833"),
+                costPerBaseUnit: new Prisma.Decimal("0.5833"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("11.666"),
+                quantity: 20,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: new Prisma.Decimal("1"),
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 80
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 79
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("1"),
+                baseQty: new Prisma.Decimal("1"),
+                cost: new Prisma.Decimal("0.0287"),
+                costPerBaseUnit: new Prisma.Decimal("0.0287"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("0.0287"),
+                quantity: 1,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: new Prisma.Decimal("1"),
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("1"),
+                baseQty: new Prisma.Decimal("1"),
+                cost: new Prisma.Decimal("80"),
+                costPerBaseUnit: new Prisma.Decimal("80"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("80"),
+                quantity: 1,
+                serialSelectionMode: "MANUAL",
+                trackedPayload: "{\"mode\":\"MANUAL\",\"selectedIds\":[332]}",
+                packageId: null,
+                packageGroupId: null,
+                packageQty: null,
+                selectedAssetItems: {
+                  create: [
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 332
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 1
+                  }
+                },
+                unitQty: new Prisma.Decimal("10"),
+                baseQty: new Prisma.Decimal("10"),
+                cost: new Prisma.Decimal("1"),
+                costPerBaseUnit: new Prisma.Decimal("0.1"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("10"),
+                quantity: 10,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: null,
+                packageGroupId: null,
+                packageQty: null,
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "SERVICE",
+                services: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: null,
+                baseQty: null,
+                cost: new Prisma.Decimal("20"),
+                costPerBaseUnit: new Prisma.Decimal("0"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("20"),
+                quantity: 1,
+                serialSelectionMode: "AUTO",
+                selectedAssetItems: undefined
+              }
+            ]
+          }
+        },
+        include: {
+          quotationDetails: {
+            orderBy: {
+              id: "asc"
+            },
+            include: {
+              products: true,
+              productvariants: true,
+              services: true,
+              selectedAssetItems: {
+                include: {
+                  productAssetItem: true
+                }
+              }
+            }
+          }
+        }
+      })
+
+Unknown argument `packageId`. Did you mean `package`? Available options are marked with ?. PrismaClientValidationError: 
+Invalid `tx.quotations.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:330:39
+
+  327         },
+  328     },
+  329 })
+→ 330 : await tx.quotations.create({
+        data: {
+          ref: "QR-00360",
+          branchId: 1,
+          customerId: 1,
+          quotationDate: new Date("2026-08-12T00:00:00.000Z"),
+          QuoteSaleType: "RETAIL",
+          taxRate: 0,
+          taxNet: 0,
+          discount: 0,
+          shipping: 0,
+          grandTotal: 122.0007,
+          status: "PENDING",
+          note: "",
+          updatedAt: new Date("2026-08-12T15:27:30.000Z"),
+          updatedBy: 1,
+          sentAt: null,
+          sentBy: null,
+          createdAt: new Date("2026-08-12T15:27:30.000Z"),
+          createdBy: 1,
+          quotationDetails: {
+            create: [
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("2"),
+                baseQty: new Prisma.Decimal("2"),
+                cost: new Prisma.Decimal("0.153"),
+                costPerBaseUnit: new Prisma.Decimal("0.0765"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("0.306"),
+                quantity: 2,
+                serialSelectionMode: "MANUAL",
+                trackedPayload: "{\"mode\":\"MANUAL\",\"selectedIds\":[338,339]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: null,
+                selectedAssetItems: {
+                  create: [
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 338
+                        }
+                      }
+                    },
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 339
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 1
+                  }
+                },
+                unitQty: new Prisma.Decimal("20"),
+                baseQty: new Prisma.Decimal("20"),
+                cost: new Prisma.Decimal("0.5833"),
+                costPerBaseUnit: new Prisma.Decimal("0.5833"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("11.666"),
+                quantity: 20,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: new Prisma.Decimal("1"),
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 80
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 79
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("1"),
+                baseQty: new Prisma.Decimal("1"),
+                cost: new Prisma.Decimal("0.0287"),
+                costPerBaseUnit: new Prisma.Decimal("0.0287"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("0.0287"),
+                quantity: 1,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: new Prisma.Decimal("1"),
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("1"),
+                baseQty: new Prisma.Decimal("1"),
+                cost: new Prisma.Decimal("80"),
+                costPerBaseUnit: new Prisma.Decimal("80"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("80"),
+                quantity: 1,
+                serialSelectionMode: "MANUAL",
+                trackedPayload: "{\"mode\":\"MANUAL\",\"selectedIds\":[332]}",
+                packageId: null,
+                packageGroupId: null,
+                packageQty: null,
+                selectedAssetItems: {
+                  create: [
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 332
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 1
+                  }
+                },
+                unitQty: new Prisma.Decimal("10"),
+                baseQty: new Prisma.Decimal("10"),
+                cost: new Prisma.Decimal("1"),
+                costPerBaseUnit: new Prisma.Decimal("0.1"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("10"),
+                quantity: 10,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: null,
+                packageGroupId: null,
+                packageQty: null,
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "SERVICE",
+                services: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: null,
+                baseQty: null,
+                cost: new Prisma.Decimal("20"),
+                costPerBaseUnit: new Prisma.Decimal("0"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("20"),
+                quantity: 1,
+                serialSelectionMode: "AUTO",
+                selectedAssetItems: undefined
+              }
+            ]
+          }
+        },
+        include: {
+          quotationDetails: {
+            orderBy: {
+              id: "asc"
+            },
+            include: {
+              products: true,
+              productvariants: true,
+              services: true,
+              selectedAssetItems: {
+                include: {
+                  productAssetItem: true
+                }
+              }
+            }
+          }
+        }
+      })
+
+Unknown argument `packageId`. Did you mean `package`? Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:330:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertQuotation (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:176:24)
+2026-08-12 16:01:50 error: Error creating/updating quotation: 
+Invalid `tx.quotations.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:330:39
+
+  327         },
+  328     },
+  329 })
+→ 330 : await tx.quotations.create({
+        data: {
+          ref: "QR-00360",
+          branchId: 1,
+          customerId: 1,
+          quotationDate: new Date("2026-08-12T00:00:00.000Z"),
+          QuoteSaleType: "RETAIL",
+          taxRate: 0,
+          taxNet: 0,
+          discount: 0,
+          shipping: 0,
+          grandTotal: 122.0007,
+          status: "PENDING",
+          note: "",
+          updatedAt: new Date("2026-08-12T15:27:30.000Z"),
+          updatedBy: 1,
+          sentAt: null,
+          sentBy: null,
+          createdAt: new Date("2026-08-12T15:27:30.000Z"),
+          createdBy: 1,
+          quotationDetails: {
+            create: [
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("2"),
+                baseQty: new Prisma.Decimal("2"),
+                cost: new Prisma.Decimal("0.153"),
+                costPerBaseUnit: new Prisma.Decimal("0.0765"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("0.306"),
+                quantity: 2,
+                serialSelectionMode: "MANUAL",
+                trackedPayload: "{\"mode\":\"MANUAL\",\"selectedIds\":[338,339]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: null,
+                selectedAssetItems: {
+                  create: [
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 338
+                        }
+                      }
+                    },
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 339
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 1
+                  }
+                },
+                unitQty: new Prisma.Decimal("20"),
+                baseQty: new Prisma.Decimal("20"),
+                cost: new Prisma.Decimal("0.5833"),
+                costPerBaseUnit: new Prisma.Decimal("0.5833"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("11.666"),
+                quantity: 20,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: new Prisma.Decimal("1"),
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 80
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 79
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("1"),
+                baseQty: new Prisma.Decimal("1"),
+                cost: new Prisma.Decimal("0.0287"),
+                costPerBaseUnit: new Prisma.Decimal("0.0287"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("0.0287"),
+                quantity: 1,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: new Prisma.Decimal("1"),
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("1"),
+                baseQty: new Prisma.Decimal("1"),
+                cost: new Prisma.Decimal("80"),
+                costPerBaseUnit: new Prisma.Decimal("80"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("80"),
+                quantity: 1,
+                serialSelectionMode: "MANUAL",
+                trackedPayload: "{\"mode\":\"MANUAL\",\"selectedIds\":[332]}",
+                packageId: null,
+                packageGroupId: null,
+                packageQty: null,
+                selectedAssetItems: {
+                  create: [
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 332
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 1
+                  }
+                },
+                unitQty: new Prisma.Decimal("10"),
+                baseQty: new Prisma.Decimal("10"),
+                cost: new Prisma.Decimal("1"),
+                costPerBaseUnit: new Prisma.Decimal("0.1"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("10"),
+                quantity: 10,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: null,
+                packageGroupId: null,
+                packageQty: null,
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "SERVICE",
+                services: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: null,
+                baseQty: null,
+                cost: new Prisma.Decimal("20"),
+                costPerBaseUnit: new Prisma.Decimal("0"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("20"),
+                quantity: 1,
+                serialSelectionMode: "AUTO",
+                selectedAssetItems: undefined
+              }
+            ]
+          }
+        },
+        include: {
+          quotationDetails: {
+            orderBy: {
+              id: "asc"
+            },
+            include: {
+              products: true,
+              productvariants: true,
+              services: true,
+              selectedAssetItems: {
+                include: {
+                  productAssetItem: true
+                }
+              }
+            }
+          }
+        }
+      })
+
+Unknown argument `packageId`. Did you mean `package`? Available options are marked with ?. PrismaClientValidationError: 
+Invalid `tx.quotations.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:330:39
+
+  327         },
+  328     },
+  329 })
+→ 330 : await tx.quotations.create({
+        data: {
+          ref: "QR-00360",
+          branchId: 1,
+          customerId: 1,
+          quotationDate: new Date("2026-08-12T00:00:00.000Z"),
+          QuoteSaleType: "RETAIL",
+          taxRate: 0,
+          taxNet: 0,
+          discount: 0,
+          shipping: 0,
+          grandTotal: 122.0007,
+          status: "PENDING",
+          note: "",
+          updatedAt: new Date("2026-08-12T15:27:30.000Z"),
+          updatedBy: 1,
+          sentAt: null,
+          sentBy: null,
+          createdAt: new Date("2026-08-12T15:27:30.000Z"),
+          createdBy: 1,
+          quotationDetails: {
+            create: [
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("2"),
+                baseQty: new Prisma.Decimal("2"),
+                cost: new Prisma.Decimal("0.153"),
+                costPerBaseUnit: new Prisma.Decimal("0.0765"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("0.306"),
+                quantity: 2,
+                serialSelectionMode: "MANUAL",
+                trackedPayload: "{\"mode\":\"MANUAL\",\"selectedIds\":[338,339]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: null,
+                selectedAssetItems: {
+                  create: [
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 338
+                        }
+                      }
+                    },
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 339
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 1
+                  }
+                },
+                unitQty: new Prisma.Decimal("20"),
+                baseQty: new Prisma.Decimal("20"),
+                cost: new Prisma.Decimal("0.5833"),
+                costPerBaseUnit: new Prisma.Decimal("0.5833"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("11.666"),
+                quantity: 20,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: new Prisma.Decimal("1"),
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 80
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 79
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("1"),
+                baseQty: new Prisma.Decimal("1"),
+                cost: new Prisma.Decimal("0.0287"),
+                costPerBaseUnit: new Prisma.Decimal("0.0287"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("0.0287"),
+                quantity: 1,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: new Prisma.Decimal("1"),
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("1"),
+                baseQty: new Prisma.Decimal("1"),
+                cost: new Prisma.Decimal("80"),
+                costPerBaseUnit: new Prisma.Decimal("80"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("80"),
+                quantity: 1,
+                serialSelectionMode: "MANUAL",
+                trackedPayload: "{\"mode\":\"MANUAL\",\"selectedIds\":[332]}",
+                packageId: null,
+                packageGroupId: null,
+                packageQty: null,
+                selectedAssetItems: {
+                  create: [
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 332
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 1
+                  }
+                },
+                unitQty: new Prisma.Decimal("10"),
+                baseQty: new Prisma.Decimal("10"),
+                cost: new Prisma.Decimal("1"),
+                costPerBaseUnit: new Prisma.Decimal("0.1"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("10"),
+                quantity: 10,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: null,
+                packageGroupId: null,
+                packageQty: null,
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "SERVICE",
+                services: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: null,
+                baseQty: null,
+                cost: new Prisma.Decimal("20"),
+                costPerBaseUnit: new Prisma.Decimal("0"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("20"),
+                quantity: 1,
+                serialSelectionMode: "AUTO",
+                selectedAssetItems: undefined
+              }
+            ]
+          }
+        },
+        include: {
+          quotationDetails: {
+            orderBy: {
+              id: "asc"
+            },
+            include: {
+              products: true,
+              productvariants: true,
+              services: true,
+              selectedAssetItems: {
+                include: {
+                  productAssetItem: true
+                }
+              }
+            }
+          }
+        }
+      })
+
+Unknown argument `packageId`. Did you mean `package`? Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:330:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertQuotation (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:176:24)
+2026-08-12 16:04:01 error: Error creating/updating quotation: 
+Invalid `tx.quotations.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:330:39
+
+  327         },
+  328     },
+  329 })
+→ 330 : await tx.quotations.create({
+        data: {
+          ref: "QR-00360",
+          branchId: 1,
+          customerId: 1,
+          quotationDate: new Date("2026-08-12T00:00:00.000Z"),
+          QuoteSaleType: "RETAIL",
+          taxRate: 0,
+          taxNet: 0,
+          discount: 0,
+          shipping: 0,
+          grandTotal: 122.0007,
+          status: "PENDING",
+          note: "",
+          updatedAt: new Date("2026-08-12T15:27:30.000Z"),
+          updatedBy: 1,
+          sentAt: null,
+          sentBy: null,
+          createdAt: new Date("2026-08-12T15:27:30.000Z"),
+          createdBy: 1,
+          quotationDetails: {
+            create: [
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("2"),
+                baseQty: new Prisma.Decimal("2"),
+                cost: new Prisma.Decimal("0.153"),
+                costPerBaseUnit: new Prisma.Decimal("0.0765"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("0.306"),
+                quantity: 2,
+                serialSelectionMode: "MANUAL",
+                trackedPayload: "{\"mode\":\"MANUAL\",\"selectedIds\":[338,339]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: null,
+                selectedAssetItems: {
+                  create: [
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 338
+                        }
+                      }
+                    },
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 339
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 1
+                  }
+                },
+                unitQty: new Prisma.Decimal("20"),
+                baseQty: new Prisma.Decimal("20"),
+                cost: new Prisma.Decimal("0.5833"),
+                costPerBaseUnit: new Prisma.Decimal("0.5833"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("11.666"),
+                quantity: 20,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: new Prisma.Decimal("1"),
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 80
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 79
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("1"),
+                baseQty: new Prisma.Decimal("1"),
+                cost: new Prisma.Decimal("0.0287"),
+                costPerBaseUnit: new Prisma.Decimal("0.0287"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("0.0287"),
+                quantity: 1,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: new Prisma.Decimal("1"),
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("1"),
+                baseQty: new Prisma.Decimal("1"),
+                cost: new Prisma.Decimal("80"),
+                costPerBaseUnit: new Prisma.Decimal("80"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("80"),
+                quantity: 1,
+                serialSelectionMode: "MANUAL",
+                trackedPayload: "{\"mode\":\"MANUAL\",\"selectedIds\":[332]}",
+                packageId: null,
+                packageGroupId: null,
+                packageQty: null,
+                selectedAssetItems: {
+                  create: [
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 332
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 1
+                  }
+                },
+                unitQty: new Prisma.Decimal("10"),
+                baseQty: new Prisma.Decimal("10"),
+                cost: new Prisma.Decimal("1"),
+                costPerBaseUnit: new Prisma.Decimal("0.1"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("10"),
+                quantity: 10,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: null,
+                packageGroupId: null,
+                packageQty: null,
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "SERVICE",
+                services: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: null,
+                baseQty: null,
+                cost: new Prisma.Decimal("20"),
+                costPerBaseUnit: new Prisma.Decimal("0"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("20"),
+                quantity: 1,
+                serialSelectionMode: "AUTO",
+                selectedAssetItems: undefined
+              }
+            ]
+          }
+        },
+        include: {
+          quotationDetails: {
+            orderBy: {
+              id: "asc"
+            },
+            include: {
+              products: true,
+              productvariants: true,
+              services: true,
+              selectedAssetItems: {
+                include: {
+                  productAssetItem: true
+                }
+              }
+            }
+          }
+        }
+      })
+
+Unknown argument `packageId`. Did you mean `package`? Available options are marked with ?. PrismaClientValidationError: 
+Invalid `tx.quotations.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:330:39
+
+  327         },
+  328     },
+  329 })
+→ 330 : await tx.quotations.create({
+        data: {
+          ref: "QR-00360",
+          branchId: 1,
+          customerId: 1,
+          quotationDate: new Date("2026-08-12T00:00:00.000Z"),
+          QuoteSaleType: "RETAIL",
+          taxRate: 0,
+          taxNet: 0,
+          discount: 0,
+          shipping: 0,
+          grandTotal: 122.0007,
+          status: "PENDING",
+          note: "",
+          updatedAt: new Date("2026-08-12T15:27:30.000Z"),
+          updatedBy: 1,
+          sentAt: null,
+          sentBy: null,
+          createdAt: new Date("2026-08-12T15:27:30.000Z"),
+          createdBy: 1,
+          quotationDetails: {
+            create: [
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("2"),
+                baseQty: new Prisma.Decimal("2"),
+                cost: new Prisma.Decimal("0.153"),
+                costPerBaseUnit: new Prisma.Decimal("0.0765"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("0.306"),
+                quantity: 2,
+                serialSelectionMode: "MANUAL",
+                trackedPayload: "{\"mode\":\"MANUAL\",\"selectedIds\":[338,339]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: null,
+                selectedAssetItems: {
+                  create: [
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 338
+                        }
+                      }
+                    },
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 339
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 1
+                  }
+                },
+                unitQty: new Prisma.Decimal("20"),
+                baseQty: new Prisma.Decimal("20"),
+                cost: new Prisma.Decimal("0.5833"),
+                costPerBaseUnit: new Prisma.Decimal("0.5833"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("11.666"),
+                quantity: 20,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: new Prisma.Decimal("1"),
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 80
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 79
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("1"),
+                baseQty: new Prisma.Decimal("1"),
+                cost: new Prisma.Decimal("0.0287"),
+                costPerBaseUnit: new Prisma.Decimal("0.0287"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("0.0287"),
+                quantity: 1,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: new Prisma.Decimal("1"),
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("1"),
+                baseQty: new Prisma.Decimal("1"),
+                cost: new Prisma.Decimal("80"),
+                costPerBaseUnit: new Prisma.Decimal("80"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("80"),
+                quantity: 1,
+                serialSelectionMode: "MANUAL",
+                trackedPayload: "{\"mode\":\"MANUAL\",\"selectedIds\":[332]}",
+                packageId: null,
+                packageGroupId: null,
+                packageQty: null,
+                selectedAssetItems: {
+                  create: [
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 332
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 1
+                  }
+                },
+                unitQty: new Prisma.Decimal("10"),
+                baseQty: new Prisma.Decimal("10"),
+                cost: new Prisma.Decimal("1"),
+                costPerBaseUnit: new Prisma.Decimal("0.1"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("10"),
+                quantity: 10,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: null,
+                packageGroupId: null,
+                packageQty: null,
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "SERVICE",
+                services: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: null,
+                baseQty: null,
+                cost: new Prisma.Decimal("20"),
+                costPerBaseUnit: new Prisma.Decimal("0"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("20"),
+                quantity: 1,
+                serialSelectionMode: "AUTO",
+                selectedAssetItems: undefined
+              }
+            ]
+          }
+        },
+        include: {
+          quotationDetails: {
+            orderBy: {
+              id: "asc"
+            },
+            include: {
+              products: true,
+              productvariants: true,
+              services: true,
+              selectedAssetItems: {
+                include: {
+                  productAssetItem: true
+                }
+              }
+            }
+          }
+        }
+      })
+
+Unknown argument `packageId`. Did you mean `package`? Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:330:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertQuotation (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:176:24)
+2026-08-12 16:04:17 error: Error creating/updating quotation: 
+Invalid `tx.quotations.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:330:39
+
+  327         },
+  328     },
+  329 })
+→ 330 : await tx.quotations.create({
+        data: {
+          ref: "QR-00360",
+          branchId: 1,
+          customerId: 1,
+          quotationDate: new Date("2026-08-12T00:00:00.000Z"),
+          QuoteSaleType: "RETAIL",
+          taxRate: 0,
+          taxNet: 0,
+          discount: 0,
+          shipping: 0,
+          grandTotal: 122.0007,
+          status: "PENDING",
+          note: "",
+          updatedAt: new Date("2026-08-12T15:27:30.000Z"),
+          updatedBy: 1,
+          sentAt: null,
+          sentBy: null,
+          createdAt: new Date("2026-08-12T15:27:30.000Z"),
+          createdBy: 1,
+          quotationDetails: {
+            create: [
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("2"),
+                baseQty: new Prisma.Decimal("2"),
+                cost: new Prisma.Decimal("0.153"),
+                costPerBaseUnit: new Prisma.Decimal("0.0765"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("0.306"),
+                quantity: 2,
+                serialSelectionMode: "MANUAL",
+                trackedPayload: "{\"mode\":\"MANUAL\",\"selectedIds\":[338,339]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: null,
+                selectedAssetItems: {
+                  create: [
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 338
+                        }
+                      }
+                    },
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 339
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 1
+                  }
+                },
+                unitQty: new Prisma.Decimal("20"),
+                baseQty: new Prisma.Decimal("20"),
+                cost: new Prisma.Decimal("0.5833"),
+                costPerBaseUnit: new Prisma.Decimal("0.5833"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("11.666"),
+                quantity: 20,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: new Prisma.Decimal("1"),
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 80
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 79
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("1"),
+                baseQty: new Prisma.Decimal("1"),
+                cost: new Prisma.Decimal("0.0287"),
+                costPerBaseUnit: new Prisma.Decimal("0.0287"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("0.0287"),
+                quantity: 1,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: new Prisma.Decimal("1"),
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("1"),
+                baseQty: new Prisma.Decimal("1"),
+                cost: new Prisma.Decimal("80"),
+                costPerBaseUnit: new Prisma.Decimal("80"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("80"),
+                quantity: 1,
+                serialSelectionMode: "MANUAL",
+                trackedPayload: "{\"mode\":\"MANUAL\",\"selectedIds\":[332]}",
+                packageId: null,
+                packageGroupId: null,
+                packageQty: null,
+                selectedAssetItems: {
+                  create: [
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 332
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 1
+                  }
+                },
+                unitQty: new Prisma.Decimal("10"),
+                baseQty: new Prisma.Decimal("10"),
+                cost: new Prisma.Decimal("1"),
+                costPerBaseUnit: new Prisma.Decimal("0.1"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("10"),
+                quantity: 10,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: null,
+                packageGroupId: null,
+                packageQty: null,
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "SERVICE",
+                services: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: null,
+                baseQty: null,
+                cost: new Prisma.Decimal("20"),
+                costPerBaseUnit: new Prisma.Decimal("0"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("20"),
+                quantity: 1,
+                serialSelectionMode: "AUTO",
+                selectedAssetItems: undefined
+              }
+            ]
+          }
+        },
+        include: {
+          quotationDetails: {
+            orderBy: {
+              id: "asc"
+            },
+            include: {
+              products: true,
+              productvariants: true,
+              services: true,
+              selectedAssetItems: {
+                include: {
+                  productAssetItem: true
+                }
+              }
+            }
+          }
+        }
+      })
+
+Unknown argument `packageId`. Did you mean `package`? Available options are marked with ?. PrismaClientValidationError: 
+Invalid `tx.quotations.create()` invocation in
+D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:330:39
+
+  327         },
+  328     },
+  329 })
+→ 330 : await tx.quotations.create({
+        data: {
+          ref: "QR-00360",
+          branchId: 1,
+          customerId: 1,
+          quotationDate: new Date("2026-08-12T00:00:00.000Z"),
+          QuoteSaleType: "RETAIL",
+          taxRate: 0,
+          taxNet: 0,
+          discount: 0,
+          shipping: 0,
+          grandTotal: 122.0007,
+          status: "PENDING",
+          note: "",
+          updatedAt: new Date("2026-08-12T15:27:30.000Z"),
+          updatedBy: 1,
+          sentAt: null,
+          sentBy: null,
+          createdAt: new Date("2026-08-12T15:27:30.000Z"),
+          createdBy: 1,
+          quotationDetails: {
+            create: [
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("2"),
+                baseQty: new Prisma.Decimal("2"),
+                cost: new Prisma.Decimal("0.153"),
+                costPerBaseUnit: new Prisma.Decimal("0.0765"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("0.306"),
+                quantity: 2,
+                serialSelectionMode: "MANUAL",
+                trackedPayload: "{\"mode\":\"MANUAL\",\"selectedIds\":[338,339]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: null,
+                selectedAssetItems: {
+                  create: [
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 338
+                        }
+                      }
+                    },
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 339
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 1
+                  }
+                },
+                unitQty: new Prisma.Decimal("20"),
+                baseQty: new Prisma.Decimal("20"),
+                cost: new Prisma.Decimal("0.5833"),
+                costPerBaseUnit: new Prisma.Decimal("0.5833"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("11.666"),
+                quantity: 20,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: new Prisma.Decimal("1"),
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 80
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 79
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("1"),
+                baseQty: new Prisma.Decimal("1"),
+                cost: new Prisma.Decimal("0.0287"),
+                costPerBaseUnit: new Prisma.Decimal("0.0287"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("0.0287"),
+                quantity: 1,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: 1,
+                packageGroupId: "PKG-1-1786525189196-75fyjm",
+                packageQty: new Prisma.Decimal("1"),
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 18
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: new Prisma.Decimal("1"),
+                baseQty: new Prisma.Decimal("1"),
+                cost: new Prisma.Decimal("80"),
+                costPerBaseUnit: new Prisma.Decimal("80"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("80"),
+                quantity: 1,
+                serialSelectionMode: "MANUAL",
+                trackedPayload: "{\"mode\":\"MANUAL\",\"selectedIds\":[332]}",
+                packageId: null,
+                packageGroupId: null,
+                packageQty: null,
+                selectedAssetItems: {
+                  create: [
+                    {
+                      productAssetItem: {
+                        connect: {
+                          id: 332
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                ItemType: "PRODUCT",
+                products: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                productvariants: {
+                  connect: {
+                    id: 32
+                  }
+                },
+                unit: {
+                  connect: {
+                    id: 1
+                  }
+                },
+                unitQty: new Prisma.Decimal("10"),
+                baseQty: new Prisma.Decimal("10"),
+                cost: new Prisma.Decimal("1"),
+                costPerBaseUnit: new Prisma.Decimal("0.1"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("10"),
+                quantity: 10,
+                serialSelectionMode: "AUTO",
+                trackedPayload: "{\"mode\":\"AUTO\",\"selectedIds\":[]}",
+                packageId: null,
+                packageGroupId: null,
+                packageQty: null,
+                selectedAssetItems: undefined
+              },
+              {
+                ItemType: "SERVICE",
+                services: {
+                  connect: {
+                    id: 2
+                  }
+                },
+                unitQty: null,
+                baseQty: null,
+                cost: new Prisma.Decimal("20"),
+                costPerBaseUnit: new Prisma.Decimal("0"),
+                taxNet: new Prisma.Decimal("0"),
+                taxMethod: "Include",
+                discount: new Prisma.Decimal("0"),
+                discountMethod: "Fixed",
+                total: new Prisma.Decimal("20"),
+                quantity: 1,
+                serialSelectionMode: "AUTO",
+                selectedAssetItems: undefined
+              }
+            ]
+          }
+        },
+        include: {
+          quotationDetails: {
+            orderBy: {
+              id: "asc"
+            },
+            include: {
+              products: true,
+              productvariants: true,
+              services: true,
+              selectedAssetItems: {
+                include: {
+                  productAssetItem: true
+                }
+              }
+            }
+          }
+        }
+      })
+
+Unknown argument `packageId`. Did you mean `package`? Available options are marked with ?.
+    at wn (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at $n.handleRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6958)
+    at $n.handleAndLogRequestError (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:330:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertQuotation (D:\Citylink-Inventory-claude\backend\src\controllers\quotationController.ts:176:24)
+2026-08-12 16:07:08 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-12 16:08:21 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 08:27:24 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 09:04:27 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 09:11:25 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 09:12:46 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 09:13:51 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 09:14:02 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 09:14:19 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 09:17:41 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 09:58:14 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 09:58:30 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 09:58:42 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 10:04:03 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 10:05:19 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 10:05:44 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 10:13:38 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 10:32:12 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 10:50:53 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 14:09:22 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 14:09:30 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-13 15:30:40 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-17 13:35:49 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-17 15:37:25 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-17 15:40:27 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-17 17:07:15 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-18 09:12:59 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-18 10:40:13 error: Error creating/updating invoice: Insufficient stock for barcode: 217000058816 Error: Insufficient stock for barcode: 217000058816
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:520:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:211:20)
+2026-08-18 10:40:35 error: Error creating/updating invoice: Insufficient stock for barcode: 217000058816 Error: Insufficient stock for barcode: 217000058816
+    at <anonymous> (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:520:19)
+    at async Proxy._transactionWithCallback (D:\Citylink-Inventory-claude\backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async upsertInvoice (D:\Citylink-Inventory-claude\backend\src\controllers\invoiceController.ts:211:20)
+2026-08-18 15:59:52 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 
+2026-08-18 17:09:26 info: Exchange rate auto-sync job scheduled: daily at 08:00 Asia/Phnom_Penh 

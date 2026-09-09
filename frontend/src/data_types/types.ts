@@ -143,6 +143,14 @@ export interface ProductTrackedItemType {
   soldOrderItemId?: number | null;
 }
 
+export interface BlockedTrackedItemReason {
+  id: number;
+  serialNumber: string | null;
+  assetCode: string | null;
+  macAddress: string | null;
+  reason: string;
+}
+
 export type ProductStock = {
     branchId: number;
     quantity: number;
@@ -533,6 +541,78 @@ export interface ServiceType {
     stocks?: number | null;
 }
 
+export interface PackageItemType {
+    id?: number;
+    packageId?: number;
+    productVariantId: number;
+    quantity: number;
+    unitId?: number | null;
+    variantName?: string;
+    sku?: string;
+    productVariant?: ProductVariantType;
+    unit?: UnitType;
+}
+
+export interface PackageType {
+    id?: number;
+    name: string;
+    sku?: string | null;
+    barcode?: string | null;
+    packageRetailPrice: number | string;
+    packageWholeSalePrice?: number | string | null;
+    image: File[] | null;
+    imagesToDelete?: string[];
+    note?: string | null;
+    isActive?: number;
+    createdAt?: Date;
+    updatedAt?: Date;
+    deletedAt?: Date;
+
+    creator?: UserType | null;
+    updater?: UserType | null;
+    deleter?: UserType | null;
+
+    items: PackageItemType[];
+}
+
+export interface PackageExplodeComponent {
+    packageId: number;
+    packageGroupId: string;
+    productId: number;
+    productVariantId: number;
+    name: string;
+    sku: string | null;
+    barcode: string | null;
+    trackingType: string;
+    unitId: number;
+    unitQty: number;
+    baseQty: number;
+    baseUnitId: number;
+    baseUnitName: string | null;
+    price: number;
+    total: number;
+}
+
+export interface PackageShortage {
+    productVariantId: number;
+    name: string;
+    sku: string | null;
+    availableBaseQty: number;
+    requiredBaseQty: number;
+    baseUnitName: string | null;
+}
+
+export interface PackageExplodeResult {
+    packageId: number;
+    packageGroupId: string;
+    packageName: string;
+    qty: number;
+    packagePrice: number;
+    maxSellable: number | null;
+    shortages: PackageShortage[];
+    components: PackageExplodeComponent[];
+}
+
 export interface QuotationType {
     id?: number;
     branchId: number;
@@ -611,6 +691,13 @@ export interface QuotationDetailType {
     serialSelectionMode?: "AUTO" | "MANUAL" | null;
     selectedTrackedItemIds?: number[];
     selectedTrackedItems?: any[];
+
+    // Package (bundle) traceability — set only when this line was generated
+    // by exploding a Package at cart-build time. Display grouping only.
+    packageId?: number | null;
+    packageGroupId?: string | null;
+    packageName?: string | null;
+    packageQty?: number | null; // how many packages this row's quantity represents
 }
 
 export interface CustomerType {
@@ -757,6 +844,13 @@ export interface InvoiceDetailType {
     selectedTrackedItemIds?: number[];
     selectedTrackedItems?: ProductTrackedItemType[];
     branchId?: number | null;
+
+    // Package (bundle) traceability — set only when this line was generated
+    // by exploding a Package at cart-build time. Display grouping only.
+    packageId?: number | null;
+    packageGroupId?: string | null;
+    packageName?: string | null;
+    packageQty?: number | null; // how many packages this row's quantity represents
 }
 
 export interface StockAdjustmentType {

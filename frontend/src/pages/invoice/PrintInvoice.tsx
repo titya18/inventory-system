@@ -321,6 +321,13 @@ const formatCurrency = (value: any) => {
                       </span>
                     )} */}
                   </div>
+                  {Array.isArray(item.components) && item.components.length > 0 && (
+                    <div style={{ fontSize: '10px', color: '#777', marginTop: '3px', fontWeight: 'normal', lineHeight: 1.4 }}>
+                      Includes: {item.components
+                        .map((c: any) => `${c.name} × ${Number(c.qty).toFixed(2).replace(/\.00$/, "")}${c.unitName ? ` ${c.unitName}` : ""}`)
+                        .join(', ')}
+                    </div>
+                  )}
                 </td>
                 <td style={{ 
                   padding: '0px 15px',
@@ -601,6 +608,73 @@ const PrintInvoice: React.FC = () => {
           0
         ) || 0;
 
+        // Package-sourced items collapse into one printed line each — the
+        // customer sees "Package A" once, not every component it's made of.
+        const rawItems = (invoice.items || []).map((item: any, index: number) => ({
+          description:
+            item.ItemType === "PRODUCT"
+              ? item.productvariants?.productType === "New"
+                ? item.products?.name
+                : `${item.products?.name}`
+              : item.services?.name || `Item ${index + 1}`,
+          qty:
+            item.ItemType === "PRODUCT"
+              ? (item.unitQty ?? item.quantity ?? 1)
+              : (item.quantity ?? 1),
+          unitId: item.unitId ?? null,
+          unitName:
+            item.ItemType === "PRODUCT"
+              ? (item.unit?.name || item.unitName || "")
+              : "",
+          itemType: item.ItemType,
+          taxNet: item.taxNet,
+          taxMethod: item.taxMethod,
+          discountMethod: item.discountMethod,
+          price: item.price || 0,
+          discount: item.discount || 0,
+          total: item.total || 0,
+          trackingType: item.productvariants?.trackingType ?? 'NONE',
+          serialNumbers: (item.productvariants?.trackingType && item.productvariants.trackingType !== 'NONE')
+            ? (item.selectedAssetItems ?? []).map((link: any) => link.productAssetItem?.serialNumber).filter(Boolean)
+            : [],
+          packageGroupId: item.packageGroupId ?? null,
+          packageQty: item.packageQty ?? null,
+          packageName: item.packageName ?? item.package?.name ?? null,
+        }));
+
+        const printItems: any[] = [];
+        const seenPackageGroups = new Set<string>();
+        for (const item of rawItems) {
+          if (item.packageGroupId) {
+            if (seenPackageGroups.has(item.packageGroupId)) continue;
+            seenPackageGroups.add(item.packageGroupId);
+            const groupItems = rawItems.filter((i: any) => i.packageGroupId === item.packageGroupId);
+            const groupTotal = groupItems.reduce((sum: number, i: any) => sum + (parseFloat(i.total) || 0), 0);
+            const qty = Number(item.packageQty ?? 1) || 1;
+            printItems.push({
+              description: `📦 ${item.packageName ?? "Package"}`,
+              qty,
+              unitId: null,
+              unitName: "",
+              itemType: "PRODUCT",
+              taxNet: 0,
+              taxMethod: "Include",
+              discountMethod: "Fixed",
+              price: qty > 0 ? groupTotal / qty : groupTotal,
+              discount: 0,
+              total: groupTotal,
+              trackingType: "NONE",
+              serialNumbers: [],
+              components: groupItems.map((i: any) => ({
+                name: i.description,
+                qty: i.qty,
+                unitName: i.unitName,
+              })),
+            });
+          } else {
+            printItems.push(item);
+          }
+        }
 
         // Transform API data to match our structure
         const transformedData = {
@@ -636,38 +710,7 @@ const PrintInvoice: React.FC = () => {
             phone: invoice.customer?.phone || "+1 987 654 3210"
           },
           
-          items: invoice.items?.map((item: any, index: number) => ({
-            description:
-              item.ItemType === "PRODUCT"
-                ? item.productvariants?.productType === "New"
-                  ? item.products?.name
-                  // : `${item.products?.name} (${item.productvariants?.productType})`
-                  : `${item.products?.name}`
-                : item.services?.name || `Item ${index + 1}`,
-
-            qty:
-              item.ItemType === "PRODUCT"
-                ? (item.unitQty ?? item.quantity ?? 1)
-                : (item.quantity ?? 1),
-
-            unitId: item.unitId ?? null,
-            unitName:
-              item.ItemType === "PRODUCT"
-                ? (item.unit?.name || item.unitName || "")
-                : "",
-
-            itemType: item.ItemType,
-            taxNet: item.taxNet,
-            taxMethod: item.taxMethod,
-            discountMethod: item.discountMethod,
-            price: item.price || 0,
-            discount: item.discount || 0,
-            total: item.total || 0,
-            trackingType: item.productvariants?.trackingType ?? 'NONE',
-            serialNumbers: (item.productvariants?.trackingType && item.productvariants.trackingType !== 'NONE')
-              ? (item.selectedAssetItems ?? []).map((link: any) => link.productAssetItem?.serialNumber).filter(Boolean)
-              : [],
-          })) || [],
+          items: printItems,
           
           totals: {
             subtotal: sumtotal,

@@ -10,7 +10,12 @@ import { Search, X, GitBranch, AlertTriangle, ScanLine } from "lucide-react";
 import { searchProduct } from "@/api/searchProduct";
 import { getAllCategories } from "@/api/category";
 import { getAllBranches } from "@/api/branch";
+import { getAllPackages, explodePackage } from "@/api/package";
+import { formatPackageShortageMessage } from "@/utils/packageStockMessage";
+import { PackageType } from "@/data_types/types";
 import { POSProduct, useCart } from "@/hooks/useCart";
+import { toast } from "react-toastify";
+import { Package as PackageIcon } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
@@ -64,12 +69,14 @@ const mapVariantToProduct = (v: any, branchId: number): POSProduct => {
 const Pos: React.FC = () => {
   const { user } = useAppContext();
   const { formattedDate } = useClock();
-  const { items, clearCart } = useCart();
+  const { items, clearCart, addItemWithConfig, saleType } = useCart();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [allProducts, setAllProducts] = useState<POSProduct[]>([]);
+  const [allPackages, setAllPackages] = useState<PackageType[]>([]);
+  const [addingPackageId, setAddingPackageId] = useState<number | null>(null);
   const [categories, setCategories] = useState<POSCategory[]>([{ id: "all", name: "All" }]);
   const [loading, setLoading] = useState(false);
 
@@ -131,6 +138,88 @@ const Pos: React.FC = () => {
       })
       .catch(() => {});
   }, []);
+
+  // Load packages (global catalog, not branch-scoped)
+  useEffect(() => {
+    getAllPackages()
+      .then(setAllPackages)
+      .catch(() => setAllPackages([]));
+  }, []);
+
+  // Explodes a Package (qty=1 basis) and adds it to the cart as ONE line
+  // carrying an embedded component breakdown — expanded into per-component
+  // invoice lines only at payment time (PaymentModal.handleConfirm), so it
+  // never collides with a standalone product line of the same variant.
+  const handleAddPackageToCart = async (pkg: PackageType) => {
+    if (!effectiveBranchId || !pkg.id) return;
+    setAddingPackageId(pkg.id);
+    try {
+      const result = await explodePackage(pkg.id, 1, effectiveBranchId, saleType);
+      if (result.maxSellable !== null && result.maxSellable < 1) {
+        toast.error(formatPackageShortageMessage(result.packageName, result.shortages), { autoClose: 6000 });
+        return;
+      }
+
+      const packageGroupId = `PKGPOS-${pkg.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const packageProduct: POSProduct = {
+        id: `pkg-${pkg.id}`,
+        variantId: 0,
+        productId: 0,
+        name: pkg.name,
+        price: Number(pkg.packageRetailPrice) || result.packagePrice,
+        wholeSalePrice: Number(pkg.packageWholeSalePrice ?? pkg.packageRetailPrice) || result.packagePrice,
+        stock: result.maxSellable ?? 9999,
+        categoryId: -1,
+        categoryName: "Package",
+        image: null,
+        barcode: pkg.barcode ?? undefined,
+        trackingType: "NONE",
+        unitId: null,
+        unitName: "",
+        baseUnitName: "",
+        branchId: effectiveBranchId,
+        unitOptions: [],
+        productType: undefined,
+      };
+
+      addItemWithConfig({
+        product: packageProduct,
+        quantity: 1,
+        unitId: null,
+        unitName: "",
+        unitPrice: result.packagePrice,
+        multiplier: 1,
+        serialSelectionMode: "AUTO",
+        selectedTrackedItemIds: [],
+        selectedTrackedItems: [],
+        taxType: "Include",
+        orderTax: 0,
+        discountType: "Fixed",
+        discount: 0,
+        packageId: pkg.id,
+        packageGroupId,
+        packageName: result.packageName,
+        packageComponents: result.components.map((c) => ({
+          packageId: c.packageId,
+          productId: c.productId,
+          productVariantId: c.productVariantId,
+          name: c.name,
+          sku: c.sku,
+          trackingType: c.trackingType,
+          unitId: c.unitId,
+          unitQty: c.unitQty,
+          baseQty: c.baseQty,
+          baseUnitName: c.baseUnitName,
+          price: c.price,
+          total: c.total,
+        })),
+      });
+    } catch (err: any) {
+      toast.error(err.message || "Error adding package to cart");
+    } finally {
+      setAddingPackageId(null);
+    }
+  };
 
   // Stable load function — reads branchId from ref, never recreated
   const loadProducts = useCallback(async (term: string) => {
@@ -259,7 +348,7 @@ const Pos: React.FC = () => {
           </div>
 
           {/* Category tabs */}
-          <div className="px-4 py-2.5 overflow-x-auto flex-shrink-0" style={{ backgroundColor: '#fff', borderBottom: '1px solid #e2e8f0' }}>
+          <div className="px-4 py-2.5 overflow-y-auto flex-shrink-0" style={{ backgroundColor: '#fff', borderBottom: '1px solid #e2e8f0', maxHeight: 92 }}>
             <CategoryTabs
               categories={categories}
               selectedCategory={selectedCategory}
@@ -267,6 +356,51 @@ const Pos: React.FC = () => {
               productCounts={productCounts}
             />
           </div>
+
+          {/* Packages strip */}
+          {effectiveBranchId && allPackages.length > 0 && (() => {
+            const q = searchQuery.trim().toLowerCase();
+            const visiblePackages = q
+              ? allPackages.filter((p) =>
+                  p.name.toLowerCase().includes(q) ||
+                  (p.sku ?? "").toLowerCase().includes(q) ||
+                  (p.barcode ?? "").toLowerCase().includes(q)
+                )
+              : allPackages;
+            if (visiblePackages.length === 0) return null;
+            return (
+              <div className="px-4 py-2.5 flex-shrink-0" style={{ backgroundColor: '#fff', borderBottom: '1px solid #e2e8f0' }}>
+                <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                  {visiblePackages.map((pkg) => (
+                    <button
+                      key={pkg.id}
+                      type="button"
+                      onClick={() => handleAddPackageToCart(pkg)}
+                      disabled={addingPackageId === pkg.id}
+                      className="flex-shrink-0 flex items-center gap-2 rounded-lg border px-3 py-2 text-left hover:shadow-sm transition-shadow disabled:opacity-50"
+                      style={{ borderColor: '#c7d2fe', backgroundColor: '#eef2ff', minWidth: 180 }}
+                    >
+                      {pkg.image && pkg.image.length > 0 ? (
+                        <img
+                          src={`${API_BASE}/${pkg.image[0]}`}
+                          alt=""
+                          className="w-8 h-8 rounded object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <PackageIcon className="w-4 h-4 flex-shrink-0" style={{ color: '#6366f1' }} />
+                      )}
+                      <span className="min-w-0">
+                        <span className="block text-xs font-semibold text-gray-700 truncate">{pkg.name}</span>
+                        <span className="block text-[11px] text-indigo-600 font-medium">
+                          ${Number(saleType === "WHOLESALE" ? (pkg.packageWholeSalePrice ?? pkg.packageRetailPrice) : pkg.packageRetailPrice).toFixed(2)}
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Product grid */}
           <div className="flex-1 overflow-y-auto p-4" style={{ backgroundColor: '#f1f5f9' }}>

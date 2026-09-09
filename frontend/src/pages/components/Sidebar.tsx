@@ -37,7 +37,8 @@ import {
     Store,
     Landmark,
     TrendingUp,
-    UserCheck
+    UserCheck,
+    PackageSearch
 } from 'lucide-react';
 
 // Define a type for the state
@@ -385,6 +386,7 @@ const Sidebar: React.FC = () => {
                             hasPermission('Unit-View') ||
                             hasPermission('Varient-Attribute-View') ||
                             hasPermission('Product-View') ||
+                            hasPermission('Package-View') ||
                             hasPermission('Service-View')
                         ) && (
                             <h2 className="-mx-4 mb-1 flex items-center bg-white-light/30 px-7 py-3 font-extrabold uppercase dark:bg-dark dark:bg-opacity-[0.08]">
@@ -494,6 +496,24 @@ const Sidebar: React.FC = () => {
                                             <div className="flex items-center">
                                                 <AlignEndHorizontal />
                                                 <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Products</span>
+                                            </div>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+
+                        {hasPermission('Package-View') &&
+                            <li className="nav-item">
+                                <ul>
+                                    <li className="nav-item" onClick={() => handleToggleMenu(null)}>
+                                        <NavLink
+                                            to="/packages"
+                                            className={location.pathname.includes('/packages') ? 'active' : ''}
+                                        >
+                                            <div className="flex items-center">
+                                                <PackageSearch />
+                                                <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Packages</span>
                                             </div>
                                         </NavLink>
                                     </li>
@@ -786,7 +806,8 @@ const Sidebar: React.FC = () => {
                             hasPermission('Cash-Session-View') ||
                             hasPermission('Cash-Session-Report') ||
                             hasPermission('Top-Selling-Products-Report') ||
-                            hasPermission('Top-Sales-Person-Report')
+                            hasPermission('Top-Sales-Person-Report') ||
+                            hasPermission('Package-Sales-Report')
                         ) && (
                             <h2 className="-mx-4 mb-1 flex items-center bg-white-light/30 px-7 py-3 font-extrabold uppercase dark:bg-dark dark:bg-opacity-[0.08]">
                                 <svg
@@ -815,6 +836,24 @@ const Sidebar: React.FC = () => {
                                             <div className="flex items-center">
                                                 <FilePenLine />
                                                 <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Sale Report</span>
+                                            </div>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+
+                        {hasPermission('Package-Sales-Report') &&
+                            <li className="nav-item">
+                                <ul>
+                                    <li className="nav-item" onClick={() => handleToggleMenu(null)}>
+                                        <NavLink
+                                            to="/reportPackageSales"
+                                            className={location.pathname.includes('reportPackageSales') ? 'active' : ''}
+                                        >
+                                            <div className="flex items-center">
+                                                <PackageSearch />
+                                                <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Package Sales</span>
                                             </div>
                                         </NavLink>
                                     </li>

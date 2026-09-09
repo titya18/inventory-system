@@ -1093,3 +1093,36 @@ export const getCustomerPurchaseReport = async (params: {
     if (!res.ok) throw new Error("Failed to fetch customer purchase report");
     return res.json();
 };
+
+// ─── Package Sales Report ────────────────────────────────────────────────────
+export const getPackageSalesReport = async (params: {
+    startDate?: string; endDate?: string; branchId?: number;
+    search?: string; page?: number; pageSize?: number; sortField?: string; sortOrder?: string;
+}): Promise<{ data: any[]; total: number; summary: any }> => {
+    const q = new URLSearchParams();
+    if (params.startDate) q.set("startDate", params.startDate);
+    if (params.endDate)   q.set("endDate",   params.endDate);
+    if (params.branchId)  q.set("branchId",  String(params.branchId));
+    if (params.search)    q.set("search",    params.search);
+    q.set("pageNumber", String(params.page   ?? 1));
+    q.set("pageSize",   String(params.pageSize ?? 20));
+    if (params.sortField) q.set("sortField", params.sortField);
+    if (params.sortOrder) q.set("sortOrder", params.sortOrder);
+    const res = await fetch(`${API_BASE_URL}/api/report/packageSales?${q}`, { credentials: "include" });
+    if (!res.ok) throw new Error("Failed to fetch package sales report");
+    return res.json();
+};
+
+// ─── Package Sales Report — drill-down ───────────────────────────────────────
+export const getPackageSaleInstances = async (
+    packageId: number,
+    params: { startDate?: string; endDate?: string; branchId?: number }
+): Promise<{ packageName: string; data: any[] }> => {
+    const q = new URLSearchParams();
+    if (params.startDate) q.set("startDate", params.startDate);
+    if (params.endDate)   q.set("endDate",   params.endDate);
+    if (params.branchId)  q.set("branchId",  String(params.branchId));
+    const res = await fetch(`${API_BASE_URL}/api/report/packageSales/${packageId}/instances?${q}`, { credentials: "include" });
+    if (!res.ok) throw new Error("Failed to fetch package sale instances");
+    return res.json();
+};

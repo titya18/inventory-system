@@ -1,21 +1,26 @@
 services:
+  # -------------------- PostgreSQL --------------------
   db:
     container_name: node-react-pos-db
     image: postgres:15-alpine
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin123456
+      POSTGRES_DB: ctl_db_inventory
+      POSTGRES_USER: ctl_inventory_user
+      POSTGRES_PASSWORD: CTL_inventoryPassword18
+      TZ: Asia/Phnom_Penh
+      PGTZ: Asia/Phnom_Penh
     ports:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ctl_inventory_user -d ctl_db_inventory"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
+  # -------------------- PgAdmin --------------------
   pgadmin:
     container_name: node-react-pos-pgadmin
     image: dpage/pgadmin4
@@ -26,33 +31,51 @@ services:
     ports:
       - "5050:80"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
+  # -------------------- Backend --------------------
   backend:
     container_name: node-react-pos-backend
-    build: ./backend
-    restart: always
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: "no"
+
+    env_file:
+      - ./backend/.env
+
+    environment:
+      NODE_ENV: production
+
     ports:
       - "4000:4000"
-    environment:
-      DATABASE_URL: postgresql://postgres:admin123456@db:5432/node_react_pos?schema=public
-      JWT_SECRET_KEY: 8qNw4tpBGY6JfnciNpmizjUFIozrHxYB
-      FRONTEND_URL: http://frontend:80
+
     depends_on:
       db:
         condition: service_healthy
+
     command: ["/bin/sh", "-c", "sleep 5 && npx prisma migrate dev --name init && npm run dev"]
 
+    volumes:
+      - ./backend/public:/app/public
+
+  # -------------------- Frontend --------------------
   frontend:
     container_name: node-react-pos-frontend
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     restart: always
+
     ports:
       - "9000:80"
+
     environment:
       API_URL: http://backend:4000
+
     depends_on:
       - backend
 

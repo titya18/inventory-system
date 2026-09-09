@@ -23,6 +23,8 @@ import {
     getTopSellingProductsReport,
     getTopSalesPersonReport,
     getCustomerPurchaseReport,
+    getPackageSalesReport,
+    getPackageSaleInstances,
 } from "../controllers/reportController";
 
 const router = express.Router();
@@ -49,4 +51,6 @@ router.route("/cashSessionReport").get(getCashSessionReport);
 router.route("/topSellingProducts").get(authorize(["Top-Selling-Products-Report"]), getTopSellingProductsReport);
 router.route("/topSalesPerson").get(authorize(["Top-Sales-Person-Report"]), getTopSalesPersonReport);
 router.route("/reportCustomerPurchase").get(authorize(["Customer-Purchase-Report"]), getCustomerPurchaseReport);
+router.route("/packageSales").get(authorize(["Package-Sales-Report"]), getPackageSalesReport);
+router.route("/packageSales/:packageId/instances").get(authorize(["Package-Sales-Report"]), getPackageSaleInstances);
 export default router;
