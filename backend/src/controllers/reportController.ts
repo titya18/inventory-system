@@ -4249,7 +4249,8 @@ export const getPackageSaleInstances = async (
         const loggedInUser = req.user;
         if (!loggedInUser) { res.status(401).json({ message: "Unauthenticated." }); return; }
 
-        const packageId = parseInt(req.params.packageId, 10);
+        const packageIdParam = Array.isArray(req.params.packageId) ? req.params.packageId[0] : req.params.packageId;
+        const packageId = parseInt(packageIdParam, 10);
         if (!packageId || isNaN(packageId)) {
             res.status(400).json({ message: "A valid packageId is required" });
             return;
